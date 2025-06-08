@@ -1,0 +1,435 @@
+# this_file: pyproject.toml
+#==============================================================================
+# TOPYAZ PACKAGE CONFIGURATION
+# This pyproject.toml defines the package metadata, dependencies, build system,
+# and development environment for the topyaz package.
+#==============================================================================
+
+#------------------------------------------------------------------------------
+# PROJECT METADATA
+# Core package information used by PyPI and package managers.
+#------------------------------------------------------------------------------
+[project]
+name = 'topyaz' # Package name on PyPI
+description = '' # Short description
+readme = 'README.md' # Path to README file
+requires-python = '>=3.10' # Minimum Python version
+keywords = [
+] # Keywords for PyPI search
+dynamic = ["version"] # Fields set dynamically at build time
+
+# PyPI classifiers for package categorization
+classifiers = [
+    'Development Status :: 4 - Beta', # Package maturity level
+    'Programming Language :: Python',
+    'Programming Language :: Python :: 3.10',
+    'Programming Language :: Python :: 3.11',
+    'Programming Language :: Python :: 3.12',
+    'Programming Language :: Python :: Implementation :: CPython',
+    'Programming Language :: Python :: Implementation :: PyPy',
+    'Operating System :: OS Independent',
+    'License :: OSI Approved :: MIT License',
+    'Intended Audience :: Developers',
+]
+
+dependencies = [
+]
+
+# Author information
+[[project.authors]]
+name = 'Adam Twardoch'
+email = 'adam+github@twardoch.com'
+
+# License information
+[project.license]
+text = 'MIT'
+
+# Project URLs
+[project.urls]
+Documentation = 'https://github.com/twardoch/topyaz#readme'
+Issues = 'https://github.com/twardoch/topyaz/issues'
+Source = 'https://github.com/twardoch/topyaz'
+
+#------------------------------------------------------------------------------
+# OPTIONAL DEPENDENCIES
+# Additional dependencies for optional features, development, and testing.
+#------------------------------------------------------------------------------
+[project.optional-dependencies]
+
+# Development tools
+dev = [
+    'pre-commit>=4.1.0', # Pre-commit hook manager - Keep pre-commit as is, update if newer pre-commit version is required
+    'ruff>=0.9.7', # Linting and formatting - Keep ruff as is, update if newer ruff version is required
+    'mypy>=1.15.0', # Type checking - Keep mypy as is, update if newer mypy version is required
+    'absolufy-imports>=0.3.1', # Convert relative imports to absolute - Keep absolufy-imports as is, update if newer absolufy-imports version is required
+    'pyupgrade>=3.19.1', # Upgrade Python syntax - Keep pyupgrade as is, update if newer pyupgrade version is required
+    'isort>=6.0.1', # Sort imports - Keep isort as is, update if newer isort version is required
+]
+
+# Testing tools and frameworks
+test = [
+    'pytest>=8.3.4', # Testing framework - Keep pytest as is, update if newer pytest version is required
+    'pytest-cov>=6.0.0', # Coverage plugin for pytest - Keep pytest-cov as is, update if newer pytest-cov version is required
+    'pytest-xdist>=3.6.1', # Parallel test execution - Keep pytest-xdist as is, update if newer pytest-xdist version is required
+    'pytest-benchmark[histogram]>=5.1.0', # Benchmarking plugin - Keep pytest-benchmark as is, update if newer pytest-benchmark version is required
+    'pytest-asyncio>=0.25.3', # Async test support - Keep pytest-asyncio as is, update if newer pytest-asyncio version is required
+    'coverage[toml]>=7.6.12',
+]
+
+docs = [
+    "sphinx>=7.2.6",
+    "sphinx-rtd-theme>=2.0.0",
+    "sphinx-autodoc-typehints>=2.0.0",
+    "myst-parser>=3.0.0", # Markdown support in Sphinx
+]
+
+# All optional dependencies combined
+all = [
+]
+
+#------------------------------------------------------------------------------
+# COMMAND-LINE SCRIPTS
+# Entry points for command-line executables installed with the package.
+#------------------------------------------------------------------------------
+[project.scripts]
+# CLINAME = "topyaz.__main__:main"
+
+#------------------------------------------------------------------------------
+# BUILD SYSTEM CONFIGURATION
+# Defines the tools required to build the package and the build backend.
+#------------------------------------------------------------------------------
+[build-system]
+# Hatchling is a modern build backend for Python packaging
+# hatch-vcs integrates with version control systems for versioning
+requires = [
+    'hatchling>=1.27.0', # Keep hatchling as is, update if newer hatchling version is required
+    'hatch-vcs>=0.4.0', # Keep hatch-vcs as is, update if newer hatch-vcs version is required
+]
+build-backend = 'hatchling.build' # Specifies Hatchling as the build backend
+
+
+#------------------------------------------------------------------------------
+# HATCH BUILD CONFIGURATION
+# Configures the build process, specifying which packages to include and
+# how to handle versioning.
+#------------------------------------------------------------------------------
+[tool.hatch.build]
+# Include package data files
+include = [
+    "src/topyaz/py.typed", # For better type checking support
+    "src/topyaz/data/**/*", # Include data files if any
+
+]
+exclude = ["**/__pycache__", "**/.pytest_cache", "**/.mypy_cache"]
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/topyaz"]
+reproducible = true
+
+
+# Version control system hook configuration
+# Automatically updates the version file from git tags
+[tool.hatch.build.hooks.vcs]
+version-file = "src/topyaz/__version__.py"
+
+# Version source configuration
+[tool.hatch.version]
+source = 'vcs' # Get version from git tags or other VCS info
+
+# Metadata handling configuration
+[tool.hatch.metadata]
+allow-direct-references = true # Allow direct references in metadata (useful for local dependencies)
+
+
+#------------------------------------------------------------------------------
+# DEVELOPMENT ENVIRONMENTS
+
+[tool.hatch.envs.default]
+features = ['dev', 'test', 'all']
+dependencies = [
+]
+
+# Commands available in the default environment
+[tool.hatch.envs.default.scripts]
+# Run tests with optional arguments
+test = 'pytest {args:tests}'
+# Run tests with coverage reporting
+test-cov = "pytest --cov-report=term-missing --cov-config=pyproject.toml --cov=src/topyaz --cov=tests {args:tests}"
+# Run type checking
+type-check = "mypy src/topyaz tests"
+# Run linting and formatting
+lint = ["ruff check src/topyaz tests", "ruff format --respect-gitignore src/topyaz tests"]
+# Format and fix style issues
+fmt = ["ruff format --respect-gitignore src/topyaz tests", "ruff check --fix src/topyaz tests"]
+fix = ["ruff check --fix --unsafe-fixes src/topyaz tests", "ruff format --respect-gitignore src/topyaz tests"]
+
+# Matrix configuration to test across multiple Python versions
+
+[[tool.hatch.envs.all.matrix]]
+python = ["3.10", "3.11", "3.12"]
+
+#------------------------------------------------------------------------------
+# SPECIALIZED ENVIRONMENTS
+# Additional environments for specific development tasks.
+#------------------------------------------------------------------------------
+
+# Dedicated environment for linting and code quality checks
+[tool.hatch.envs.lint]
+detached = true # Create a separate, isolated environment
+features = ['dev'] # Use dev extras  dependencies 
+
+# Linting environment commands
+[tool.hatch.envs.lint.scripts]
+# Type checking with automatic type installation
+typing = "mypy --install-types --non-interactive {args:src/topyaz tests}"
+# Check style and format code
+style = ["ruff check {args:.}", "ruff format --respect-gitignore {args:.}"]
+# Format and fix style issues
+fmt = ["ruff format --respect-gitignore {args:.}", "ruff check --fix {args:.}"]
+fix = ["ruff check --fix --unsafe-fixes {args:.}", "ruff format --respect-gitignore {args:.}"]
+# Run all ops
+all = ["style", "typing", "fix"]
+
+# Dedicated environment for testing
+[tool.hatch.envs.test]
+features = ['test'] # Use test extras as dependencies
+
+# Testing environment commands
+[tool.hatch.envs.test.scripts]
+# Run tests in parallel
+test = "python -m pytest -n auto {args:tests}"
+# Run tests with coverage in parallel
+test-cov = "python -m pytest -n auto --cov-report=term-missing --cov-config=pyproject.toml --cov=src/topyaz --cov=tests {args:tests}"
+# Run benchmarks
+bench = "python -m pytest -v -p no:briefcase tests/test_benchmark.py --benchmark-only"
+# Run benchmarks and save results
+bench-save = "python -m pytest -v -p no:briefcase tests/test_benchmark.py --benchmark-only --benchmark-json=benchmark/results.json"
+
+# Documentation environment
+[tool.hatch.envs.docs]
+features = ['docs']
+
+# Documentation environment commands
+[tool.hatch.envs.docs.scripts]
+build = "sphinx-build -b html docs/source docs/build"
+
+# GitHub Actions workflow configuration
+[tool.hatch.envs.ci]
+features = ['test']
+
+
+[tool.hatch.envs.ci.scripts]
+test = "pytest --cov=src/topyaz --cov-report=xml"
+
+
+#------------------------------------------------------------------------------
+# CODE QUALITY TOOLS
+# Configuration for linting, formatting, and code quality enforcement.
+#------------------------------------------------------------------------------
+
+#------------------------------------------------------------------------------
+# COVERAGE CONFIGURATION
+# Settings for test coverage measurement and reporting.
+#------------------------------------------------------------------------------
+
+# Path mapping for coverage in different environments
+[tool.coverage.paths]
+topyaz = ["src/topyaz", "*/topyaz/src/topyaz"]
+tests = ["tests", "*/topyaz/tests"]
+
+# Coverage report configuration
+[tool.coverage.report]
+# Lines to exclude from coverage reporting
+exclude_lines = [
+    'no cov', # Custom marker to skip coverage
+    'if __name__ == .__main__.:', # Script execution guard
+    'if TYPE_CHECKING:', # Type checking imports and code
+    'pass', # Empty pass statements
+    'raise NotImplementedError', # Unimplemented method placeholders
+    'raise ImportError', # Import error handling
+    'except ImportError', # Import error handling
+    'except KeyError', # Common error handling
+    'except AttributeError', # Common error handling
+    'except NotImplementedError', # Common error handling
+]
+
+[tool.coverage.run]
+source_pkgs = ["topyaz", "tests"]
+branch = true # Measure branch coverage (if/else statements)
+parallel = true # Support parallel test execution
+omit = [
+    "src/topyaz/__about__.py",
+]
+
+#------------------------------------------------------------------------------
+# MYPY CONFIGURATION
+# Configuration for type checking with mypy.
+#------------------------------------------------------------------------------
+
+[tool.mypy]
+python_version = "3.10"
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = true
+disallow_incomplete_defs = true
+check_untyped_defs = true
+disallow_untyped_decorators = true
+no_implicit_optional = true
+warn_redundant_casts = true
+warn_unused_ignores = true
+warn_no_return = true
+warn_unreachable = true
+
+[[tool.mypy.overrides]]
+module = ["tests.*"]
+disallow_untyped_defs = false
+disallow_incomplete_defs = false
+
+#------------------------------------------------------------------------------
+# PYTEST CONFIGURATION
+# Configuration for pytest, including markers, options, and benchmark settings.
+#------------------------------------------------------------------------------
+
+[tool.pytest.ini_options]
+addopts = "-v --durations=10 -p no:briefcase"
+asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "function"
+console_output_style = "progress"
+filterwarnings = ["ignore::DeprecationWarning", "ignore::UserWarning"]
+log_cli = true
+log_cli_level = "INFO"
+markers = [
+    "benchmark: marks tests as benchmarks (select with '-m benchmark')",
+    "unit: mark a test as a unit test",
+    "integration: mark a test as an integration test",
+    "permutation: tests for permutation functionality", 
+    "parameter: tests for parameter parsing",
+    "prompt: tests for prompt parsing",
+]
+norecursedirs = [
+    ".*",
+    "build",
+    "dist", 
+    "venv",
+    "__pycache__",
+    "*.egg-info",
+    "_private",
+]
+python_classes = ["Test*"]
+python_files = ["test_*.py"]
+python_functions = ["test_*"]
+testpaths = ["tests"]
+
+[tool.pytest-benchmark]
+min_rounds = 100
+min_time = 0.1
+histogram = true
+storage = "file"
+save-data = true
+compare = [
+    "min",    # Minimum time
+    "max",    # Maximum time
+    "mean",   # Mean time
+    "stddev", # Standard deviation
+    "median", # Median time
+    "iqr",    # Inter-quartile range
+    "ops",    # Operations per second
+    "rounds", # Number of rounds
+]
+
+#------------------------------------------------------------------------------
+# RUFF CONFIGURATION
+# Configuration for Ruff, including linter and formatter settings.
+#------------------------------------------------------------------------------ 
+
+# Ruff linter and formatter configuration
+[tool.ruff]
+target-version = "py310"
+line-length = 120
+
+# Linting rules configuration
+[tool.ruff.lint]
+# Rule sets to enable, organized by category
+select = [
+    # flake8 plugins and extensions
+    'A', # flake8-builtins: checks for shadowed builtins
+    'ARG', # flake8-unused-arguments: checks for unused function arguments
+    'ASYNC', # flake8-async: checks for async/await issues
+    'B', # flake8-bugbear: finds likely bugs and design problems
+    'C', # flake8-comprehensions: helps write better list/dict comprehensions
+    'DTZ', # flake8-datetimez: checks for datetime timezone issues
+    'E', # pycodestyle errors: PEP 8 style guide errors
+    'EM', # flake8-errmsg: checks for better error messages
+    'F', # pyflakes: detects various errors
+    'FBT', # flake8-boolean-trap: checks for boolean traps in function signatures
+    'I', # isort: sorts imports
+    'ICN', # flake8-import-conventions: checks for import conventions
+    'ISC', # flake8-implicit-str-concat: checks for implicit string concatenation
+    'LOG', # flake8-logging: checks for logging issues
+    'N', # pep8-naming: checks naming conventions
+    'PLC', # pylint convention: checks for convention issues
+    'PLE', # pylint error: checks for errors
+    'PLR', # pylint refactor: suggests refactors
+    'PLW', # pylint warning: checks for suspicious code
+    'PT', # flake8-pytest-style: checks pytest-specific style
+    'PTH', # flake8-use-pathlib: checks for stdlib path usage vs pathlib
+    'PYI', # flake8-pyi: checks stub files
+    'RET', # flake8-return: checks return statement consistency
+    'RSE', # flake8-raise: checks raise statements
+    'RUF', # Ruff-specific rules
+    'S', # flake8-bandit: checks for security issues
+    'SIM', # flake8-simplify: checks for code simplification opportunities
+    'T', # flake8-print: checks for print statements
+    'TCH', # flake8-type-checking: helps with type-checking
+    'TID', # flake8-tidy-imports: checks for tidy import statements
+    'UP', # pyupgrade: checks for opportunities to use newer Python features
+    'W', # pycodestyle warnings: PEP 8 style guide warnings
+    'YTT', # flake8-2020: checks for misuse of sys.version or sys.version_info
+
+]
+# Rules to ignore (with reasons)
+ignore = [
+    'B027', # Empty method in abstract base class - sometimes needed for interfaces
+    'C901', # Function is too complex - sometimes complexity is necessary
+    'FBT003', # Boolean positional argument in function definition - sometimes unavoidable
+    'PLR0911', # Too many return statements - sometimes needed for readability
+    'PLR0912', # Too many branches - sometimes needed for complex logic
+    'PLR0913', # Too many arguments - sometimes needed in APIs
+    'PLR0915', # Too many statements - sometimes needed for comprehensive functions
+    'PLR1714', # Consider merging multiple comparisons - sometimes less readable
+    'PLW0603', # Using the global statement - sometimes necessary
+    'PT013', # Pytest explicit test parameter - sometimes clearer
+    'PTH123', # Path traversal - sometimes needed
+    'PYI056', # Calling open() in pyi file - sometimes needed in type stubs
+    'S105', # Possible hardcoded password - often false positives
+    'S106', # Possible hardcoded password - often false positives
+    'S107', # Possible hardcoded password - often false positives
+    'S110', # try-except-pass - sometimes valid for suppressing exceptions
+    'SIM102'
+    # Nested if statements - sometimes more readable than combined conditions
+]
+# Rules that should not be automatically fixed
+unfixable = [
+    'F401', # Don't automatically remove unused imports - may be needed later
+
+]
+# Configure extend-exclude to ignore specific directories
+extend-exclude = [".git", ".venv", "venv", "dist", "build"]
+
+# isort configuration within Ruff
+[tool.ruff.lint.isort]
+known-first-party = ['topyaz'] # Treat as first-party imports for sorting
+
+# flake8-tidy-imports configuration within Ruff
+[tool.ruff.lint.flake8-tidy-imports]
+ban-relative-imports = 'all' # Ban all relative imports for consistency
+
+# Per-file rule exceptions
+[tool.ruff.lint.per-file-ignores]
+# Tests can use magic values, assertions, and relative imports
+'tests/**/*' = [
+    'PLR2004', # Allow magic values in tests for readability
+    'S101', # Allow assertions in tests
+    'TID252'
+    # Allow relative imports in tests for convenience
+]

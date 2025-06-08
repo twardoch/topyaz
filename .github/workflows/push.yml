@@ -1,0 +1,112 @@
+name: Build & Test
+
+on:
+  push:
+    branches: [main]
+    tags-ignore: ["v*"]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  id-token: write
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  quality:
+    name: Code Quality
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Run Ruff lint
+        uses: astral-sh/ruff-action@v3
+        with:
+          version: "latest"
+          args: "check --output-format=github"
+
+      - name: Run Ruff Format
+        uses: astral-sh/ruff-action@v3
+        with:
+          version: "latest"
+          args: "format --check --respect-gitignore"
+
+  test:
+    name: Run Tests
+    needs: quality
+    strategy:
+      matrix:
+        python-version: ["3.10", "3.11", "3.12"]
+        os: [ubuntu-latest]
+      fail-fast: true
+    runs-on: ${{ matrix.os }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install UV
+        uses: astral-sh/setup-uv@v5
+        with:
+          version: "latest"
+          python-version: ${{ matrix.python-version }}
+          enable-cache: true
+          cache-suffix: ${{ matrix.os }}-${{ matrix.python-version }}
+
+      - name: Install test dependencies
+        run: |
+          uv pip install --system --upgrade pip
+          uv pip install --system ".[test]"
+
+      - name: Run tests with Pytest
+        run: uv run pytest -n auto --maxfail=1 --disable-warnings --cov-report=xml --cov-config=pyproject.toml --cov=src/topyaz --cov=tests tests/
+
+      - name: Upload coverage report
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-${{ matrix.python-version }}-${{ matrix.os }}
+          path: coverage.xml
+
+  build:
+    name: Build Distribution
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install UV
+        uses: astral-sh/setup-uv@v5
+        with:
+          version: "latest"
+          python-version: "3.12"
+          enable-cache: true
+
+      - name: Install build tools
+        run: uv pip install build hatchling hatch-vcs
+
+      - name: Build distributions
+        run: uv run python -m build --outdir dist
+
+      - name: Upload distribution artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: dist-files
+          path: dist/
+          retention-days: 5 
