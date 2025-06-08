@@ -1,24 +1,27 @@
-
 # topyaz: Unified CLI Wrapper for Topaz Labs Products
 
 **topyaz** is a Python CLI wrapper that unifies Topaz Labs' three AI products (Video AI, Gigapixel AI, Photo AI) into a single command-line interface for professional batch processing workflows.
 
 **🎯 Core Purpose:**
+
 - Single CLI tool for all Topaz products instead of using separate GUIs
 - Enable remote processing via SSH on powerful machines
 - Batch operations with progress monitoring and error recovery
 
 **📋 Requirements:**
+
 - macOS 11+ (Topaz products are Mac-focused)
 - Gigapixel AI Pro license ($499/year) for CLI access
 - 16GB+ RAM, 80GB+ storage for models
 
-**🚧 Current Status:**
-- **Planning Stage**: Extensive specification (SPEC.md) and documentation written
-- **Implementation**: Minimal skeleton code - most features in TODO.md are unimplemented
-- **Architecture**: Designed around unified `topyazWrapper` class using Python Fire for CLI generation
+**✅ Current Status:**
+
+- **Phase 1 Complete**: Comprehensive refactoring from monolithic to modular architecture
+- **Implementation**: Clean, production-ready codebase with 18+ focused modules
+- **Architecture**: Modular design with dependency injection, abstract interfaces, and excellent testability
 
 **💡 Key Value:**
+
 - ~2x faster than GUI for batch operations
 - Remote execution on GPU servers
 - Unified interface across Video AI (upscaling), Gigapixel AI (image enhancement), Photo AI (auto-enhancement)
@@ -63,6 +66,7 @@ topyaz video large_video.mp4 --remote-host gpu-server --scale 4
 ## 📋 Requirements
 
 ### System Requirements
+
 - **macOS**: 11.0 Big Sur or higher
   - macOS 13 Ventura+ for advanced Video AI models (Rhea, Aion)
   - macOS 14 Sonoma+ for Gigapixel AI generative models
@@ -72,6 +76,7 @@ topyaz video large_video.mp4 --remote-host gpu-server --scale 4
 - **GPU**: 2GB+ VRAM for GPU acceleration
 
 ### Topaz Products
+
 - **Topaz Video AI**: Any valid license
 - **Topaz Gigapixel AI**: Pro license required for CLI access ($499/year)
 - **Topaz Photo AI**: Any valid license
@@ -82,30 +87,30 @@ Create a configuration file at `~/.topyaz/config.yaml`:
 
 ```yaml
 defaults:
-  output_dir: "~/processed"
+  output_dir: '~/processed'
   preserve_structure: true
   backup_originals: false
-  log_level: "INFO"
+  log_level: 'INFO'
 
 video:
-  default_model: "amq-13"
-  default_codec: "hevc_videotoolbox"
+  default_model: 'amq-13'
+  default_codec: 'hevc_videotoolbox'
   default_quality: 18
 
 gigapixel:
-  default_model: "std"
-  default_format: "preserve"
+  default_model: 'std'
+  default_format: 'preserve'
   parallel_read: 4
 
 photo:
-  default_format: "jpg"
+  default_format: 'jpg'
   default_quality: 95
 
 remote_hosts:
   gpu-server:
-    host: "192.168.1.100"
-    user: "admin"
-    key: "~/.ssh/topaz_key"
+    host: '192.168.1.100'
+    user: 'admin'
+    key: '~/.ssh/topaz_key'
 ```
 
 ## 📖 Documentation
@@ -133,6 +138,7 @@ topyaz video videos/ \
 ```
 
 **Supported Models:**
+
 - **Artemis**: amq-13, ahq-10/11/12, alq-10/12/13, alqs-1/2, amqs-1/2, aaa-9/10
 - **Proteus**: prob-2, prap-2
 - **Dione**: ddv-1/2/3, dtd-1/3/4, dtds-1/2, dtv-1/3/4, dtvs-1/2
@@ -166,6 +172,7 @@ topyaz gp portraits/ \
 ```
 
 **Available Models:**
+
 - **Standard**: std, hf (high fidelity), low (low resolution)
 - **Specialized**: art/cg (Art & CG), lines, text, vc (very compressed)
 - **Recovery**: recovery (with face enhancement)
@@ -209,6 +216,7 @@ topyaz gp large_collection/ \
 ### Common Issues
 
 **"No such filter: tvai_up" Error**
+
 ```bash
 # Check Video AI installation
 topyaz validate --check-video-ai
@@ -218,6 +226,7 @@ topyaz diagnose --show-env
 ```
 
 **Authentication Failures**
+
 ```bash
 # Re-authenticate with Topaz products
 topyaz setup --verify-licenses
@@ -227,6 +236,7 @@ topyaz validate --check-gigapixel-pro
 ```
 
 **Memory Issues**
+
 ```bash
 # Process with smaller batches
 topyaz video large_video.mp4 --scale 2 --segment-size 60
@@ -260,11 +270,11 @@ topyaz integrates with popular community tools:
 
 Performance benchmarks on Apple M3 Max (128GB RAM):
 
-| Operation | Files | Size | Time | Speed |
-|-----------|-------|------|------|-------|
-| Video AI 2x | 10 videos | 50GB | 45 min | ~2x faster than GUI |
-| Gigapixel 4x | 100 images | 5GB | 16 min | ~2x faster than GUI |
-| Photo AI batch | 500 images | 10GB | 8 min | ~1.5x faster than GUI |
+| Operation      | Files      | Size | Time   | Speed                 |
+| -------------- | ---------- | ---- | ------ | --------------------- |
+| Video AI 2x    | 10 videos  | 50GB | 45 min | ~2x faster than GUI   |
+| Gigapixel 4x   | 100 images | 5GB  | 16 min | ~2x faster than GUI   |
+| Photo AI batch | 500 images | 10GB | 8 min  | ~1.5x faster than GUI |
 
 ## 🔒 Security
 

@@ -1,13 +1,13 @@
 
 # topyaz: Unified Python CLI Wrapper for Topaz Labs Products
 
-## Overview
+## 1. Overview
 
 `topyaz` is a comprehensive Python package that provides a unified command-line interface for Topaz Labs' three flagship products: Video AI, Gigapixel AI, and Photo AI. The package serves as an intelligent wrapper around the native CLI tools provided by Topaz Labs, offering both local and remote execution capabilities via SSH. The tool is designed to be robust, user-friendly, and production-ready for batch processing workflows.
 
-## Architecture and Design Philosophy
+## 2. Architecture and Design Philosophy
 
-### Core Design Principles
+### 2.1. Core Design Principles
 
 1. **Unified Interface**: A single Python class with consistent CLI options across all three Topaz products
 2. **Remote Execution Support**: Native SSH and macOS remote execution capabilities
@@ -15,70 +15,372 @@
 4. **Detailed Feedback**: Verbose logging and progress reporting for all operations
 5. **Production Ready**: Designed for automated workflows and batch processing
 
-### Implementation Strategy
+### 2.2. Implementation Strategy
 
 The package implements a unified class structure using Python Fire for automatic CLI generation. The main class `topyazWrapper` serves as the entry point, with specialized methods for each Topaz product (`photo`, `video`, `gp` for Gigapixel). The design emphasizes parameter consistency while accommodating product-specific requirements.
 
-## Package Structure and Implementation
+## 3. Package Structure and Implementation
 
-### Python Package Structure
+### 3.1. Python Package Structure
 
 The topyaz package follows standard Python packaging conventions with the following structure:
 
 ```
 topyaz/
 ├── src/topyaz/               # Main package source code
-│   ├── __init__.py          # Package initialization
-│   ├── topyaz.py           # Main module with topyazWrapper class
-│   ├── __version__.py      # Dynamic version from git tags (generated)
-│   └── py.typed            # Type hints marker file
-├── tests/                  # Test suite
-│   ├── test_package.py     # Basic package tests
-│   └── test_*.py          # Additional test modules
-├── pyproject.toml         # Project configuration and dependencies
-├── README.md              # Package documentation
-├── SPEC.md               # Technical specification
-├── TODO.md               # Implementation roadmap
-└── CLAUDE.md             # Development instructions
+│   ├── __init__.py          # Package initialization and exports
+│   ├── __main__.py          # CLI entry point
+│   ├── cli.py               # Main topyazWrapper class (simplified)
+│   ├── core/                # Core infrastructure
+│   │   ├── __init__.py
+│   │   ├── errors.py        # Custom exception hierarchy
+│   │   ├── types.py         # Type definitions and dataclasses
+│   │   └── config.py        # Configuration management
+│   ├── system/              # System components
+│   │   ├── __init__.py
+│   │   ├── environment.py   # Environment validation
+│   │   ├── gpu.py           # Multi-platform GPU detection
+│   │   ├── memory.py        # Memory management and optimization
+│   │   └── paths.py         # Path validation and utilities
+│   ├── execution/           # Command execution layer
+│   │   ├── __init__.py
+│   │   ├── base.py          # Abstract executor interfaces
+│   │   ├── local.py         # Local command execution
+│   │   ├── remote.py        # SSH remote execution
+│   │   └── progress.py      # Progress monitoring utilities
+│   ├── products/            # Product implementations
+│   │   ├── __init__.py
+│   │   ├── base.py          # Abstract product interfaces
+│   │   ├── gigapixel.py     # Gigapixel AI implementation
+│   │   ├── video_ai.py      # Video AI implementation
+│   │   └── photo_ai.py      # Photo AI implementation
+│   ├── utils/               # Utility modules
+│   │   ├── __init__.py
+│   │   └── logging.py       # Centralized logging configuration
+│   ├── __version__.py       # Dynamic version from git tags (generated)
+│   └── py.typed             # Type hints marker file
+├── tests/                   # Test suite
+│   ├── test_package.py      # Basic package tests
+│   ├── test_refactoring.py  # Refactoring validation tests
+│   └── test_*.py           # Additional test modules
+├── pyproject.toml          # Project configuration and dependencies
+├── README.md               # Package documentation
+├── SPEC.md                # Technical specification
+├── TODO.md                # Implementation roadmap
+├── PLAN.md                # Implementation phases
+├── CHANGELOG.md           # Change history
+└── CLAUDE.md              # Development instructions
 ```
 
-### Main Class: topyazWrapper (src/topyaz/topyaz.py)
+### 3.2. Modular Architecture (Refactored from monolithic topyaz.py)
+
+The topyaz package has been refactored from a single 1750+ line monolithic file into a clean, modular architecture with 18+ focused modules. This provides excellent maintainability, testability, and extensibility.
+
+#### 3.2.1. Core Infrastructure (`src/topyaz/core/`)
+
+**Errors Module (`core/errors.py`)**
+```python
+class TopazError(Exception):
+    """Base exception for all topyaz errors."""
+    pass
+
+class AuthenticationError(TopazError):
+    """Authentication-related errors."""
+    pass
+
+class EnvironmentError(TopazError):
+    """Environment validation errors."""
+    pass
+
+class ProcessingError(TopazError):
+    """Processing-related errors."""
+    pass
+
+class RemoteExecutionError(TopazError):
+    """Remote execution errors."""
+    pass
+```
+
+**Type Definitions (`core/types.py`)**
+```python
+from dataclasses import dataclass
+from enum import Enum
+from pathlib import Path
+from typing import Any, Dict, List, Optional, Union
+
+class Product(Enum):
+    """Supported Topaz products."""
+    VIDEO_AI = "video_ai"
+    GIGAPIXEL_AI = "gigapixel"
+    PHOTO_AI = "photo_ai"
+
+class LogLevel(Enum):
+    """Logging levels."""
+    DEBUG = "DEBUG"
+    INFO = "INFO"
+    WARNING = "WARNING"
+    ERROR = "ERROR"
+
+@dataclass
+class ProcessingOptions:
+    """Common processing options across all products."""
+    verbose: bool = True
+    dry_run: bool = False
+    timeout: int = 3600
+    parallel_jobs: int = 1
+    output_dir: Path | None = None
+    preserve_structure: bool = True
+    backup_originals: bool = False
+
+@dataclass
+class RemoteOptions:
+    """Remote execution configuration."""
+    host: str | None = None
+    user: str | None = None
+    ssh_key: Path | None = None
+    ssh_port: int = 22
+    connection_timeout: int = 30
+
+@dataclass
+class ProcessingResult:
+    """Result of a processing operation."""
+    success: bool
+    output_path: Path | None = None
+    error_message: str | None = None
+    processing_time: float = 0.0
+    files_processed: int = 0
+    files_failed: int = 0
+```
+
+**Configuration Management (`core/config.py`)**
+```python
+class Config:
+    """Centralized configuration management with YAML support."""
+    
+    def __init__(self, config_file: Path | None = None):
+        self.config_file = config_file or Path.home() / ".topyaz" / "config.yaml"
+        self.config = self._load_config()
+    
+    def get(self, key: str, default: Any = None) -> Any:
+        """Get configuration value with dot notation support."""
+        # Supports nested keys like "video.default_model"
+        
+    def set(self, key: str, value: Any) -> None:
+        """Set configuration value with dot notation support."""
+        
+    def save(self) -> None:
+        """Save configuration to YAML file."""
+```
+
+#### 3.2.2. System Components (`src/topyaz/system/`)
+
+**Environment Validation (`system/environment.py`)**
+```python
+class EnvironmentValidator:
+    """Validates system requirements and environment."""
+    
+    def validate_all(self, raise_on_error: bool = True) -> dict[str, bool]:
+        """Validate all system requirements."""
+        
+    def validate_macos_version(self) -> bool:
+        """Validate macOS version compatibility."""
+        
+    def validate_memory(self, required_gb: int = 16) -> bool:
+        """Validate available memory."""
+        
+    def validate_disk_space(self, required_gb: int = 80) -> bool:
+        """Validate available disk space."""
+```
+
+**GPU Detection (`system/gpu.py`)**
+```python
+class GPUManager:
+    """Multi-platform GPU detection and monitoring."""
+    
+    def get_status(self, use_cache: bool = True) -> GPUStatus:
+        """Get current GPU status and utilization."""
+        
+    def get_available_devices(self) -> list[GPUDevice]:
+        """Get list of available GPU devices."""
+```
+
+**Memory Management (`system/memory.py`)**
+```python
+class MemoryManager:
+    """Memory constraint checking and batch optimization."""
+    
+    def get_optimal_batch_size(self, file_count: int, operation_type: str | Product = "processing") -> int:
+        """Calculate optimal batch size based on available memory."""
+        
+    def check_constraints(self, operation_type: str = "processing") -> dict[str, Any]:
+        """Check current memory constraints and provide recommendations."""
+```
+
+#### 3.2.3. Execution Layer (`src/topyaz/execution/`)
+
+**Base Executor Interface (`execution/base.py`)**
+```python
+class CommandExecutor(ABC):
+    """Abstract base class for command execution."""
+    
+    @abstractmethod
+    def execute(self, command: CommandList, input_data: str | None = None) -> tuple[int, str, str]:
+        """Execute a command and return (returncode, stdout, stderr)."""
+        pass
+        
+    @abstractmethod
+    def is_available(self) -> bool:
+        """Check if this executor is available."""
+        pass
+
+class ProgressAwareExecutor(CommandExecutor):
+    """Base class for executors that support progress monitoring."""
+    
+    @abstractmethod
+    def execute_with_progress(
+        self, command: CommandList, callback: ProgressCallback, **kwargs
+    ) -> tuple[int, str, str]:
+        """Execute command with progress monitoring."""
+        pass
+```
+
+**Local Execution (`execution/local.py`)**
+```python
+class LocalExecutor(ProgressAwareExecutor):
+    """Executes commands locally with progress monitoring."""
+    
+    def execute_with_progress(self, command: CommandList, callback: ProgressCallback) -> tuple[int, str, str]:
+        """Execute command locally with real-time progress monitoring."""
+```
+
+**Remote Execution (`execution/remote.py`)**
+```python
+class RemoteExecutor(ProgressAwareExecutor):
+    """Executes commands on remote machines via SSH."""
+    
+    def __init__(self, remote_options: RemoteOptions, context: Optional[ExecutorContext] = None):
+        """Initialize with SSH connection options and context."""
+        
+    def upload_file(self, local_path: str, remote_path: str) -> bool:
+        """Upload file to remote host via SFTP."""
+        
+    def download_file(self, remote_path: str, local_path: str) -> bool:
+        """Download file from remote host via SFTP."""
+```
+
+#### 3.2.4. Product Implementations (`src/topyaz/products/`)
+
+**Base Product Interface (`products/base.py`)**
+```python
+class TopazProduct(ABC):
+    """Abstract base class for all Topaz products."""
+    
+    @abstractmethod
+    def process(self, input_path: Path | str, output_path: Path | str | None = None, **kwargs) -> ProcessingResult:
+        """Process files with this product."""
+        pass
+        
+    @abstractmethod
+    def validate_params(self, **kwargs) -> None:
+        """Validate product-specific parameters."""
+        pass
+        
+    @abstractmethod
+    def find_executable(self) -> Path | None:
+        """Find the product executable."""
+        pass
+
+class MacOSTopazProduct(TopazProduct):
+    """Base class for macOS-specific Topaz products."""
+    
+    def validate_macos_environment(self) -> None:
+        """Validate macOS-specific requirements."""
+```
+
+**Gigapixel AI Implementation (`products/gigapixel.py`)**
+```python
+class GigapixelAI(MacOSTopazProduct):
+    """Topaz Gigapixel AI implementation with CLI support."""
+    
+    def build_command(self, input_path: Path, output_path: Path, **kwargs) -> CommandList:
+        """Build gigapixel CLI command with all parameters."""
+        
+    def validate_pro_license(self) -> bool:
+        """Validate Pro license requirement for CLI access."""
+```
+
+**Video AI Implementation (`products/video_ai.py`)**
+```python
+class VideoAI(MacOSTopazProduct):
+    """Topaz Video AI implementation using FFmpeg."""
+    
+    def _setup_environment(self) -> None:
+        """Set up Video AI environment variables."""
+        os.environ["TVAI_MODEL_DIR"] = model_dir
+        os.environ["TVAI_MODEL_DATA_DIR"] = data_dir
+        
+    def build_ffmpeg_command(self, input_path: Path, output_path: Path, **kwargs) -> CommandList:
+        """Build FFmpeg command with Video AI filters."""
+```
+
+**Photo AI Implementation (`products/photo_ai.py`)**
+```python
+class PhotoAI(MacOSTopazProduct):
+    """Topaz Photo AI implementation with batch handling."""
+    
+    MAX_BATCH_SIZE = 400  # Conservative limit for Photo AI
+    
+    def process_batch_directory(self, input_dir: Path, output_dir: Path, **kwargs) -> list[ProcessingResult]:
+        """Handle Photo AI's ~450 image batch limit with automatic batching."""
+```
+
+#### 3.2.5. Unified CLI Interface (`src/topyaz/cli.py`)
 
 ```python
 class topyazWrapper:
-    def __init__(self, 
-                 remote_host: str = None,
-                 ssh_user: str = None, 
-                 ssh_key: str = None,
-                 verbose: bool = True,
-                 dry_run: bool = False,
-                 log_level: str = "INFO",
-                 timeout: int = 3600,
-                 parallel_jobs: int = 1,
-                 output_dir: str = None,
-                 preserve_structure: bool = True,
-                 backup_originals: bool = False):
-        """
-        Initialize the topyaz wrapper with unified options.
+    """Unified wrapper that delegates to specialized components."""
+    
+    def __init__(self, **kwargs):
+        # Parse options into structured data classes
+        self.options = ProcessingOptions(**kwargs)
+        self.remote_options = RemoteOptions(**kwargs)
         
-        Args:
-            remote_host: Remote machine hostname/IP for SSH execution
-            ssh_user: SSH username for remote execution
-            ssh_key: Path to SSH private key file
-            verbose: Enable detailed output and progress reporting
-            dry_run: Show commands without executing them
-            log_level: Logging level (DEBUG, INFO, WARNING, ERROR)
-            timeout: Maximum execution time in seconds per operation
-            parallel_jobs: Number of concurrent operations (where supported)
-            output_dir: Default output directory for processed files
-            preserve_structure: Maintain input directory structure in output
-            backup_originals: Create backup copies before processing
-        """
+        # Initialize components
+        self.config = Config(kwargs.get('config_file'))
+        self.env_validator = EnvironmentValidator()
+        self.gpu_manager = GPUManager()
+        self.memory_manager = MemoryManager()
+        
+        # Set up executor based on options
+        if self.remote_options.host:
+            self.executor = RemoteExecutor(self.remote_options)
+        else:
+            self.executor = LocalExecutor(ExecutorContext(
+                timeout=self.options.timeout,
+                dry_run=self.options.dry_run
+            ))
+        
+        # Initialize products with dependency injection
+        self.gigapixel = GigapixelAI(self.executor, self.options)
+        self.video_ai = VideoAI(self.executor, self.options)
+        self.photo_ai = PhotoAI(self.executor, self.options)
+    
+    def gp(self, input_path: str, **kwargs) -> bool:
+        """Process with Gigapixel AI - delegates to GigapixelAI class."""
+        return self.gigapixel.process(Path(input_path), **kwargs).success
+    
+    def video(self, input_path: str, **kwargs) -> bool:
+        """Process with Video AI - delegates to VideoAI class."""
+        return self.video_ai.process(Path(input_path), **kwargs).success
+    
+    def photo(self, input_path: str, **kwargs) -> bool:
+        """Process with Photo AI - delegates to PhotoAI class."""
+        return self.photo_ai.process(Path(input_path), **kwargs).success
 ```
 
-### Product-Specific Methods
+### 3.3. Product-Specific Methods
 
-#### Video AI Method
+#### 3.3.1. Video AI Method
 ```python
 def video(self,
           input_path: str,
@@ -115,7 +417,7 @@ def video(self,
     """
 ```
 
-#### Gigapixel AI Method
+#### 3.3.2. Gigapixel AI Method
 ```python
 def gp(self,
        input_path: str,
@@ -162,7 +464,7 @@ def gp(self,
     """
 ```
 
-#### Photo AI Method
+#### 3.3.3. Photo AI Method
 ```python
 def photo(self,
           input_path: str,
@@ -211,13 +513,13 @@ def photo(self,
     """
 ```
 
-## Feature Implementation Details
+## 4. Feature Implementation Details
 
-### Remote Execution Architecture
+### 4.1. Remote Execution Architecture
 
 The remote execution system supports both traditional SSH and native macOS mechanisms for running Topaz tools on remote machines. This is particularly valuable for offloading processing to more powerful machines or distributed processing workflows.
 
-#### SSH Implementation
+#### 4.1.1. SSH Implementation
 ```python
 def _execute_remote_ssh(self, command: str, host: str, user: str, key_path: str = None) -> tuple:
     """
@@ -232,7 +534,7 @@ def _execute_remote_ssh(self, command: str, host: str, user: str, key_path: str 
     """
 ```
 
-#### macOS Native Remote Execution
+#### 4.1.2. macOS Native Remote Execution
 ```python
 def _execute_remote_macos(self, command: str, host: str, user: str) -> tuple:
     """
@@ -246,11 +548,11 @@ def _execute_remote_macos(self, command: str, host: str, user: str) -> tuple:
     """
 ```
 
-### Input Validation and Error Handling
+### 4.2. Input Validation and Error Handling
 
 The package implements comprehensive validation for all input parameters, file paths, and system requirements. Error handling covers common issues identified in the research:
 
-#### Authentication Validation
+#### 4.2.1. Authentication Validation
 ```python
 def _validate_authentication(self, product: str) -> bool:
     """
@@ -264,7 +566,7 @@ def _validate_authentication(self, product: str) -> bool:
     """
 ```
 
-#### Environment Validation
+#### 4.2.2. Environment Validation
 ```python
 def _validate_environment(self, product: str) -> bool:
     """
@@ -279,7 +581,7 @@ def _validate_environment(self, product: str) -> bool:
     """
 ```
 
-#### File and Path Validation
+#### 4.2.3. File and Path Validation
 ```python
 def _validate_paths(self, input_path: str, output_path: str = None) -> tuple:
     """
@@ -294,11 +596,11 @@ def _validate_paths(self, input_path: str, output_path: str = None) -> tuple:
     """
 ```
 
-### Progress Monitoring and Logging
+### 4.3. Progress Monitoring and Logging
 
 The package provides detailed progress monitoring and logging capabilities, essential for long-running batch operations.
 
-#### Progress Tracking
+#### 4.3.1. Progress Tracking
 ```python
 class ProgressMonitor:
     """
@@ -319,7 +621,7 @@ class ProgressMonitor:
         """Parse CLI output for Gigapixel/Photo AI progress."""
 ```
 
-#### Logging System
+#### 4.3.2. Logging System
 ```python
 def _setup_logging(self, log_level: str, log_file: str = None) -> None:
     """
@@ -334,13 +636,13 @@ def _setup_logging(self, log_level: str, log_file: str = None) -> None:
     """
 ```
 
-## Command Line Interface Design
+## 5. Command Line Interface Design
 
 The CLI design emphasizes usability and consistency across all three Topaz products while accommodating their unique requirements.
 
-### Basic Usage Examples
+### 5.1. Basic Usage Examples
 
-#### Video Processing
+#### 5.1.1. Video Processing
 ```bash
 # Basic 2x upscaling with default settings
 topyaz video input.mp4 --scale 2
@@ -363,7 +665,7 @@ topyaz video input.mp4 \
     --model prob-3
 ```
 
-#### Image Processing with Gigapixel AI
+#### 5.1.2. Image Processing with Gigapixel AI
 ```bash
 # Batch upscaling with Pro license
 topyaz gp photos/ \
@@ -383,7 +685,7 @@ topyaz gp low_res_art/ \
     --prompt "high resolution digital artwork"
 ```
 
-#### Photo AI Batch Processing
+#### 5.1.3. Photo AI Batch Processing
 ```bash
 # Autopilot-based enhancement
 topyaz photo raw_photos/ \
@@ -399,9 +701,9 @@ topyaz photo photos/ \
     --preserve-structure
 ```
 
-### Advanced Workflow Examples
+### 5.2. Advanced Workflow Examples
 
-#### Multi-Stage Processing Pipeline
+#### 5.2.1. Multi-Stage Processing Pipeline
 ```bash
 # Process video: stabilize -> upscale -> interpolate
 topyaz video shaky_video.mp4 \
@@ -413,7 +715,7 @@ topyaz video shaky_video.mp4 \
     --backup-originals
 ```
 
-#### Distributed Processing
+#### 5.2.2. Distributed Processing
 ```bash
 # Split large batch across multiple machines
 topyaz gp large_photo_collection/ \
@@ -423,9 +725,9 @@ topyaz gp large_photo_collection/ \
     --load-balance
 ```
 
-## Configuration and Settings Management
+## 6. Configuration and Settings Management
 
-### Configuration File Support
+### 6.1. Configuration File Support
 The package supports configuration files for storing commonly used settings and remote connection details.
 
 ```yaml
@@ -461,7 +763,7 @@ remote_hosts:
     key: "~/.ssh/render_key"
 ```
 
-### Environment Variable Support
+### 6.2. Environment Variable Support
 ```bash
 # Environment variables for common settings
 export topyaz_DEFAULT_OUTPUT="~/processed"
@@ -470,9 +772,9 @@ export topyaz_LOG_LEVEL="DEBUG"
 export topyaz_BACKUP_ORIGINALS="true"
 ```
 
-## Error Handling and Recovery
+## 7. Error Handling and Recovery
 
-### Comprehensive Error Detection
+### 7.1. Comprehensive Error Detection
 The package implements robust error detection for common issues identified in the research:
 
 1. **Authentication Failures**: Automatic detection and user guidance for re-authentication
@@ -505,7 +807,7 @@ The package implements robust error detection for common issues identified in th
    - Remote environment variable setup validation
    - Network diagnostic tools for remote hosts
 
-### Recovery Mechanisms
+### 7.2. Recovery Mechanisms
 ```python
 def _handle_processing_error(self, error: Exception, context: dict) -> bool:
     """
@@ -520,7 +822,7 @@ def _handle_processing_error(self, error: Exception, context: dict) -> bool:
     """
 ```
 
-### Resumable Operations
+### 7.3. Resumable Operations
 ```python
 def _create_checkpoint(self, operation_id: str, state: dict) -> None:
     """
@@ -534,16 +836,16 @@ def _create_checkpoint(self, operation_id: str, state: dict) -> None:
     """
 ```
 
-## Performance Optimization
+## 8. Performance Optimization
 
-### Parallel Processing Support
+### 8.1. Parallel Processing Support
 The package implements intelligent parallel processing that respects the limitations of each Topaz product:
 
 - **Video AI**: Sequential processing with optimal FFmpeg parameters
 - **Gigapixel AI**: Parallel image loading with memory constraints
 - **Photo AI**: Batch size optimization based on available memory
 
-### Hardware Detection and Optimization
+### 8.2. Hardware Detection and Optimization
 ```python
 def _detect_hardware_capabilities(self) -> dict:
     """
@@ -558,7 +860,7 @@ def _detect_hardware_capabilities(self) -> dict:
     """
 ```
 
-### Memory Management
+### 8.3. Memory Management
 ```python
 def _optimize_memory_usage(self, file_list: list, available_memory: int) -> list:
     """
@@ -572,9 +874,9 @@ def _optimize_memory_usage(self, file_list: list, available_memory: int) -> list
     """
 ```
 
-## Testing and Validation
+## 9. Testing and Validation
 
-### Unit Test Coverage
+### 9.1. Unit Test Coverage
 The package includes comprehensive unit tests covering:
 
 - All CLI parameter combinations
@@ -583,7 +885,7 @@ The package includes comprehensive unit tests covering:
 - File handling and validation
 - Progress monitoring accuracy
 
-### Integration Tests
+### 9.2. Integration Tests
 ```python
 def test_video_ai_integration():
     """Test complete Video AI workflow with real files."""
@@ -598,7 +900,7 @@ def test_batch_processing():
     """Test large batch operations with various file types."""
 ```
 
-### Validation Scripts
+### 9.3. Validation Scripts
 ```bash
 # Validation script for system requirements
 topyaz validate --check-licenses --check-environment --check-connectivity
@@ -607,9 +909,9 @@ topyaz validate --check-licenses --check-environment --check-connectivity
 topyaz benchmark --test-local --test-remote --generate-report
 ```
 
-## Documentation and User Guidance
+## 10. Documentation and User Guidance
 
-### Comprehensive Help System
+### 10.1. Comprehensive Help System
 The package provides extensive help documentation accessible via CLI:
 
 ```bash
@@ -627,7 +929,7 @@ topyaz tutorial video
 topyaz troubleshoot
 ```
 
-### Interactive Setup Wizard
+### 10.2. Interactive Setup Wizard
 ```bash
 # Initial setup and configuration
 topyaz setup --interactive
@@ -639,9 +941,9 @@ topyaz setup --add-remote-host
 topyaz setup --verify-licenses
 ```
 
-## Installation and Dependencies
+## 11. Installation and Dependencies
 
-### Package Requirements
+### 11.1. Package Requirements
 
 The package dependencies are defined in `pyproject.toml`:
 
@@ -671,7 +973,7 @@ test = [
 ]
 ```
 
-### Installation Methods
+### 11.2. Installation Methods
 ```bash
 # PyPI installation (future)
 pip install topyaz
@@ -685,7 +987,7 @@ pip install -e .
 uv pip install -e .[dev,test]
 ```
 
-### System Requirements
+### 11.3. System Requirements
 - macOS 11.0 Big Sur or higher (Video AI requires 10.14 Mojave minimum for CPU, 10.16 Big Sur for GPU)
 - macOS 13 Ventura or newer for advanced models (Rhea, Aion, Iris Enhancement)
 - macOS 14 Sonoma for Gigapixel AI generative models (Recover, Redefine)
@@ -697,29 +999,29 @@ uv pip install -e .[dev,test]
 - 80GB+ free disk space for Video AI models
 - 2GB+ VRAM for GPU acceleration
 
-## Security Considerations
+## 12. Security Considerations
 
-### SSH Security
+### 12.1. SSH Security
 - Support for SSH key-based authentication only
 - No password storage or transmission
 - SSH connection validation and host key verification
 - Secure file transfer protocols
 
-### File Security
+### 12.2. File Security
 - Input validation to prevent path traversal attacks
 - Safe temporary file handling
 - Backup verification and integrity checks
 - Secure cleanup of temporary files
 
-### Remote Execution Security
+### 12.3. Remote Execution Security
 - Command injection prevention
 - Environment variable sanitization
 - Restricted command execution scope
 - Audit logging for all remote operations
 
-## Community Tools Integration
+## 13. Community Tools Integration
 
-### Existing Community Projects
+### 13.1. Existing Community Projects
 The package integrates with and references existing community tools:
 
 1. **vai-docker**: Docker containerization for Video AI on Linux
@@ -742,7 +1044,7 @@ The package integrates with and references existing community tools:
    - Version compatibility requirements
    - Integration patterns for automation
 
-### Integration Capabilities
+### 13.2. Integration Capabilities
 ```python
 def integrate_community_tools(self):
     """
@@ -756,9 +1058,9 @@ def integrate_community_tools(self):
     """
 ```
 
-## Future Enhancements
+## 14. Future Enhancements
 
-### Planned Features
+### 14.1. Planned Features
 1. **GUI Integration**: Optional web-based monitoring interface
 2. **Cloud Processing**: Integration with cloud GPU services (AWS, GCP, Azure)
 3. **Plugin System**: Extensible architecture for custom processing workflows
@@ -768,7 +1070,7 @@ def integrate_community_tools(self):
 7. **Docker Support**: Native containerization for cross-platform deployment
 8. **Workflow Designer**: Visual pipeline designer for complex processing chains
 
-### Community Integration
+### 14.2. Community Integration
 - GitHub repository with issue tracking and feature requests
 - Community-contributed presets and workflows repository
 - Plugin marketplace for extensions and custom integrations
@@ -776,9 +1078,9 @@ def integrate_community_tools(self):
 - Community model and parameter sharing
 - Integration with existing Topaz community forums and resources
 
-## Support and Troubleshooting
+## 15. Support and Troubleshooting
 
-### Built-in Diagnostics
+### 15.1. Built-in Diagnostics
 ```bash
 # System diagnostic report
 python -m topyaz diagnose --full-report
@@ -790,7 +1092,7 @@ python -m topyaz profile --operation video --input sample.mp4
 python -m topyaz license-check --all-products
 ```
 
-### Development Commands
+### 15.2. Development Commands
 
 The package includes development commands via `pyproject.toml` configuration:
 
@@ -812,7 +1114,7 @@ hatch run fmt
 hatch run docs:build
 ```
 
-### Common Issue Resolution
+### 15.3. Common Issue Resolution
 The package includes automated detection and resolution guidance for common issues:
 
 1. **"No such filter" errors**: Automatic Topaz FFmpeg detection
@@ -823,9 +1125,9 @@ The package includes automated detection and resolution guidance for common issu
 
 This specification provides a comprehensive foundation for implementing `topyaz` as a production-ready, user-friendly wrapper around Topaz Labs CLI tools, with extensive error handling, remote execution capabilities, and detailed user feedback throughout all operations.
 
-# Appendix: Reference for Topaz CLI tools
+# Appendix 1: Reference for Topaz CLI tools
 
-## Topaz Gigapixel AI
+## 16. Topaz Gigapixel AI
 
 Topaz Gigapixel AI in CLI operates via its `gigapixel` CLI tool. 
 
@@ -941,7 +1243,7 @@ Released in version 7.3.0, Gigapixel's Command Line Interface (CLI) feature, [av
 
 ---
 
-#### Notes
+#### 16.0.1. Notes
 
 *Updated May 21st, 2025
 Command line flags subject to change.*
@@ -954,7 +1256,7 @@ The following examples are written with UNIX-style escape characters. Windows us
 
 ---
 
-#### Basics
+#### 16.0.2. Basics
 
 * -m, --model for model. Valid values are specified in json files but should account for common shortenings (e.g., art, cg, and cgi are valid for Art & CGI model)
   + If there is a short code missing that you tried and it didn't work let us know
@@ -1017,7 +1319,7 @@ The following examples are written with UNIX-style escape characters. Windows us
 
 ---
 
-#### Generative Models
+#### 16.0.3. Generative Models
 
 New models for -m flag: "recovery" and "redefine".
 recovery accepts additional --mv flag, either 1 or 2 (default).
@@ -1060,7 +1362,7 @@ gigapixel.exe        # CLI executable command
 
 ---
 
-#### Examples
+#### 16.0.4. Examples
 
 The **gigapixel** executable should be on the path by default after install, but if not you can add it to your path. The default paths should be:
 
@@ -1105,7 +1407,7 @@ gigapixel --recursive -i ~/Pictures/input.jpg -o ~/Pictures/outputs --scale 2 --
 
 
 
-## Topaz Photo AI
+## 17. Topaz Photo AI
 
 Topaz Photo AI in CLI operates via its `tpai` CLI tool. 
 
@@ -1193,13 +1495,13 @@ Mac:
 
 ---
 
-## Processing Controls
+## 18. Processing Controls
 
 The CLI will use your Autopilot settings to process images. Open Topaz Photo AI and go to the Preferences > Autopilot menu.
 
 Instructions on using the Preferences > Autopilot menu are [here](https://docs.topazlabs.com/photo-ai/enhancements/autopilot-and-configuration).
 
-### Command Options
+### 18.1. Command Options
 
 --output, -o: Output folder to save images to. If it doesn't exist the program will attempt to create it.
 
@@ -1208,7 +1510,7 @@ Instructions on using the Preferences > Autopilot menu are [here](https://docs.t
 --recursive, -r: If given a folder path, it will recurse into subdirectories instead of just grabbing top level files.
 Note: If output folder is specified, the input folder's structure will be recreated within the output as necessary.
 
-### File Format Options:
+### 18.2. File Format Options:
 
 --format, -f: Set the output format. Accepts jpg, jpeg, png, tif, tiff, dng, or preserve. Default: preserve
 Note: Preserve will attempt to preserve the exact input extension, but RAW files will still be converted to DNG.Format Specific Options:
@@ -1222,7 +1524,7 @@ Note: Preserve will attempt to preserve the exact input extension, but RAW files
 --tiff-compression: -tc: TIFF compression format. Must be "none", "lzw", or "zip".
 Note: lzw is not allowed on 16-bit output and will be converted to zip.
 
-### Debug Options:
+### 18.3. Debug Options:
 
 --showSettings: Shows the Autopilot settings for images before they are processed
 
@@ -1240,7 +1542,7 @@ Return values:
 
 
 
-## Topaz Video AI
+## 19. Topaz Video AI
 
 Topaz Video AI in CLI operates with help of `ffmpeg`. 
 
@@ -1255,7 +1557,7 @@ The majority of the commands for this build will be FFmpeg commands.
 
 There is no need to install FFmpeg, it is automatically included with the TVAI installer. This article will outline the basic functions for TVAI’s CLI, however, you will want to familiarize yourself with FFmpeg commands for more complex use cases.
 
-### Getting Started with CLI
+### 19.1. Getting Started with CLI
 
 Before using the CLI for the first time, we recommend launching the GUI and logging into the app. This eliminates the need to use a command to log into the app and will allow you to launch the terminal directly from the GUI.
 
@@ -1289,7 +1591,7 @@ If you log out and need to log back in without launching the GUI:
 
 ---
 
-### Basic TVAI Filters
+### 19.2. Basic TVAI Filters
 
 Upscaling & Enhancement
 
@@ -1309,9 +1611,9 @@ Stabilization
 tvai_cpe + tvai_stb
 ```
 
-### Video AI Command Line Usage
+### 19.3. Video AI Command Line Usage
 
-#### Environment Variables
+#### 19.3.1. Environment Variables
 
 ***TVAI\_MODEL\_DATA\_DIR***
 
@@ -1330,7 +1632,7 @@ tvai_cpe + tvai_stb
 
 ---
 
-### GPU-Specific Usage Notes
+### 19.4. GPU-Specific Usage Notes
 
 TVAI is used as an FFmpeg filter, and all models will work on graphics devices from Intel, AMD, Nvidia, and Apple using a command like this example:
 
@@ -1348,7 +1650,7 @@ On some newer Intel devices, it may be necessary to set the ***`Computer\HKEY\_C
 -vf "tvai_up=model=aaa-10:scale=2:device=0"
 ```
 
-#### General Usage
+#### 19.4.1. General Usage
 
 1. Add the **`-strict 2 -hwaccel auto`** flags
 2. Set **`-c:v` to `hevc\_qsv` or `h264\_qsv`**
@@ -1440,9 +1742,9 @@ The above command performs the following:
 * Sets the output pixel format to yuv420p
 * Upscales 2x using Artemis v13
 
-### Selecting Models with CLI
+### 19.5. Selecting Models with CLI
 
-#### Scaling Models
+#### 19.5.1. Scaling Models
 
 |  |  |
 | --- | --- |
@@ -1481,7 +1783,7 @@ The above command performs the following:
 | thd-3 | Theia Fine Tune Detail v3 |
 | thf-4 | Theia Fine Tune Fidelity v4 |
 
-#### **Interpolation Models**
+#### 19.5.2. **Interpolation Models**
 
 |  |  |
 | --- | --- |
@@ -1494,7 +1796,7 @@ The above command performs the following:
 | chr-1 | Chronos Slo-Mo / FPS Conversion v1 |
 | chr-2 | Chronos Slo-Mo / FPS Conversion v2 |
 
-#### **Stabilization Models**
+#### 19.5.3. **Stabilization Models**
 
 |  |  |
 | --- | --- |
@@ -1522,7 +1824,7 @@ Step 2 (Auto-Crop):
 ./ffmpeg -hide_banner -nostdin -y -i /path/to/input_video -vf tvai_stb=filename=temp/path/cpe.json:smoothness=6:full=0 path/to/output_video
 ```
 
-## Custom Encoder Options
+## 20. Custom Encoder Options
 
 Topaz Video AI uses ffmpeg to produce output files and apply different encoding settings.
 
@@ -1573,4 +1875,374 @@ Some of these features are only available on certain GPU models, so it's recomme
 In addition to options for the video encoder, this json entry can be edited with a different audio transcode setting, maximum bitrate, bit depth, and OS compatibility to prevent settings being shown on incompatible devices.
 
 It is highly recommended to test any custom video-encoders.json entries with a short video and inspect the result using [MediaInfo](https://mediaarea.net/en/MediaInfo) to ensure that the output matches the expected results.
+
+
+# Appendix 2: Assorted code samples
+
+Here are some assorted code samples that are useful for the project.
+
+Excellent. Based on the provided `vendor.txt` code assortment and the `SPEC.md` for `topyaz`, here is the new appendix to be added to the specification. It includes the best implementation excerpts and code snippets for locating and running Topaz tools, as requested.
+
+***
+
+# Appendix B: Implementation Reference from Community Tools
+
+This appendix provides practical code excerpts and implementation patterns derived from the provided `vendor.txt`. These snippets serve as a reference for implementing the core functionalities of `topyaz`, such as locating executables, executing commands, and managing processing workflows.
+
+## 21. Locating Topaz Executables
+
+A robust wrapper must reliably find the Topaz command-line tools across different operating systems. The `init_topaz` function from `Comfy-Topaz-Photo/topaz.py` provides an excellent, comprehensive example of how to achieve this for Photo AI. This pattern can be adapted for Video AI and Gigapixel AI.
+
+**Key Features:**
+*   Checks a user-provided custom path first.
+*   Includes standard installation paths for Windows, macOS, and Linux.
+*   Executes the tool with `--version` to confirm it's working and to log the version information.
+*   Provides graceful error handling.
+
+```python
+# From: Comfy-Topaz-Photo/topaz.py
+
+def init_topaz(custom_path=None):
+    """
+    Initializes Topaz Photo AI by finding its executable.
+
+    Args:
+        custom_path (str, optional): A user-specified path to tpai.exe.
+
+    Returns:
+        (str, str): A tuple containing the executable path and its version.
+    """
+    # If a custom path is provided, check it first.
+    if custom_path and os.path.isfile(custom_path):
+        try:
+            result = subprocess.run(
+                f'"{custom_path}" --version',
+                shell=True, capture_output=True, text=True, encoding='utf-8', errors='ignore'
+            )
+            version = result.stdout.strip() if result.returncode == 0 else "Unknown Version"
+            print(f"[topyaz] Using custom Topaz Photo AI path: {custom_path} (Version: {version})")
+            return (custom_path, version)
+        except Exception as e:
+            print(f"[topyaz] Warning: Found Topaz Photo AI but couldn't get version: {custom_path}, Error: {e}")
+            return (custom_path, "Unknown Version")
+
+    # Standard paths for different operating systems
+    executable_paths = []
+    if platform.system() == "Windows":
+        paths = [
+            os.path.join(os.environ.get('PROGRAMFILES', 'C:\\Program Files'), 'Topaz Labs LLC', 'Topaz Photo AI', 'tpai.exe'),
+            os.path.join(os.environ.get('LOCALAPPDATA', ''), 'Topaz Labs LLC', 'Topaz Photo AI', 'tpai.exe'),
+        ]
+        executable_paths.extend(paths)
+    elif platform.system() == "Darwin": # macOS
+        paths = [
+            '/Applications/Topaz Photo AI.app/Contents/MacOS/tpai',
+            os.path.expanduser('~/Applications/Topaz Photo AI.app/Contents/MacOS/tpai')
+        ]
+        executable_paths.extend(paths)
+    
+    # Check each potential path
+    for path in executable_paths:
+        if os.path.isfile(path):
+            try:
+                result = subprocess.run(f'"{path}" --version', shell=True, capture_output=True, text=True, encoding='utf-8', errors='ignore')
+                version = result.stdout.strip() if result.returncode == 0 else "Unknown Version"
+                print(f"[topyaz] Found Topaz Photo AI: {path} (Version: {version})")
+                return (path, version)
+            except Exception as e:
+                print(f"[topyaz] Warning: Found Topaz Photo AI but couldn't get version: {path}, Error: {e}")
+                return (path, "Unknown Version")
+
+    raise FileNotFoundError("Could not find Topaz Photo AI executable. Please specify the path or ensure it's installed correctly.")
+```
+
+## 22. Executing Topaz CLI Commands
+
+### 22.1. Topaz Photo AI (`tpai`)
+
+The `topaz_upscale` method in `Comfy-Topaz/topaz.py` demonstrates how to build and execute a command for `tpai.exe` with multiple, complex parameter groups.
+
+**Key Features:**
+*   Dynamically builds a list of command-line arguments.
+*   Handles multiple parameter groups (`--upscale`, `--sharpen`).
+*   Toggles features using `enabled=true/false`.
+*   Captures and logs stdout and stderr from the subprocess.
+
+```python
+# From: Comfy-Topaz/topaz.py
+
+def topaz_upscale(self, img_file, compression=0, format='png', tpai_exe=None,
+                  upscale: Optional[TopazUpscaleSettings]=None,
+                  sharpen: Optional[TopazSharpenSettings]=None):
+    if not os.path.exists(tpai_exe):
+        raise ValueError('Topaz AI Upscaler not found at %s' % tpai_exe)
+    
+    target_dir = os.path.join(self.output_dir, self.subfolder)
+    tpai_args = [
+        tpai_exe,
+        '--output', target_dir,
+        '--compression', str(compression),
+        '--format', format,
+        '--showSettings',
+    ]
+    
+    if upscale:
+        tpai_args.append('--upscale')
+        if upscale.enabled:
+            tpai_args.append(f'scale={upscale.scale}')
+            tpai_args.append(f'param1={upscale.denoise}') # Minor Denoise
+            tpai_args.append(f'param2={upscale.deblur}')  # Minor Deblur
+            tpai_args.append(f'param3={upscale.detail}')  # Fix Compression
+            tpai_args.append(f'model={upscale.model}')
+        else:
+            tpai_args.append('enabled=false')
+            
+    if sharpen:
+        tpai_args.append('--sharpen')
+        if sharpen.enabled:
+            tpai_args.append(f'model=Sharpen {sharpen.model}')
+            tpai_args.append(f'param1={sharpen.strength}')
+            tpai_args.append(f'param2={sharpen.denoise}')
+        else:
+            tpai_args.append('enabled=false')
+        
+    tpai_args.append(img_file)
+    print('[topyaz] Executing command:', pprint.pformat(tpai_args))
+    p_tpai = subprocess.run(tpai_args, capture_output=True, text=True, shell=False)
+    print('[topyaz] Return code:', p_tpai.returncode)
+    print('[topyaz] STDOUT:', p_tpai.stdout)
+    print('[topyaz] STDERR:', p_tpai.stderr)
+
+    # ... (output parsing follows)
+```
+
+### 22.2. Topaz Video AI (`ffmpeg`)
+
+Processing with Video AI is done via `ffmpeg` using custom filters (`tvai_up`, `tvai_fi`). The `process_video` method in `ComfyUI-TopazVideoAI/topaz_video_node.py` shows how to construct a complex filter chain.
+
+**Key Features:**
+*   Builds a video filter chain (`-vf`) by joining multiple filter strings.
+*   Demonstrates chaining enhancements like upscaling (`tvai_up`) and frame interpolation (`tvai_fi`).
+*   Sets hardware acceleration and encoder-specific options (`hevc_nvenc`).
+*   Handles multiple input/output stages by chaining `ffmpeg` commands.
+
+```python
+# From: ComfyUI-TopazVideoAI/topaz_video_node.py
+
+def process_video(self, images, enable_upscale, upscale_factor, upscale_model, ...):
+    
+    # ... (input video is created from image batch) ...
+    
+    current_input = input_video
+    current_output = intermediate_video
+
+    if enable_upscale:
+        # Example for building a filter chain
+        upscale_filters = []
+        # In a loop for multi-pass processing:
+        upscale_filters.append(
+            f"tvai_up=model={params['upscale_model']}"
+            f":scale={params['upscale_factor']}"
+            f":compression={params['compression']}"
+            f":blend={params['blend']}"
+        )
+        filter_chain = ','.join(upscale_filters)
+        
+        ffmpeg_exe = self._get_topaz_ffmpeg_path(...)
+        cmd = [
+            ffmpeg_exe, "-y", "-i", current_input,
+            "-vf", filter_chain,
+            "-c:v", "hevc_nvenc", # Hardware encoding
+            # ... other encoder options ...
+            current_output
+        ]
+        
+        result = subprocess.run(cmd, capture_output=True, text=True)
+        if result.returncode != 0:
+            raise RuntimeError(f"FFmpeg upscale error: {result.stderr}")
+        
+        current_input = current_output
+        current_output = output_video
+
+    if enable_interpolation:
+        interpolation_filter = f"tvai_fi=model={interpolation_model}:fps={target_fps}"
+        cmd = [
+            ffmpeg_exe, "-y", "-i", current_input,
+            "-vf", interpolation_filter,
+            # ... other options ...
+            current_output
+        ]
+        # ... run subprocess ...
+```
+
+### 22.3. Topaz Gigapixel AI (GUI Automation)
+
+When a proper CLI is unavailable or requires a costly license, GUI automation is a viable alternative. The `Gigapixel` class in `Gigapixel/gigapixel/gigapixel.py` uses `pywinauto` to control the application on Windows. This approach is fragile but effective.
+
+**Key Features:**
+*   Connects to a running instance or starts a new one.
+*   Uses keyboard shortcuts (`send_keys`) for common actions like Open (`^o`) and Save (`^s`).
+*   Interacts with UI elements by title and control type.
+*   Uses retry logic (`the_retry` decorator) to handle timing issues in the GUI.
+
+```python
+# From: Gigapixel/gigapixel/gigapixel.py
+# Note: This uses pywinauto for GUI automation, not a direct CLI.
+
+class Gigapixel:
+    class _App:
+        def __init__(self, app: Application, processing_timeout: int):
+            # ...
+            self.app = app
+            self._main_window = self.app.window()
+            # ...
+
+        @retry(...)
+        def open_photo(self, photo_path: Path) -> None:
+            while photo_path.name not in self._main_window.element_info.name:
+                logger.debug("Trying to open photo")
+                self._main_window.set_focus()
+                send_keys('{ESC}^o') # Send Escape, then Ctrl+O
+                clipboard.copy(str(photo_path))
+                send_keys('^v {ENTER}{ESC}') # Paste path, press Enter, press Escape
+                
+        def save_photo(self) -> None:
+            self._open_export_dialog()
+            send_keys('{ENTER}')
+            # ... wait for processing to finish ...
+            self._close_export_dialog()
+
+        def set_processing_options(self, scale: Optional[Scale] = None, mode: Optional[Mode] = None) -> None:
+            if scale:
+                self._main_window.child_window(title=scale.value).click_input()
+            if mode:
+                self._main_window.child_window(title=mode.value).click_input()
+```
+
+## 23. Workflow Patterns and Best Practices
+
+### 23.1. Temporary File Management
+
+Workflows should be atomic and clean up after themselves. The `process_images` method from `Comfy-Topaz-Photo/topaz.py` shows a standard pattern of creating temporary input files and a temporary output directory, then cleaning them up in a `finally` block.
+
+```python
+# From: Comfy-Topaz-Photo/topaz.py
+
+def process_images(self, images, tpai_exe, ...):
+    # Create a unique temporary output folder for this run
+    output_folder = tempfile.mkdtemp(prefix="topaz_output_")
+    input_paths = []
+
+    try:
+        # Save input images from memory (e.g., tensors) to temporary files
+        timestamp = int(time.time())
+        file_prefix = f"{output_prefix}{timestamp}_"
+        input_paths = save_images(images, file_prefix=file_prefix)
+        
+        # Call Topaz Photo AI, which writes to output_folder
+        output_paths = process_topaz_image(...)
+        
+        # Load the processed images back into memory
+        upscaled_images = []
+        for upscaled_path in output_paths:
+            # ... load image ...
+            upscaled_images.append(img_tensor)
+        
+        return (result,)
+    
+    finally:
+        # Ensure cleanup of all temporary files and directories
+        for path in input_paths:
+            if os.path.exists(path):
+                os.remove(path)
+        if os.path.exists(output_folder):
+            shutil.rmtree(output_folder)
+```
+
+### 23.2. Parsing CLI Output
+
+When tools provide structured output (like JSON), it can be parsed to extract valuable information. The `get_settings` function from `Comfy-Topaz/topaz.py` shows a clever way to isolate a JSON object from noisy `stdout` text.
+
+```python
+# From: Comfy-Topaz/topaz.py
+
+def get_settings(self, stdout):
+    '''
+    Extracts the settings JSON string from the stdout of the tpai.exe process
+    '''        
+    # Find the start of the settings block
+    settings_start = stdout.find('Final Settings for')
+    # Find the first opening brace after that
+    settings_start = stdout.find('{', settings_start)
+    
+    # Count braces to find the end of the JSON object
+    count = 0
+    settings_end = settings_start
+    for i in range(settings_start, len(stdout)):            
+        if stdout[i] == '{':
+            count += 1
+        elif stdout[i] == '}':
+            count -= 1
+        if count == 0:
+            settings_end = i
+            break
+            
+    settings_json = str(stdout[settings_start : settings_end + 1])
+    settings = json.loads(settings_json)
+    
+    # ... further processing of the parsed settings ...
+    return user_settings_json, autopilot_settings_json
+```
+
+### 23.3. Handling File Output and Retries
+
+External tools may not always produce predictable output filenames or might fail intermittently. The `process_topaz_image` logic in `Comfy-Topaz-Photo/topaz.py` demonstrates a robust way to handle this with retries and dynamic output file discovery.
+
+```python
+# From: Comfy-Topaz-Photo/topaz.py
+
+def process_topaz_image(tpai_exe, input_images, ...):
+    # ...
+    output_images = []
+    max_retries = 2
+    
+    for input_path in input_images:
+        # ...
+        
+        # Record file list before processing to detect new files
+        before_files = set(os.listdir(output_folder))
+        
+        for retry in range(max_retries + 1):
+            try:
+                result = subprocess.run(...) # Execute command
+                
+                if result.returncode == 0:
+                    # Attempt 1: Find by predictable name
+                    output_file = find_output_file(input_path, output_folder, output_format)
+                    if output_file:
+                        output_images.append(output_file)
+                        break
+
+                    # Attempt 2: Find any new file created in the output folder
+                    after_files = set(os.listdir(output_folder))
+                    new_files = after_files - before_files
+                    if new_files:
+                        # ... get the latest new file ...
+                        output_images.append(output_path)
+                        break
+                    else:
+                        # Handle case where command succeeds but no file is found
+                        raise TopazError("Topaz Photo AI may have processed successfully but no output file was detected")
+                else:
+                    # Handle command failure
+                    error_msg = f"Processing failed: {result.stderr}"
+                    if retry < max_retries:
+                        time.sleep(2) # Wait before retrying
+                    else:
+                        raise TopazError(error_msg)
+            
+            except (subprocess.TimeoutExpired, Exception) as e:
+                # Handle timeouts and other exceptions with retry logic
+                # ...
+```
 
