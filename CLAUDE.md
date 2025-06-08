@@ -1,3 +1,30 @@
+## TLDR: topyaz Project
+
+**topyaz** is a Python CLI wrapper that unifies Topaz Labs' three AI products (Video AI, Gigapixel AI, Photo AI) into a single command-line interface for professional batch processing workflows.
+
+**🎯 Core Purpose:**
+- Single CLI tool for all Topaz products instead of using separate GUIs
+- Enable remote processing via SSH on powerful machines
+- Batch operations with progress monitoring and error recovery
+
+**📋 Requirements:**
+- macOS 11+ (Topaz products are Mac-focused)
+- Gigapixel AI Pro license ($499/year) for CLI access
+- 16GB+ RAM, 80GB+ storage for models
+
+**🚧 Current Status:**
+- **Planning Stage**: Extensive specification (SPEC.md) and documentation written
+- **Implementation**: Minimal skeleton code - most features in TODO.md are unimplemented
+- **Architecture**: Designed around unified `topyazWrapper` class using Python Fire for CLI generation
+
+**💡 Key Value:**
+- ~2x faster than GUI for batch operations
+- Remote execution on GPU servers
+- Unified interface across Video AI (upscaling), Gigapixel AI (image enhancement), Photo AI (auto-enhancement)
+- Production-ready error handling and recovery mechanisms
+
+**Target Users:** Video/photo professionals, content creators, automated workflow developers who need efficient batch processing of large media collections.
+
 # When you write code
 
 - Iterate gradually, avoiding major changes
@@ -58,7 +85,8 @@ When you’re finished, print "Wait, but" to go back, think & reflect, revise & 
 ## After Python changes run:
 
 ```
-fd -e py -x autoflake {}; fd -e py -x pyupgrade --py311-plus {}; fd -e py -x ruff check --output-format=github --fix --unsafe-fixes {}; fd -e py -x ruff format --respect-gitignore --target-version py311 {}; python -m pytest;
+./cleanup.sh
 ```
+
 
 Be creative, diligent, critical, relentless & funny!

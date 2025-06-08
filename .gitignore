@@ -1,3 +1,4 @@
+resources/
 *_autogen/
 .DS_Store
 __version__.py
