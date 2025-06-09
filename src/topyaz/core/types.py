@@ -169,7 +169,7 @@ class PhotoAIParams:
     - topyaz/products/_photo_ai.py
     """
 
-    autopilot_preset: str = "default"
+    autopilot_preset: str = "auto"
     format: str = "preserve"
     quality: int = 95
     compression: int = 2

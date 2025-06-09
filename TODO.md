@@ -1,16 +1,18 @@
-
 CLI:
 
-- `dry_run`: 
-  - is it actually used? 
-  - there’s also `skip_processing` which is basically the same. We only need `dry_run`
+- ✅ `dry_run`: 
+  - FIXED: Removed `skip_processing` parameter, using only `dry_run` throughout the codebase
+  - `skip_processing` calls now use `self._options.dry_run` instead
 
-- `autopilot_preset`: 
-  - it should be just `preset`
-  - I think its default value should be `auto`
+- ✅ `autopilot_preset`: 
+  - FIXED: Renamed to `preset` in CLI method signature and documentation
+  - FIXED: Default value changed to `"auto"` in PhotoAIParams
 
-- `override_autopilot`: 
-  - do we really need this? 
-  - what does the app so if it’s provided? 
+- ✅ `override_autopilot`: 
+  - KEPT: This parameter is needed - it controls when to add the `--override` flag to Photo AI CLI
+  - The logic automatically sets it when manual enhancement parameters are provided, but can also be explicitly set
 
-For Photo AI, we have this special treatment where we can change the prefs before running the tool, and that influences autopilot. See src/topyaz/system/photo_ai_prefs.py — therefore we should explicitly add the options that are accessible via the preferences to CLI, so that they're listed in the usage
+- ✅ Photo AI preference options:
+  - ADDED: All Photo AI autopilot preference options are now exposed as CLI parameters
+  - Added parameters: face_strength, face_detection, face_parts, denoise_model, denoise_levels, denoise_strength, denoise_raw_model, denoise_raw_levels, denoise_raw_strength, sharpen_model, sharpen_levels, sharpen_strength, upscaling_model, upscaling_factor, upscaling_type, deblur_strength, denoise_upscale_strength, lighting_strength, raw_exposure_strength, adjust_color, temperature_value, opacity_value, resolution_unit, default_resolution, overwrite_files, recurse_directories, append_filters
+  - These parameters are passed through to the Photo AI processing methods and handled via the preferences system

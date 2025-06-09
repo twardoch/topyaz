@@ -223,25 +223,24 @@ class TopyazCLI:
             if result.success:
                 logger.info(f"Successfully processed {input_path} -> {result.output_path}")
                 return True
+            # Display error information to user
+            if result.error_message:
+                logger.error(f"Gigapixel AI processing failed: {result.error_message}")
             else:
-                # Display error information to user
-                if result.error_message:
-                    logger.error(f"Gigapixel AI processing failed: {result.error_message}")
-                else:
-                    logger.error("Gigapixel AI processing failed with unknown error")
+                logger.error("Gigapixel AI processing failed with unknown error")
 
-                # Show additional error details if available
-                if result.stderr and result.stderr.strip():
-                    logger.error(f"Error details: {result.stderr.strip()}")
-                elif result.additional_info and result.additional_info.get("licensing_error"):
-                    # Enhanced licensing error message from parse_output
-                    logger.error(result.additional_info.get("user_message", "Licensing error detected"))
-                elif result.stdout and "False" in result.stdout:
-                    # Fallback licensing issue pattern
-                    logger.error("This appears to be a licensing issue. Gigapixel AI CLI requires a Pro license.")
-                    logger.error("Please upgrade your license or use the desktop application instead.")
+            # Show additional error details if available
+            if result.stderr and result.stderr.strip():
+                logger.error(f"Error details: {result.stderr.strip()}")
+            elif result.additional_info and result.additional_info.get("licensing_error"):
+                # Enhanced licensing error message from parse_output
+                logger.error(result.additional_info.get("user_message", "Licensing error detected"))
+            elif result.stdout and "False" in result.stdout:
+                # Fallback licensing issue pattern
+                logger.error("This appears to be a licensing issue. Gigapixel AI CLI requires a Pro license.")
+                logger.error("Please upgrade your license or use the desktop application instead.")
 
-                return False
+            return False
 
         except Exception as e:
             logger.error(f"Gigapixel AI processing failed: {e}")
@@ -325,20 +324,47 @@ class TopyazCLI:
     def photo(
         self,
         input_path: str,
-        autopilot_preset: str = "auto",
+        preset: str = "auto",
         format: str = "preserve",
         quality: int = 95,
         compression: int = 6,
         bit_depth: int = 8,
         tiff_compression: str = "lzw",
         show_settings: bool = False,
-        skip_processing: bool = False,
         override_autopilot: bool = False,
         upscale: bool | None = None,
         noise: bool | None = None,
         sharpen: bool | None = None,
         lighting: bool | None = None,
         color: bool | None = None,
+        # Photo AI preference options
+        face_strength: int | None = None,
+        face_detection: str | None = None,
+        face_parts: list[str] | None = None,
+        denoise_model: str | None = None,
+        denoise_levels: list[str] | None = None,
+        denoise_strength: int | None = None,
+        denoise_raw_model: str | None = None,
+        denoise_raw_levels: list[str] | None = None,
+        denoise_raw_strength: int | None = None,
+        sharpen_model: str | None = None,
+        sharpen_levels: list[str] | None = None,
+        sharpen_strength: int | None = None,
+        upscaling_model: str | None = None,
+        upscaling_factor: float | None = None,
+        upscaling_type: str | None = None,
+        deblur_strength: int | None = None,
+        denoise_upscale_strength: int | None = None,
+        lighting_strength: int | None = None,
+        raw_exposure_strength: int | None = None,
+        adjust_color: bool | None = None,
+        temperature_value: int | None = None,
+        opacity_value: int | None = None,
+        resolution_unit: int | None = None,
+        default_resolution: float | None = None,
+        overwrite_files: bool | None = None,
+        recurse_directories: bool | None = None,
+        append_filters: bool | None = None,
         output: str | None = None,
         **kwargs,
     ) -> bool:
@@ -347,20 +373,47 @@ class TopyazCLI:
 
         Args:
             input_path: Input file or directory path
-            autopilot_preset: Autopilot preset to use
+            preset: Autopilot preset to use
             format: Output format_output (preserve, jpg, png, tiff, dng)
             quality: JPEG quality_output (0-100)
             compression: PNG compression (0-10)
             bit_depth: TIFF bit depth (8 or 16)
             tiff_compression: TIFF compression (none, lzw, zip)
             show_settings: Show processing settings only
-            skip_processing: Skip actual processing
             override_autopilot: Override autopilot with manual settings
             upscale: Enable/disable upscaling
             noise: Enable/disable noise reduction
             sharpen: Enable/disable sharpening
             lighting: Enable/disable lighting enhancement
             color: Enable/disable color enhancement
+            # Photo AI autopilot preference options
+            face_strength: Face recovery strength (0-100)
+            face_detection: Face detection mode (auto, subject, all)
+            face_parts: List of face parts to include (hair, necks, eyes, mouth)
+            denoise_model: Denoise model (Auto, Low Light Beta, Severe Noise Beta)
+            denoise_levels: Denoise levels (low, medium, high, severe)
+            denoise_strength: Denoise strength (0-10)
+            denoise_raw_model: RAW denoise model
+            denoise_raw_levels: RAW denoise levels
+            denoise_raw_strength: RAW denoise strength (0-10)
+            sharpen_model: Sharpen model (Auto, Sharpen Standard v2, etc.)
+            sharpen_levels: Sharpen levels
+            sharpen_strength: Sharpen strength (0-10)
+            upscaling_model: Upscaling model (High Fidelity V2, Standard V2, Graphics V2)
+            upscaling_factor: Upscaling factor (1.0-6.0)
+            upscaling_type: Upscaling type (auto, scale, width, height)
+            deblur_strength: Deblur strength (0-10)
+            denoise_upscale_strength: Denoise upscale strength (0-10)
+            lighting_strength: Lighting enhancement strength (0-100)
+            raw_exposure_strength: RAW exposure strength (0-100)
+            adjust_color: Enable color adjustment
+            temperature_value: White balance temperature (0-100)
+            opacity_value: Opacity value (0-100)
+            resolution_unit: Resolution unit (1=inches, 2=cm)
+            default_resolution: Default resolution (-1=auto)
+            overwrite_files: Allow overwriting files
+            recurse_directories: Process directories recursively
+            append_filters: Append filters to output
             output: Output path
             **kwargs: Additional parameters
 
@@ -382,20 +435,48 @@ class TopyazCLI:
                 results = self._photo_ai.process_batch_directory(
                     input_dir=input_path_obj,
                     output_dir=output_path_obj,
-                    autopilot_preset=autopilot_preset,
+                    autopilot_preset=preset,
                     format=format,
                     quality=quality,
                     compression=compression,
                     bit_depth=bit_depth,
                     tiff_compression=tiff_compression,
                     show_settings=show_settings,
-                    skip_processing=skip_processing,
+                    skip_processing=self._options.dry_run,
                     override_autopilot=override_autopilot,
                     upscale=upscale,
                     noise=noise,
                     sharpen=sharpen,
                     lighting=lighting,
                     color=color,
+                    # Pass through preference options
+                    face_strength=face_strength,
+                    face_detection=face_detection,
+                    face_parts=face_parts,
+                    denoise_model=denoise_model,
+                    denoise_levels=denoise_levels,
+                    denoise_strength=denoise_strength,
+                    denoise_raw_model=denoise_raw_model,
+                    denoise_raw_levels=denoise_raw_levels,
+                    denoise_raw_strength=denoise_raw_strength,
+                    sharpen_model=sharpen_model,
+                    sharpen_levels=sharpen_levels,
+                    sharpen_strength=sharpen_strength,
+                    upscaling_model=upscaling_model,
+                    upscaling_factor=upscaling_factor,
+                    upscaling_type=upscaling_type,
+                    deblur_strength=deblur_strength,
+                    denoise_upscale_strength=denoise_upscale_strength,
+                    lighting_strength=lighting_strength,
+                    raw_exposure_strength=raw_exposure_strength,
+                    adjust_color=adjust_color,
+                    temperature_value=temperature_value,
+                    opacity_value=opacity_value,
+                    resolution_unit=resolution_unit,
+                    default_resolution=default_resolution,
+                    overwrite_files=overwrite_files,
+                    recurse_directories=recurse_directories,
+                    append_filters=append_filters,
                     **kwargs,
                 )
 
@@ -406,20 +487,48 @@ class TopyazCLI:
             result = self._photo_ai.process(
                 input_path=input_path,
                 output_path=output,
-                autopilot_preset=autopilot_preset,
+                autopilot_preset=preset,
                 format=format,
                 quality=quality,
                 compression=compression,
                 bit_depth=bit_depth,
                 tiff_compression=tiff_compression,
                 show_settings=show_settings,
-                skip_processing=skip_processing,
+                skip_processing=self._options.dry_run,
                 override_autopilot=override_autopilot,
                 upscale=upscale,
                 noise=noise,
                 sharpen=sharpen,
                 lighting=lighting,
                 color=color,
+                # Pass through preference options
+                face_strength=face_strength,
+                face_detection=face_detection,
+                face_parts=face_parts,
+                denoise_model=denoise_model,
+                denoise_levels=denoise_levels,
+                denoise_strength=denoise_strength,
+                denoise_raw_model=denoise_raw_model,
+                denoise_raw_levels=denoise_raw_levels,
+                denoise_raw_strength=denoise_raw_strength,
+                sharpen_model=sharpen_model,
+                sharpen_levels=sharpen_levels,
+                sharpen_strength=sharpen_strength,
+                upscaling_model=upscaling_model,
+                upscaling_factor=upscaling_factor,
+                upscaling_type=upscaling_type,
+                deblur_strength=deblur_strength,
+                denoise_upscale_strength=denoise_upscale_strength,
+                lighting_strength=lighting_strength,
+                raw_exposure_strength=raw_exposure_strength,
+                adjust_color=adjust_color,
+                temperature_value=temperature_value,
+                opacity_value=opacity_value,
+                resolution_unit=resolution_unit,
+                default_resolution=default_resolution,
+                overwrite_files=overwrite_files,
+                recurse_directories=recurse_directories,
+                append_filters=append_filters,
                 **kwargs,
             )
 

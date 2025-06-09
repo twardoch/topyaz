@@ -263,7 +263,9 @@ class PhotoAI(MacOSTopazProduct):
             cmd.append("--skipProcessing")
 
         # Add override autopilot if manual enhancements are specified
-        if override_autopilot or any([upscale, noise, sharpen, lighting, color]):
+        if override_autopilot or any(
+            [upscale is not None, noise is not None, sharpen is not None, lighting is not None, color is not None]
+        ):
             cmd.append("--override")
 
             # Add enhancement toggles with proper boolean formatting
