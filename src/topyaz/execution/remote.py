@@ -375,7 +375,8 @@ class RemoteExecutor(CommandExecutor):
 
     def __del__(self):
         """Cleanup SSH connection on object destruction."""
-        self._close_connection()
+        if hasattr(self, "_ssh_client"):
+            self._close_connection()
 
 
 class RemoteConnectionPool:

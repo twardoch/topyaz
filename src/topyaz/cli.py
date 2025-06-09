@@ -94,6 +94,13 @@ class TopyazCLI:
             backup_originals=backup_originals,
         )
 
+        # Auto-detect remote user if host is provided but user is not
+        if remote_host and not remote_user:
+            import getpass
+
+            remote_user = getpass.getuser()
+            logger.debug(f"Auto-detected remote user: {remote_user}")
+
         self._remote_options = RemoteOptions(
             host=remote_host,
             user=remote_user,

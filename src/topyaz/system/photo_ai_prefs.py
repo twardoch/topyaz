@@ -151,18 +151,18 @@ class PhotoAIPreferences(PreferenceHandler):
                 raise PreferenceValidationError(msg)
 
             # Value validation
-            face_detection = preferences.get("autopilotFaceDetectOption", "")
+            face_detection = preferences.get("autopilotFaceDetectOption", "subject")
             if face_detection not in self.VALID_FACE_DETECTION:
                 msg = f"Invalid face detection: {face_detection}"
                 raise PreferenceValidationError(msg)
 
             face_strength = preferences.get("autopilotFaceStrength", 0)
-            if not (0 <= face_strength <= 100):
+            if face_strength is not None and not (0 <= face_strength <= 100):
                 msg = f"Face strength must be 0-100: {face_strength}"
                 raise PreferenceValidationError(msg)
 
             upscaling_factor = preferences.get("autopilotUpscalingFactor", 0)
-            if not (1.0 <= upscaling_factor <= 6.0):
+            if upscaling_factor is not None and not (1.0 <= upscaling_factor <= 6.0):
                 msg = f"Upscaling factor must be 1.0-6.0: {upscaling_factor}"
                 raise PreferenceValidationError(msg)
 
@@ -279,39 +279,39 @@ class PhotoAIPreferences(PreferenceHandler):
         prefs.update(
             {
                 # Face Recovery
-                "autopilotFaceStrength": settings.face_strength,
-                "autopilotFaceDetectOption": settings.face_detection,
-                "faceParts": settings.face_parts,
+                "autopilotFaceStrength": settings.face_strength or 80,
+                "autopilotFaceDetectOption": settings.face_detection or "subject",
+                "faceParts": settings.face_parts or ["hair", "necks"],
                 # Denoise
-                "autopilotDenoisingModel": settings.denoise_model,
-                "autopilotDenoiseLevels": settings.denoise_levels,
-                "autopilotDenoiseStrength": settings.denoise_strength,
-                "autopilotDenoisingRawModel": settings.denoise_raw_model,
-                "autopilotDenoiseRawLevels": settings.denoise_raw_levels,
-                "autopilotDenoiseRawStrength": settings.denoise_raw_strength,
+                "autopilotDenoisingModel": settings.denoise_model or "Auto",
+                "autopilotDenoiseLevels": settings.denoise_levels or ["medium", "high", "severe"],
+                "autopilotDenoiseStrength": settings.denoise_strength or 3,
+                "autopilotDenoisingRawModel": settings.denoise_raw_model or "Auto",
+                "autopilotDenoiseRawLevels": settings.denoise_raw_levels or ["low", "medium", "high", "severe"],
+                "autopilotDenoiseRawStrength": settings.denoise_raw_strength or 3,
                 # Sharpen
-                "autopilotSharpeningModel": settings.sharpen_model,
-                "autopilotSharpenBlurs": settings.sharpen_levels,
-                "autopilotSharpenStrength": settings.sharpen_strength,
+                "autopilotSharpeningModel": settings.sharpen_model or "Auto",
+                "autopilotSharpenBlurs": settings.sharpen_levels or ["medium", "high"],
+                "autopilotSharpenStrength": settings.sharpen_strength or 3,
                 # Upscaling
-                "autopilotUpscalingModel": settings.upscaling_model,
-                "autopilotUpscalingFactor": settings.upscaling_factor,
-                "autopilotUpscalingType": settings.upscaling_type,
-                "autopilotUpscalingParam1Strength": settings.deblur_strength,
-                "autopilotUpscalingParam2Strength": settings.denoise_upscale_strength,
+                "autopilotUpscalingModel": settings.upscaling_model or "High Fidelity V2",
+                "autopilotUpscalingFactor": settings.upscaling_factor or 2.0,
+                "autopilotUpscalingType": settings.upscaling_type or "auto",
+                "autopilotUpscalingParam1Strength": settings.deblur_strength or 3,
+                "autopilotUpscalingParam2Strength": settings.denoise_upscale_strength or 3,
                 # Exposure & Color
-                "autopilotNonRAWExposureStrength": settings.lighting_strength,
-                "autopilotRAWExposureStrength": settings.raw_exposure_strength,
-                "autopilotAdjustColor": settings.adjust_color,
+                "autopilotNonRAWExposureStrength": settings.lighting_strength or 25,
+                "autopilotRAWExposureStrength": settings.raw_exposure_strength or 8,
+                "autopilotAdjustColor": bool(settings.adjust_color) if settings.adjust_color is not None else False,
                 # White Balance
-                "autopilotTemperatureValue": settings.temperature_value,
-                "autopilotOpacityValue": settings.opacity_value,
+                "autopilotTemperatureValue": settings.temperature_value or 50,
+                "autopilotOpacityValue": settings.opacity_value or 100,
                 # Output
-                "autopilotResolutionUnit": settings.resolution_unit,
-                "autopilotDefaultResolution": settings.default_resolution,
+                "autopilotResolutionUnit": settings.resolution_unit or 1,
+                "autopilotDefaultResolution": settings.default_resolution or -1.0,
                 # Processing
-                "saveAllowOverwrite": settings.overwrite_files,
-                "saveAppendFilters": settings.append_filters,
+                "saveAllowOverwrite": bool(settings.overwrite_files) if settings.overwrite_files is not None else False,
+                "saveAppendFilters": bool(settings.append_filters) if settings.append_filters is not None else False,
             }
         )
 
@@ -331,13 +331,13 @@ class PhotoAIPreferences(PreferenceHandler):
             PreferenceValidationError: If any setting is invalid
         """
         # Face detection validation
-        if "face_detection" in kwargs:
+        if "face_detection" in kwargs and kwargs["face_detection"] is not None:
             if kwargs["face_detection"] not in self.VALID_FACE_DETECTION:
                 msg = f"Invalid face_detection: {kwargs['face_detection']}"
                 raise PreferenceValidationError(msg)
 
         # Face parts validation
-        if "face_parts" in kwargs:
+        if "face_parts" in kwargs and kwargs["face_parts"] is not None:
             invalid_parts = set(kwargs["face_parts"]) - self.VALID_FACE_PARTS
             if invalid_parts:
                 msg = f"Invalid face_parts: {invalid_parts}"
@@ -351,7 +351,7 @@ class PhotoAIPreferences(PreferenceHandler):
             "temperature_value",
             "opacity_value",
         ]:
-            if param in kwargs:
+            if param in kwargs and kwargs[param] is not None:
                 value = kwargs[param]
                 if not (0 <= value <= 100):
                     msg = f"{param} must be 0-100: {value}"
@@ -365,44 +365,60 @@ class PhotoAIPreferences(PreferenceHandler):
             "deblur_strength",
             "denoise_upscale_strength",
         ]:
-            if param in kwargs:
+            if param in kwargs and kwargs[param] is not None:
                 value = kwargs[param]
                 if not (0 <= value <= 10):
                     msg = f"{param} must be 0-10: {value}"
                     raise PreferenceValidationError(msg)
 
         # Upscaling factor validation
-        if "upscaling_factor" in kwargs:
+        if "upscaling_factor" in kwargs and kwargs["upscaling_factor"] is not None:
             value = kwargs["upscaling_factor"]
             if not (1.0 <= value <= 6.0):
                 msg = f"upscaling_factor must be 1.0-6.0: {value}"
                 raise PreferenceValidationError(msg)
 
         # Model validations
-        if "denoise_model" in kwargs and kwargs["denoise_model"] not in self.VALID_DENOISE_MODELS:
+        if (
+            "denoise_model" in kwargs
+            and kwargs["denoise_model"] is not None
+            and kwargs["denoise_model"] not in self.VALID_DENOISE_MODELS
+        ):
             msg = f"Invalid denoise_model: {kwargs['denoise_model']}"
             raise PreferenceValidationError(msg)
 
-        if "sharpen_model" in kwargs and kwargs["sharpen_model"] not in self.VALID_SHARPEN_MODELS:
+        if (
+            "sharpen_model" in kwargs
+            and kwargs["sharpen_model"] is not None
+            and kwargs["sharpen_model"] not in self.VALID_SHARPEN_MODELS
+        ):
             msg = f"Invalid sharpen_model: {kwargs['sharpen_model']}"
             raise PreferenceValidationError(msg)
 
-        if "upscaling_model" in kwargs and kwargs["upscaling_model"] not in self.VALID_UPSCALING_MODELS:
+        if (
+            "upscaling_model" in kwargs
+            and kwargs["upscaling_model"] is not None
+            and kwargs["upscaling_model"] not in self.VALID_UPSCALING_MODELS
+        ):
             msg = f"Invalid upscaling_model: {kwargs['upscaling_model']}"
             raise PreferenceValidationError(msg)
 
-        if "upscaling_type" in kwargs and kwargs["upscaling_type"] not in self.VALID_UPSCALING_TYPES:
+        if (
+            "upscaling_type" in kwargs
+            and kwargs["upscaling_type"] is not None
+            and kwargs["upscaling_type"] not in self.VALID_UPSCALING_TYPES
+        ):
             msg = f"Invalid upscaling_type: {kwargs['upscaling_type']}"
             raise PreferenceValidationError(msg)
 
         # Level validations
-        if "denoise_levels" in kwargs:
+        if "denoise_levels" in kwargs and kwargs["denoise_levels"] is not None:
             invalid_levels = set(kwargs["denoise_levels"]) - self.VALID_DENOISE_LEVELS
             if invalid_levels:
                 msg = f"Invalid denoise_levels: {invalid_levels}"
                 raise PreferenceValidationError(msg)
 
-        if "sharpen_levels" in kwargs:
+        if "sharpen_levels" in kwargs and kwargs["sharpen_levels"] is not None:
             invalid_levels = set(kwargs["sharpen_levels"]) - self.VALID_DENOISE_LEVELS
             if invalid_levels:
                 msg = f"Invalid sharpen_levels: {invalid_levels}"
