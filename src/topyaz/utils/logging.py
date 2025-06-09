@@ -5,6 +5,7 @@ Simplified logging setup for topyaz.
 """
 
 import sys
+
 from loguru import logger
 
 

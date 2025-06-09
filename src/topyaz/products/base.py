@@ -415,7 +415,7 @@ class TopazProduct(ABC):
 
                 logger.info(f"Successfully processed {input_path} -> {final_output_path} in {execution_time:.2f}s")
 
-                result = ProcessingResult(
+                return ProcessingResult(
                     success=True,
                     input_path=input_path,
                     output_path=final_output_path,
@@ -427,8 +427,6 @@ class TopazProduct(ABC):
                     file_size_after=file_size_after,
                     additional_info=parsed_info,
                 )
-
-                return result
 
             except Exception as e:
                 logger.error(f"Error processing {input_path} with {self.product_name}: {e}")

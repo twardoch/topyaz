@@ -550,7 +550,8 @@ class VideoAI(MacOSTopazProduct):
         VideoAI doesn't use temporary directories, so this method is not used.
         It's implemented to satisfy the abstract base class requirement.
         """
-        raise NotImplementedError("VideoAI uses direct output writing, not temp directories")
+        msg = "VideoAI uses direct output writing, not temp directories"
+        raise NotImplementedError(msg)
 
     def process(self, input_path: Path | str, output_path: Path | str | None = None, **kwargs):
         """
