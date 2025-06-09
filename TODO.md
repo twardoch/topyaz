@@ -1,46 +1,28 @@
-Here are the KB sizes of the files: 
+python -m topyaz photo testdata/poster.jpg --verbose
 
-4	./topyaz/__init__.py
-4	./topyaz/__main__.py
-4	./topyaz/__version__.py
-4	./topyaz/core/__init__.py
-4	./topyaz/execution/__init__.py
-4	./topyaz/execution/base.py
-4	./topyaz/products/__init__.py
-4	./topyaz/system/__init__.py
-4	./topyaz/utils/__init__.py
-4	./topyaz/utils/logging.py
-8	./topyaz/core/errors.py
-8	./topyaz/core/types.py
-8	./topyaz/execution/local.py
-12	./topyaz/core/config.py
-12	./topyaz/system/environment.py
-12	./topyaz/system/gpu.py
-12	./topyaz/system/memory.py
-12	./topyaz/system/preferences.py
-12	./topyaz/utils/validation.py
-16	./topyaz/products/gigapixel.py
-16	./topyaz/system/paths.py
-20	./topyaz/cli.py
-20	./topyaz/products/base.py
-20	./topyaz/system/photo_ai_prefs.py
-24	./topyaz/products/video_ai.py
-28	./topyaz/products/photo_ai.py
-
-The last 5 are too complex. 
-
-- Analyze the entire codebase (llms.txt has a snapshot)
-- In `PLAN.md` write a detailed refactoring plan/spec (suitable and sufficient for a junior dev who doesn't know the codebase to perform the refactoring)
-- Move the `products` code into separate folders, one for gigapixel, one for photo_ai, one for video_ai. In there make a nicely organized codebase for each product
-- Consider what code should shared, unify that into shared code
-- Improve handling on Windows
-- Reduce cognitive load
-- Move code into dedicated pieces
-- Document each construct (function, class, method, module) and include `- Used in:`
-- Think whether any given piece of code is necessary or an unnecessary complication. Simplify the unnecessary complications. 
-- `cli.py` must be simpler. It shouldn't contain complicated per-product logic. It really should just be a CLI class with methods that accept parameters (because Fire CLI works so), and then these should be calling Topaz-product-specific code elsewhere. The logic should not be in cli.py
-
-
-
-
-You may offload some of the code inside the methods from `cli.py` to dedicated locations, so that `cli.py` really is just the CLI interface, but no logic. But the methods in `cli.py` must retain the full explicit signatures and docstrings! 
+2025-06-10 01:44:55 | INFO     | topyaz.utils.logging:setup_logging:27 - Logging configured at DEBUG level.
+2025-06-10 01:44:55 | INFO     | topyaz.cli:__init__:71 - Initializing topyaz wrapper
+2025-06-10 01:44:55 | DEBUG    | topyaz.core.config:_load_config:138 - Config file not found: /Users/adam/.topyaz/_config.yaml
+2025-06-10 01:44:55 | INFO     | topyaz.cli:__init__:94 - Using local execution
+2025-06-10 01:44:55 | INFO     | topyaz.cli:__init__:105 - topyaz wrapper initialized successfully
+2025-06-10 01:44:55 | INFO     | topyaz.cli:photo:402 - Processing testdata/poster.jpg with Photo AI
+2025-06-10 01:44:55 | INFO     | topyaz.system.preferences:backup:187 - Created preference backup: 4cd1dc7e-4bf6-4be5-8bc3-ac51915cb143
+2025-06-10 01:44:55 | INFO     | topyaz.system.preferences:backup:187 - Created preference backup: 90291197-bb49-40dc-bb88-64aac5f14b7a
+2025-06-10 01:44:55 | DEBUG    | topyaz.system.preferences:read_preferences:110 - Successfully read preferences from /Users/adam/Library/Preferences/com.topazlabs.Topaz Photo AI.plist
+2025-06-10 01:44:55 | DEBUG    | topyaz.products.photo_ai.preferences:validate_preferences:126 - Preferences validation passed
+2025-06-10 01:44:55 | DEBUG    | topyaz.system.preferences:write_preferences:144 - Successfully wrote preferences to /Users/adam/Library/Preferences/com.topazlabs.Topaz Photo AI.plist
+2025-06-10 01:44:55 | INFO     | topyaz.products.photo_ai.preferences:update_autopilot_settings:228 - Updated Photo AI autopilot settings
+2025-06-10 01:44:55 | INFO     | topyaz.products.photo_ai.api:_process_with_preferences:130 - Applied enhanced autopilot settings to Photo AI preferences
+2025-06-10 01:44:55 | DEBUG    | topyaz.system.paths:validate_input_path:136 - Validated input path: /Users/adam/Developer/vcs/github.twardoch/pub/topyaz/testdata/poster.jpg
+2025-06-10 01:44:55 | WARNING  | topyaz.products.photo_ai.params:validate_params:50 - Preferences system not available - skipping autopilot parameter validation
+2025-06-10 01:44:55 | DEBUG    | topyaz.products.base:find_executable:172 - Found Topaz Photo AI at: /Applications/Topaz Photo AI.app/Contents/Resources/bin/tpai
+2025-06-10 01:44:55 | INFO     | topyaz.products.base:process:360 - Processing testdata/poster.jpg with Topaz Photo AI
+2025-06-10 01:44:55 | DEBUG    | topyaz.execution.local:execute:72 - Executing locally: /Applications/Topaz Photo AI.app/Contents/Resources/bin/tpai --cli /Users/adam/Developer/vcs/github.twardoch/pub/topyaz/testdata/poster.jpg -o /private/var/folders/05/clcynl0509ldxltl599hhhx40000gn/T/topyaz__photo_ai_tvcfoqbo --verbose
+2025-06-10 01:44:55 | ERROR    | topyaz.execution.local:execute:121 - Command execution failed: subprocess.run() got multiple values for keyword argument 'check'
+2025-06-10 01:44:55 | ERROR    | topyaz.products.base:process:443 - Error processing testdata/poster.jpg with Topaz Photo AI: Command execution failed: subprocess.run() got multiple values for keyword argument 'check'
+2025-06-10 01:44:55 | INFO     | topyaz.system.preferences:restore:226 - Restored preferences from backup: 90291197-bb49-40dc-bb88-64aac5f14b7a
+2025-06-10 01:44:55 | DEBUG    | topyaz.system.preferences:_cleanup_backup:248 - Cleaned up backup file: /var/folders/05/clcynl0509ldxltl599hhhx40000gn/T/topyaz_backups/com.topazlabs.Topaz Photo AI.plist_90291197-bb49-40dc-bb88-64aac5f14b7a.bak
+2025-06-10 01:44:55 | INFO     | topyaz.products.photo_ai.api:_process_with_preferences:134 - Restored original Photo AI preferences
+2025-06-10 01:44:55 | INFO     | topyaz.system.preferences:restore:226 - Restored preferences from backup: 4cd1dc7e-4bf6-4be5-8bc3-ac51915cb143
+2025-06-10 01:44:55 | DEBUG    | topyaz.system.preferences:_cleanup_backup:248 - Cleaned up backup file: /var/folders/05/clcynl0509ldxltl599hhhx40000gn/T/topyaz_backups/com.topazlabs.Topaz Photo AI.plist_4cd1dc7e-4bf6-4be5-8bc3-ac51915cb143.bak
+False
