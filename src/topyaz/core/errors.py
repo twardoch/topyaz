@@ -48,7 +48,7 @@ class AuthenticationError(TopazError):
     - topyaz/__init__.py
     - topyaz/core/__init__.py
     - topyaz/execution/remote.py
-    - topyaz/products/video_ai.py
+    - topyaz/products/_video_ai.py
     """
 
     pass
@@ -98,7 +98,7 @@ class ProcessingError(TopazError):
     - topyaz/execution/local.py
     - topyaz/execution/remote.py
     - topyaz/products/base.py
-    - topyaz/products/photo_ai.py
+    - topyaz/products/_photo_ai.py
     """
 
     pass
@@ -122,9 +122,9 @@ class ValidationError(TopazError):
     - topyaz/__init__.py
     - topyaz/core/__init__.py
     - topyaz/products/base.py
-    - topyaz/products/gigapixel.py
-    - topyaz/products/photo_ai.py
-    - topyaz/products/video_ai.py
+    - topyaz/products/_gigapixel.py
+    - topyaz/products/_photo_ai.py
+    - topyaz/products/_video_ai.py
     - topyaz/system/paths.py
     """
 

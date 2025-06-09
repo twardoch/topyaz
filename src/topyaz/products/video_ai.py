@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# this_file: src/topyaz/products/video_ai.py
+# this_file: src/topyaz/products/_video_ai.py
 """
 Topaz Video AI implementation for topyaz.
 
@@ -39,8 +39,8 @@ class VideoAI(MacOSTopazProduct):
         Initialize Video AI instance.
 
         Args:
-            executor: Command executor for running operations
-            options: Processing options and configuration
+            executor: Command _executor for running operations
+            options: Processing _options and configuration
 
         """
         super().__init__(executor, options, Product.VIDEO_AI)
@@ -119,7 +119,7 @@ class VideoAI(MacOSTopazProduct):
             else:
                 # Linux fallback
                 model_dir = "/opt/video-ai/models"
-                user_data_dir = str(Path.home() / ".config/topaz-video-ai/models")
+                user_data_dir = str(Path.home() / "._config/topaz-video-ai/models")
 
             # Set environment variables
             os.environ["TVAI_MODEL_DIR"] = model_dir
@@ -195,7 +195,7 @@ class VideoAI(MacOSTopazProduct):
         scale = kwargs.get("scale", 2)
         fps = kwargs.get("fps")
         codec = kwargs.get("codec", "hevc_videotoolbox")
-        quality = kwargs.get("quality", 18)
+        quality = kwargs.get("quality_output", 18)
         denoise = kwargs.get("denoise")
         details = kwargs.get("details")
         halo = kwargs.get("halo")
@@ -275,7 +275,7 @@ class VideoAI(MacOSTopazProduct):
             msg = f"FPS must be between 1 and 240, got {fps}"
             raise ValidationError(msg)
 
-        # Validate quality (CRF value)
+        # Validate quality_output (CRF value)
         if not (1 <= quality <= 51):
             msg = f"Quality must be between 1 and 51, got {quality}"
             raise ValidationError(msg)
@@ -319,10 +319,10 @@ class VideoAI(MacOSTopazProduct):
 
     def build_command(self, input_path: Path, output_path: Path, **kwargs) -> CommandList:
         """
-        Build Video AI command line with Topaz AI filters and high-quality encoding.
+        Build Video AI command line with Topaz AI filters and high-quality_output encoding.
 
         Combines Topaz Video AI filters (tvai_up, tvai_fi, tvai_stb) with
-        high-quality H.265 encoding settings as specified in TODO.
+        high-quality_output H.265 encoding settings as specified in TODO.
 
         Args:
             input_path: Input video file path
@@ -348,7 +348,7 @@ class VideoAI(MacOSTopazProduct):
         interpolate = kwargs.get("interpolate", False)
         device = kwargs.get("device", 0)
 
-        # Build base command with high-quality settings
+        # Build base command with high-quality_output settings
         cmd = [str(executable)]
 
         # Add ffmpeg flags
@@ -401,7 +401,7 @@ class VideoAI(MacOSTopazProduct):
         if filters:
             cmd.extend(["-vf", ",".join(filters)])
 
-        # High-quality encoding settings (adapted for TVAI's ffmpeg and macOS)
+        # High-quality_output encoding settings (adapted for TVAI's ffmpeg and macOS)
         if platform.system() == "Darwin":
             # Use VideoToolbox encoder on macOS (compatible with TVAI)
             cmd.extend(["-c:v", "hevc_videotoolbox"])
@@ -409,7 +409,7 @@ class VideoAI(MacOSTopazProduct):
             cmd.extend(["-pix_fmt", "yuv420p"])
             cmd.extend(["-allow_sw", "1"])
             cmd.extend(["-tag:v", "hvc1"])
-            # Try to set quality equivalent to CRF 18
+            # Try to set quality_output equivalent to CRF 18
             cmd.extend(["-global_quality", "18"])
         else:
             # Fallback to libx265 for other platforms
@@ -520,7 +520,7 @@ class VideoAI(MacOSTopazProduct):
         elif "prob" in model.lower():
             model_multiplier = 1.2  # More complex models
         elif "ahq" in model.lower():
-            model_multiplier = 1.1  # High quality models
+            model_multiplier = 1.1  # High quality_output models
         else:
             model_multiplier = 1.0  # Default
 
@@ -543,7 +543,7 @@ class VideoAI(MacOSTopazProduct):
 
     def _get_output_suffix(self) -> str:
         """Get suffix to add to output filenames."""
-        return "_video_ai"
+        return "_iVideoAI"
 
     def _find_output_file(self, temp_dir: Path, input_path: Path) -> Path:
         """

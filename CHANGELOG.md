@@ -34,9 +34,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 #### ✅ **Phase 1d: Product Implementations** (4/4 COMPLETED)
 
 - `products/base.py`: Abstract product interfaces with TopazProduct and MacOSTopazProduct base classes
-- `products/gigapixel.py`: Gigapixel AI implementation with Pro license validation and all CLI parameters
-- `products/video_ai.py`: Video AI implementation with FFmpeg integration and environment variable setup
-- `products/photo_ai.py`: Photo AI implementation with intelligent 450-image batch limit handling
+- `products/_gigapixel.py`: Gigapixel AI implementation with Pro license validation and all CLI parameters
+- `products/_video_ai.py`: Video AI implementation with FFmpeg integration and environment variable setup
+- `products/_photo_ai.py`: Photo AI implementation with intelligent 450-image batch limit handling
 
 #### ✅ **Phase 1e: Integration** (2/2 COMPLETED)
 
@@ -68,7 +68,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - **Critical Issue #1**: Fixed Gigapixel AI executable not found error
 
   - Updated `_find_executable` function with correct macOS application paths
-  - Gigapixel AI now correctly found at `/Applications/Topaz Gigapixel AI.app/Contents/Resources/bin/gigapixel`
+  - Gigapixel AI now correctly found at `/Applications/Topaz Gigapixel AI.app/Contents/Resources/bin/_gigapixel`
   - Photo AI now correctly found at `/Applications/Topaz Photo AI.app/Contents/Resources/bin/tpai`
   - Video AI now correctly found at `/Applications/Topaz Video AI.app/Contents/MacOS/ffmpeg`
 

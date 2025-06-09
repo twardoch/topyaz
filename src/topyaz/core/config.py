@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# this_file: src/topyaz/core/config.py
+# this_file: src/topyaz/core/_config.py
 """
 Configuration management for topyaz.
 
@@ -25,13 +25,13 @@ class Config:
 
     Configuration is loaded from:
     1. Default values (hardcoded)
-    2. System config file (~/.topyaz/config.yaml)
-    3. User-specified config file
+    2. System _config file (~/.topyaz/_config.yaml)
+    3. User-specified _config file
     4. Environment variables (TOPYAZ_* prefix)
 
     Configuration keys can be accessed using dot notation:
-        config.get("video.default_model")
-        config.get("defaults.output_dir", "~/processed")
+        _config.get("video.default_model")
+        _config.get("defaults.output_dir", "~/processed")
 
     Used in:
     - topyaz/cli.py
@@ -53,12 +53,12 @@ class Config:
             "default_quality": 18,
             "device": 0,
         },
-        "gigapixel": {
+        "_gigapixel": {
             "default_model": "std",
             "default_format": "preserve",
             "default_scale": 2,
             "parallel_read": 4,
-            "quality": 95,
+            "quality_output": 95,
         },
         "photo": {
             "default_format": "preserve",
@@ -72,16 +72,16 @@ class Config:
             "keepalive_interval": 60,
         },
         "paths": {
-            "gigapixel": {
+            "_gigapixel": {
                 "macos": [
-                    "/Applications/Topaz Gigapixel AI.app/Contents/Resources/bin/gigapixel",
+                    "/Applications/Topaz Gigapixel AI.app/Contents/Resources/bin/_gigapixel",
                     "/Applications/Topaz Gigapixel AI.app/Contents/MacOS/Topaz Gigapixel AI",
                 ],
                 "windows": [
-                    "C:\\Program Files\\Topaz Labs LLC\\Topaz Gigapixel AI\\bin\\gigapixel.exe",
+                    "C:\\Program Files\\Topaz Labs LLC\\Topaz Gigapixel AI\\bin\\_gigapixel.exe",
                 ],
             },
-            "video_ai": {
+            "_video_ai": {
                 "macos": [
                     "/Applications/Topaz Video AI.app/Contents/MacOS/ffmpeg",
                 ],
@@ -89,7 +89,7 @@ class Config:
                     "C:\\Program Files\\Topaz Labs LLC\\Topaz Video AI\\ffmpeg.exe",
                 ],
             },
-            "photo_ai": {
+            "_photo_ai": {
                 "macos": [
                     "/Applications/Topaz Photo AI.app/Contents/Resources/bin/tpai",
                     "/Applications/Topaz Photo AI.app/Contents/MacOS/Topaz Photo AI",
@@ -107,10 +107,10 @@ class Config:
 
         Args:
             config_file: Optional path to configuration file.
-                        If not provided, uses ~/.topyaz/config.yaml
+                        If not provided, uses ~/.topyaz/_config.yaml
 
         """
-        self.config_file = config_file or Path.home() / ".topyaz" / "config.yaml"
+        self.config_file = config_file or Path.home() / ".topyaz" / "_config.yaml"
         self.config = self._load_config()
         self._load_env_vars()
 
@@ -122,23 +122,23 @@ class Config:
             Merged configuration dictionary
 
         """
-        # Start with default config
+        # Start with default _config
         config = self._deep_copy_dict(self.DEFAULT_CONFIG)
 
-        # Load from config file if it exists
+        # Load from _config file if it exists
         if self.config_file.exists():
             try:
                 with open(self.config_file) as f:
                     user_config = yaml.safe_load(f) or {}
 
-                # Merge user config into defaults
+                # Merge user _config into defaults
                 config = self._merge_configs(config, user_config)
                 logger.debug(f"Loaded configuration from {self.config_file}")
 
             except yaml.YAMLError as e:
-                logger.warning(f"Failed to parse config file {self.config_file}: {e}")
+                logger.warning(f"Failed to parse _config file {self.config_file}: {e}")
             except Exception as e:
-                logger.warning(f"Failed to load config from {self.config_file}: {e}")
+                logger.warning(f"Failed to load _config from {self.config_file}: {e}")
         else:
             logger.debug(f"Config file not found: {self.config_file}")
 
@@ -171,7 +171,7 @@ class Config:
 
             # Set the configuration value
             self._set_nested(config_key, parsed_value)
-            logger.debug(f"Set config from env: {config_key} = {parsed_value}")
+            logger.debug(f"Set _config from env: {config_key} = {parsed_value}")
 
     def _parse_env_value(self, value: str) -> Any:
         """
@@ -257,8 +257,8 @@ class Config:
             Configuration value or default
 
         Examples:
-            config.get("video.default_model")  # "amq-13"
-            config.get("missing.key", "default")  # "default"
+            _config.get("video.default_model")  # "amq-13"
+            _config.get("missing.key", "default")  # "default"
 
         """
         keys = key.split(".")
@@ -304,14 +304,14 @@ class Config:
 
         """
         self._set_nested(key, value)
-        logger.debug(f"Set config: {key} = {value}")
+        logger.debug(f"Set _config: {key} = {value}")
 
     def save(self, path: Path | None = None) -> None:
         """
         Save current configuration to file.
 
         Args:
-            path: Path to save to (defaults to original config file)
+            path: Path to save to (defaults to original _config file)
 
         """
         save_path = path or self.config_file
@@ -330,7 +330,7 @@ class Config:
         Get executable paths for a specific product.
 
         Args:
-            product: Product name (gigapixel, video_ai, photo_ai)
+            product: Product name (_gigapixel, _video_ai, _photo_ai)
             platform: Platform name (macos, windows). Auto-detected if None.
 
         Returns:

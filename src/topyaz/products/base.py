@@ -8,9 +8,9 @@ defining common functionality and ensuring consistent implementation across
 all supported products.
 
 Used in:
-- topyaz/products/gigapixel.py
-- topyaz/products/photo_ai.py
-- topyaz/products/video_ai.py
+- topyaz/products/_gigapixel.py
+- topyaz/products/_photo_ai.py
+- topyaz/products/_video_ai.py
 """
 
 import platform
@@ -48,14 +48,14 @@ class TopazProduct(ABC):
         Initialize product instance.
 
         Args:
-            executor: Command executor for running operations
-            options: Processing options and configuration
+            executor: Command _executor for running operations
+            options: Processing _options and configuration
             product_type: Type of product (from Product enum)
 
         Used in:
-        - topyaz/products/gigapixel.py
-        - topyaz/products/photo_ai.py
-        - topyaz/products/video_ai.py
+        - topyaz/products/_gigapixel.py
+        - topyaz/products/_photo_ai.py
+        - topyaz/products/_video_ai.py
         """
         self.executor = executor
         self.options = options
@@ -195,9 +195,9 @@ class TopazProduct(ABC):
             ExecutableNotFoundError: If executable cannot be found
 
         Used in:
-        - topyaz/products/gigapixel.py
-        - topyaz/products/photo_ai.py
-        - topyaz/products/video_ai.py
+        - topyaz/products/_gigapixel.py
+        - topyaz/products/_photo_ai.py
+        - topyaz/products/_video_ai.py
         """
         executable = self.find_executable()
         if not executable:
@@ -274,7 +274,7 @@ class TopazProduct(ABC):
 
     def prepare_output_path(self, input_path: Path, output_path: Path | None = None) -> Path:
         """
-        Prepare output path based on input and options.
+        Prepare output path based on input and _options.
 
         Args:
             input_path: Input file path
@@ -384,9 +384,19 @@ class TopazProduct(ABC):
 
                 # Check if processing was successful
                 if exit_code != 0:
-                    error_msg = f"{self.product_name} processing failed (exit code {exit_code})"
-                    if stderr:
-                        error_msg += f": {stderr}"
+                    # Parse output for additional error information
+                    parsed_info = self.parse_output(stdout, stderr)
+
+                    # Create more specific error message
+                    if parsed_info.get("licensing_error"):
+                        error_msg = parsed_info.get("user_message", "Licensing error detected")
+                    elif parsed_info.get("error_type"):
+                        error_msg = f"{self.product_name} processing failed: {parsed_info.get('error_type')}"
+                    else:
+                        error_msg = f"{self.product_name} processing failed (exit code {exit_code})"
+                        if stderr:
+                            error_msg += f": {stderr}"
+
                     return ProcessingResult(
                         success=False,
                         input_path=input_path,
@@ -398,6 +408,7 @@ class TopazProduct(ABC):
                         file_size_before=file_size_before,
                         file_size_after=0,
                         error_message=error_msg,
+                        additional_info=parsed_info,
                     )
 
                 # Find the generated file using subclass-specific logic
@@ -477,9 +488,9 @@ class MacOSTopazProduct(TopazProduct):
 
     Used in:
     - topyaz/products/__init__.py
-    - topyaz/products/gigapixel.py
-    - topyaz/products/photo_ai.py
-    - topyaz/products/video_ai.py
+    - topyaz/products/_gigapixel.py
+    - topyaz/products/_photo_ai.py
+    - topyaz/products/_video_ai.py
     """
 
     @property
@@ -546,8 +557,8 @@ def create_product(product_type: Product, executor: CommandExecutor, options: Pr
 
     Args:
         product_type: Type of product to create
-        executor: Command executor
-        options: Processing options
+        executor: Command _executor
+        options: Processing _options
 
     Returns:
         Product instance

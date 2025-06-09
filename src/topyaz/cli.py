@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 # this_file: src/topyaz/cli.py
 """
 Command-line interface for topyaz.
@@ -8,6 +8,7 @@ components into a unified interface compatible with the original TopyazCLI.
 
 """
 
+from dataclasses import asdict
 from pathlib import Path
 from typing import Any
 
@@ -40,39 +41,39 @@ class TopyazCLI:
 
     def __init__(
         self,
-        verbose: bool = True,
-        dry_run: bool = False,
-        timeout: int = 3600,
-        parallel_jobs: int = 1,
         output_dir: str | None = None,
-        preserve_structure: bool = True,
         backup_originals: bool = False,
+        preserve_structure: bool = True,
         remote_host: str | None = None,
         remote_user: str | None = None,
         ssh_key: str | None = None,
         ssh_port: int = 22,
         connection_timeout: int = 30,
         config_file: str | None = None,
+        parallel_jobs: int = 1,
+        dry_run: bool = False,
+        timeout: int = 3600,
+        verbose: bool = False,
         **kwargs,
     ):
         """
         Initialize topyaz wrapper.
 
         Args:
-            verbose: Enable verbose logging
-            dry_run: Enable dry run mode (don't actually process)
-            timeout: Command timeout in seconds
-            parallel_jobs: Number of parallel jobs (not implemented yet)
             output_dir: Default output directory
-            preserve_structure: Preserve directory structure in output
             backup_originals: Backup original files before processing
+            preserve_structure: Preserve directory structure in output
             remote_host: Remote host for SSH execution
             remote_user: Remote user for SSH
             ssh_key: SSH key file path
             ssh_port: SSH port number
             connection_timeout: SSH connection timeout
             config_file: Configuration file path
-            **kwargs: Additional configuration options
+            parallel_jobs: Number of parallel jobs (not implemented yet)
+            dry_run: Enable dry run mode (don't actually process)
+            timeout: Command timeout in seconds
+            verbose: Enable verbose logging
+            **kwargs: Additional configuration _options
 
         """
         # Set up logging first
@@ -80,8 +81,8 @@ class TopyazCLI:
 
         logger.info("Initializing topyaz wrapper")
 
-        # Parse options into data classes
-        self.options = ProcessingOptions(
+        # Parse _options into data classes
+        self._options = ProcessingOptions(
             verbose=verbose,
             dry_run=dry_run,
             timeout=timeout,
@@ -91,7 +92,7 @@ class TopyazCLI:
             backup_originals=backup_originals,
         )
 
-        self.remote_options = RemoteOptions(
+        self._remote_options = RemoteOptions(
             host=remote_host,
             user=remote_user,
             ssh_key=Path(ssh_key) if ssh_key else None,
@@ -101,53 +102,53 @@ class TopyazCLI:
 
         # Initialize configuration
         config_path = Path(config_file) if config_file else None
-        self.config = Config(config_path)
+        self._config = Config(config_path)
 
         # Initialize system components
-        self.env_validator = EnvironmentValidator()
-        self.gpu_manager = GPUManager()
-        self.memory_manager = MemoryManager()
+        self._env_validator = EnvironmentValidator()
+        self._gpu_manager = GPUManager()
+        self._memory_manager = MemoryManager()
 
-        # Set up executor
-        if self.remote_options.host:
-            logger.info(f"Using remote execution: {self.remote_options.user}@{self.remote_options.host}")
-            self.executor = RemoteExecutor(self.remote_options)
+        # Set up _executor
+        if self._remote_options.host:
+            logger.info(f"Using remote execution: {self._remote_options.user}@{self._remote_options.host}")
+            self._executor = RemoteExecutor(self._remote_options)
         else:
             logger.info("Using local execution")
             from topyaz.execution.base import ExecutorContext
 
-            context = ExecutorContext(timeout=self.options.timeout, dry_run=self.options.dry_run)
-            self.executor = LocalExecutor(context)
+            context = ExecutorContext(timeout=self._options.timeout, dry_run=self._options.dry_run)
+            self._executor = LocalExecutor(context)
 
         # Initialize products (lazy loading)
-        self._gigapixel: GigapixelAI | None = None
-        self._video_ai: VideoAI | None = None
-        self._photo_ai: PhotoAI | None = None
+        self._iGigapixelAI: GigapixelAI | None = None
+        self._iVideoAI: VideoAI | None = None
+        self._iPhotoAI: PhotoAI | None = None
 
         logger.info("topyaz wrapper initialized successfully")
 
     @property
-    def gigapixel(self) -> GigapixelAI:
+    def _gigapixel(self) -> GigapixelAI:
         """Get Gigapixel AI instance (lazy loaded)."""
-        if self._gigapixel is None:
-            self._gigapixel = GigapixelAI(self.executor, self.options)
-        return self._gigapixel
+        if self._iGigapixelAI is None:
+            self._iGigapixelAI = GigapixelAI(self._executor, self._options)
+        return self._iGigapixelAI
 
     @property
-    def video_ai(self) -> VideoAI:
+    def _video_ai(self) -> VideoAI:
         """Get Video AI instance (lazy loaded)."""
-        if self._video_ai is None:
-            self._video_ai = VideoAI(self.executor, self.options)
-        return self._video_ai
+        if self._iVideoAI is None:
+            self._iVideoAI = VideoAI(self._executor, self._options)
+        return self._iVideoAI
 
     @property
-    def photo_ai(self) -> PhotoAI:
+    def _photo_ai(self) -> PhotoAI:
         """Get Photo AI instance (lazy loaded)."""
-        if self._photo_ai is None:
-            self._photo_ai = PhotoAI(self.executor, self.options)
-        return self._photo_ai
+        if self._iPhotoAI is None:
+            self._iPhotoAI = PhotoAI(self._executor, self._options)
+        return self._iPhotoAI
 
-    def gp(
+    def giga(
         self,
         input_path: str,
         model: str = "std",
@@ -161,8 +162,8 @@ class TopyazCLI:
         prompt: str | None = None,
         face_recovery: int | None = None,
         face_recovery_version: int = 2,
-        format: str = "preserve",
-        quality: int = 95,
+        format_output: str = "preserve",
+        quality_output: int = 95,
         bit_depth: int = 0,
         parallel_read: int = 1,
         output: str | None = None,
@@ -184,8 +185,8 @@ class TopyazCLI:
             prompt: Text prompt for generative models
             face_recovery: Face recovery strength (1-100)
             face_recovery_version: Face recovery version (1 or 2)
-            format: Output format (preserve, jpg, png, tiff)
-            quality: JPEG quality (1-100)
+            format_output: Output format (preserve, jpg, png, tiff)
+            quality_output: JPEG quality (1-100)
             bit_depth: Output bit depth (0, 8, 16)
             parallel_read: Parallel file reading (1-10)
             output: Output path
@@ -198,7 +199,7 @@ class TopyazCLI:
         try:
             logger.info(f"Processing {input_path} with Gigapixel AI")
 
-            result = self.gigapixel.process(
+            result = self._gigapixel.process(
                 input_path=input_path,
                 output_path=output,
                 model=model,
@@ -212,14 +213,35 @@ class TopyazCLI:
                 prompt=prompt,
                 face_recovery=face_recovery,
                 face_recovery_version=face_recovery_version,
-                format=format,
-                quality=quality,
+                format=format_output,
+                quality=quality_output,
                 bit_depth=bit_depth,
                 parallel_read=parallel_read,
                 **kwargs,
             )
 
-            return result.success
+            if result.success:
+                logger.info(f"Successfully processed {input_path} -> {result.output_path}")
+                return True
+            else:
+                # Display error information to user
+                if result.error_message:
+                    logger.error(f"Gigapixel AI processing failed: {result.error_message}")
+                else:
+                    logger.error("Gigapixel AI processing failed with unknown error")
+
+                # Show additional error details if available
+                if result.stderr and result.stderr.strip():
+                    logger.error(f"Error details: {result.stderr.strip()}")
+                elif result.additional_info and result.additional_info.get("licensing_error"):
+                    # Enhanced licensing error message from parse_output
+                    logger.error(result.additional_info.get("user_message", "Licensing error detected"))
+                elif result.stdout and "False" in result.stdout:
+                    # Fallback licensing issue pattern
+                    logger.error("This appears to be a licensing issue. Gigapixel AI CLI requires a Pro license.")
+                    logger.error("Please upgrade your license or use the desktop application instead.")
+
+                return False
 
         except Exception as e:
             logger.error(f"Gigapixel AI processing failed: {e}")
@@ -254,7 +276,7 @@ class TopyazCLI:
             scale: Upscale factor (1-4)
             fps: Target frame rate for interpolation
             codec: Video codec (hevc_videotoolbox, hevc_nvenc, etc.)
-            quality: Video quality/CRF value (1-51)
+            quality: Video quality_output/CRF value (1-51)
             denoise: Denoise strength (0-100)
             details: Detail enhancement (-100 to 100)
             halo: Halo reduction (0-100)
@@ -274,7 +296,7 @@ class TopyazCLI:
         try:
             logger.info(f"Processing {input_path} with Video AI")
 
-            result = self.video_ai.process(
+            result = self._video_ai.process(
                 input_path=input_path,
                 output_path=output,
                 model=model,
@@ -326,8 +348,8 @@ class TopyazCLI:
         Args:
             input_path: Input file or directory path
             autopilot_preset: Autopilot preset to use
-            format: Output format (preserve, jpg, png, tiff, dng)
-            quality: JPEG quality (0-100)
+            format: Output format_output (preserve, jpg, png, tiff, dng)
+            quality: JPEG quality_output (0-100)
             compression: PNG compression (0-10)
             bit_depth: TIFF bit depth (8 or 16)
             tiff_compression: TIFF compression (none, lzw, zip)
@@ -357,7 +379,7 @@ class TopyazCLI:
                 if not output_path_obj:
                     output_path_obj = input_path_obj.parent / f"{input_path_obj.name}_processed"
 
-                results = self.photo_ai.process_batch_directory(
+                results = self._photo_ai.process_batch_directory(
                     input_dir=input_path_obj,
                     output_dir=output_path_obj,
                     autopilot_preset=autopilot_preset,
@@ -381,7 +403,7 @@ class TopyazCLI:
                 return all(result.get("success", False) for result in results)
 
             # Single file processing
-            result = self.photo_ai.process(
+            result = self._photo_ai.process(
                 input_path=input_path,
                 output_path=output,
                 autopilot_preset=autopilot_preset,
@@ -407,7 +429,7 @@ class TopyazCLI:
             logger.error(f"Photo AI processing failed: {e}")
             return False
 
-    def system_info(self) -> dict[str, Any]:
+    def _sysinfo(self) -> dict[str, Any]:
         """
         Get comprehensive system information.
 
@@ -417,21 +439,21 @@ class TopyazCLI:
         """
         try:
             return {
-                "environment": self.env_validator.get_system_info(),
-                "gpu": self.gpu_manager.get_status().to_dict(),
-                "memory": self.memory_manager.get_status(),
+                "environment": self._env_validator.get_system_info(),
+                "gpu": asdict(self._gpu_manager.get_status()),
+                "memory": self._memory_manager.get_status(),
                 "products": {
-                    "gigapixel": self.gigapixel.get_info(),
-                    "video_ai": self.video_ai.get_info(),
-                    "photo_ai": self.photo_ai.get_info(),
+                    "_gigapixel": self._gigapixel.get_info(),
+                    "_video_ai": self._video_ai.get_info(),
+                    "_photo_ai": self._photo_ai.get_info(),
                 },
-                "executor": self.executor.get_info(),
+                "_executor": self._executor.get_info(),
             }
         except Exception as e:
             logger.error(f"Failed to get system info: {e}")
             return {"error": str(e)}
 
-    def validate_environment(self) -> bool:
+    def info(self) -> bool:
         """
         Validate system environment and requirements.
 
@@ -439,8 +461,9 @@ class TopyazCLI:
             True if environment is valid
 
         """
+        logger.info(self._sysinfo())
         try:
-            validation_results = self.env_validator.validate_all(raise_on_error=False)
+            validation_results = self._env_validator.validate_all(raise_on_error=False)
 
             for check, result in validation_results.items():
                 if result:
@@ -454,7 +477,7 @@ class TopyazCLI:
             logger.error(f"Environment validation failed: {e}")
             return False
 
-    def version_info(self) -> dict[str, str]:
+    def version(self) -> dict[str, str]:
         """
         Get version information for all components.
 
@@ -467,9 +490,9 @@ class TopyazCLI:
 
             return {
                 "topyaz": __version__,
-                "gigapixel": self.gigapixel.get_version() or "unknown",
-                "video_ai": self.video_ai.get_version() or "unknown",
-                "photo_ai": self.photo_ai.get_version() or "unknown",
+                "_gigapixel": self._gigapixel.get_version() or "unknown",
+                "_video_ai": self._video_ai.get_version() or "unknown",
+                "_photo_ai": self._photo_ai.get_version() or "unknown",
             }
         except Exception as e:
             logger.error(f"Failed to get version info: {e}")
@@ -478,7 +501,9 @@ class TopyazCLI:
 
 def main():
     """Main entry point for the CLI."""
-    fire.Fire(TopyazCLI)
+    # Pass instance to avoid "command command" duplication
+    cli_instance = TopyazCLI
+    fire.Fire(cli_instance)
 
 
 if __name__ == "__main__":

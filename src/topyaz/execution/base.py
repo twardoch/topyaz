@@ -25,9 +25,9 @@ class CommandExecutor(ABC):
     - topyaz/execution/local.py
     - topyaz/execution/remote.py
     - topyaz/products/base.py
-    - topyaz/products/gigapixel.py
-    - topyaz/products/photo_ai.py
-    - topyaz/products/video_ai.py
+    - topyaz/products/_gigapixel.py
+    - topyaz/products/_photo_ai.py
+    - topyaz/products/_video_ai.py
     """
 
     @abstractmethod
@@ -56,19 +56,19 @@ class CommandExecutor(ABC):
     @abstractmethod
     def is_available(self) -> bool:
         """
-        Check if this executor is available for use.
+        Check if this _executor is available for use.
 
         Returns:
-            True if executor can be used, False otherwise
+            True if _executor can be used, False otherwise
         """
         pass
 
     def get_info(self) -> dict[str, str]:
         """
-        Get information about this executor.
+        Get information about this _executor.
 
         Returns:
-            Dictionary with executor information
+            Dictionary with _executor information
 
         Used in:
         - topyaz/execution/local.py

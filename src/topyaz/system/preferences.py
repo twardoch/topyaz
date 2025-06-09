@@ -8,7 +8,7 @@ preference files and other configuration systems across different platforms.
 
 Used in:
 - src/topyaz/system/photo_ai_prefs.py
-- src/topyaz/products/photo_ai.py
+- src/topyaz/products/_photo_ai.py
 """
 
 import plistlib

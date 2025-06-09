@@ -7,7 +7,7 @@ This module provides comprehensive control over Topaz Photo AI's autopilot
 settings by manipulating the macOS preferences file before CLI execution.
 
 Used in:
-- src/topyaz/products/photo_ai.py
+- src/topyaz/products/_photo_ai.py
 """
 
 import platform

@@ -108,9 +108,9 @@ The topyaz project implements a unified command-line interface for Topaz Labs' A
 
 ### Product Integration (Importance: 95)
 Core business logic integrating Topaz Labs' AI products:
-- Video AI processing capabilities in `topyaz/products/video_ai.py`
+- Video AI processing capabilities in `topyaz/products/_video_ai.py`
 - Gigapixel AI upscaling features in `topyaz/products/gigapixel_ai.py`  
-- Photo AI enhancement tools in `topyaz/products/photo_ai.py`
+- Photo AI enhancement tools in `topyaz/products/_photo_ai.py`
 
 ### Remote Processing Architecture (Importance: 85)
 Remote execution system enabling distributed processing:

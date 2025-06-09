@@ -54,10 +54,10 @@ pip install topyaz
 topyaz video input.mp4 --scale 2 --model amq-13
 
 # Batch upscale images with Gigapixel AI (Pro license required)
-topyaz gp photos/ --scale 4 --model recovery --denoise 40
+topyaz giga photos/ --scale 4 --model recovery --denoise 40
 
 # Enhance photos with Photo AI Autopilot
-topyaz photo raw_photos/ --format jpg --quality 95
+topyaz photo raw_photos/ --format_output jpg --quality_output 95
 
 # Remote processing on a powerful machine
 topyaz video large_video.mp4 --remote-host gpu-server --scale 4
@@ -97,7 +97,7 @@ video:
   default_codec: 'hevc_videotoolbox'
   default_quality: 18
 
-gigapixel:
+_gigapixel:
   default_model: 'std'
   default_format: 'preserve'
   parallel_read: 4
@@ -150,13 +150,13 @@ topyaz video videos/ \
 
 ```bash
 # Standard upscaling
-topyaz gp images/ --scale 4 --model std
+topyaz giga images/ --scale 4 --model std
 
 # Art & CG optimization
-topyaz gp artwork/ --scale 2 --model art --sharpen 30
+topyaz giga artwork/ --scale 2 --model art --sharpen 30
 
 # Generative upscaling with prompts
-topyaz gp photos/ \
+topyaz giga photos/ \
     --model redefine \
     --scale 2 \
     --creativity 4 \
@@ -164,7 +164,7 @@ topyaz gp photos/ \
     --prompt "high resolution portrait photography"
 
 # Face recovery enhancement
-topyaz gp portraits/ \
+topyaz giga portraits/ \
     --scale 2 \
     --model recovery \
     --face-recovery 80 \
@@ -182,11 +182,11 @@ topyaz gp portraits/ \
 
 ```bash
 # Autopilot enhancement
-topyaz photo raw_photos/ --format jpg --quality 95
+topyaz photo raw_photos/ --format_output jpg --quality_output 95
 
-# Custom format conversion
+# Custom format_output conversion
 topyaz photo images/ \
-    --format tiff \
+    --format_output tiff \
     --bit-depth 16 \
     --tiff-compression zip
 
@@ -205,7 +205,7 @@ topyaz video large_file.mp4 \
     --scale 4
 
 # Distributed processing across multiple machines
-topyaz gp large_collection/ \
+topyaz giga large_collection/ \
     --remote-host server1,server2,server3 \
     --parallel-jobs 3 \
     --load-balance
@@ -232,7 +232,7 @@ topyaz diagnose --show-env
 topyaz setup --verify-licenses
 
 # Check Pro license for Gigapixel AI
-topyaz validate --check-gigapixel-pro
+topyaz validate --check-_gigapixel-pro
 ```
 
 **Memory Issues**
@@ -264,7 +264,7 @@ topyaz integrates with popular community tools:
 
 - **[vai-docker](https://github.com/jojje/vai-docker)**: Docker containerization for Video AI
 - **[ComfyUI-TopazVideoAI](https://github.com/sh570655308/ComfyUI-TopazVideoAI)**: ComfyUI workflow integration
-- **[gigapixel-automator](https://github.com/halfSpinDoctor/gigapixel-automator)**: Legacy AppleScript automation
+- **[_gigapixel-automator](https://github.com/halfSpinDoctor/gigapixel-automator)**: Legacy AppleScript automation
 
 ## 📊 Performance
 

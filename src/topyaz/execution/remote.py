@@ -35,14 +35,14 @@ class RemoteExecutor(CommandExecutor):
 
     def __init__(self, remote_options: RemoteOptions, context: ExecutorContext | None = None):
         """
-        Initialize remote executor.
+        Initialize remote _executor.
 
         Args:
             remote_options: Remote connection configuration
             context: Execution context
 
         Raises:
-            RemoteExecutionError: If remote options are invalid
+            RemoteExecutionError: If remote _options are invalid
 
         """
         if not remote_options.host:
@@ -354,7 +354,7 @@ class RemoteExecutor(CommandExecutor):
         return result
 
     def get_info(self) -> dict[str, str]:
-        """Get information about this executor.
+        """Get information about this _executor.
 
         Used in:
         - topyaz/cli.py
@@ -403,10 +403,10 @@ class RemoteConnectionPool:
 
     def get_executor(self, remote_options: RemoteOptions) -> RemoteExecutor:
         """
-        Get an executor from the pool or create a new one.
+        Get an _executor from the pool or create a new one.
 
         Args:
-            remote_options: Remote connection options
+            remote_options: Remote connection _options
 
         Returns:
             RemoteExecutor instance
@@ -420,14 +420,14 @@ class RemoteConnectionPool:
             self._in_use.add(executor)
             return executor
 
-        # Create new executor
+        # Create new _executor
         executor = RemoteExecutor(remote_options)
         self._in_use.add(executor)
         return executor
 
     def return_executor(self, executor: RemoteExecutor) -> None:
         """
-        Return an executor to the pool.
+        Return an _executor to the pool.
 
         Args:
             executor: Executor to return
@@ -473,10 +473,10 @@ _connection_pool = RemoteConnectionPool()
 
 def get_remote_executor(remote_options: RemoteOptions) -> RemoteExecutor:
     """
-    Get a remote executor from the global connection pool.
+    Get a remote _executor from the global connection pool.
 
     Args:
-        remote_options: Remote connection options
+        remote_options: Remote connection _options
 
     Returns:
         RemoteExecutor instance
@@ -489,7 +489,7 @@ def get_remote_executor(remote_options: RemoteOptions) -> RemoteExecutor:
 
 def return_remote_executor(executor: RemoteExecutor) -> None:
     """
-    Return a remote executor to the global connection pool.
+    Return a remote _executor to the global connection pool.
 
     Args:
         executor: Executor to return

@@ -78,7 +78,7 @@ class NvidiaGPUDetector(GPUDetector):
         cmd = [
             "nvidia-smi",
             "--query-gpu=name,memory.total,memory.used,memory.free,utilization.gpu,temperature.gpu,power.draw",
-            "--format=csv,noheader,nounits",
+            "--format_output=csv,noheader,nounits",
         ]
 
         success, stdout, stderr = self._run_command(cmd)
@@ -132,11 +132,11 @@ class AMDGPUDetector(GPUDetector):
         if not success:
             return GPUStatus(available=False, errors=[f"rocm-smi failed: {stderr}"])
 
-        # Parse AMD GPU output (format is more complex than NVIDIA)
+        # Parse AMD GPU output (format_output is more complex than NVIDIA)
         devices = []
         lines = stdout.strip().split("\n")
 
-        # Simple parsing - AMD output format varies
+        # Simple parsing - AMD output format_output varies
         gpu_count = 0
         for line in lines:
             if "GPU" in line and any(keyword in line for keyword in ["Device", "Temperature", "Usage"]):

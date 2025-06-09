@@ -2,7 +2,7 @@
 
 echo "---------- GIGAPIXEL AI ----------"
 echo "$ topyaz gp ./testdata/palms.jpg"
-topyaz gp ./testdata/man.jpg --scale 2
+topyaz giga ./testdata/man.jpg --scale 2
 
 echo "---------- PHOTO AI ----------"
 echo "$ topyaz photo ./testdata/man.jpg --override-autopilot --upscale True --noise False"

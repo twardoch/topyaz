@@ -75,7 +75,7 @@ class MemoryManager:
             op_lower = operation_type.lower()
             if "video" in op_lower:
                 product = Product.VIDEO_AI
-            elif "gigapixel" in op_lower:
+            elif "_gigapixel" in op_lower:
                 product = Product.GIGAPIXEL
             elif "photo" in op_lower:
                 product = Product.PHOTO_AI
@@ -156,7 +156,7 @@ class MemoryManager:
             op_lower = operation_type.lower()
             if "video" in op_lower:
                 memory_per_item = self.MEMORY_PER_ITEM[Product.VIDEO_AI]
-            elif "gigapixel" in op_lower:
+            elif "_gigapixel" in op_lower:
                 memory_per_item = self.MEMORY_PER_ITEM[Product.GIGAPIXEL]
             elif "photo" in op_lower:
                 memory_per_item = self.MEMORY_PER_ITEM[Product.PHOTO_AI]
@@ -278,7 +278,7 @@ class MemoryManager:
             # Product-specific suggestions
             if isinstance(operation_type, Product):
                 if operation_type == Product.VIDEO_AI:
-                    suggestions.append("- Lower output resolution or quality")
+                    suggestions.append("- Lower output resolution or quality_output")
                     suggestions.append("- Process shorter segments")
                 elif operation_type == Product.GIGAPIXEL:
                     suggestions.append("- Process smaller images first")

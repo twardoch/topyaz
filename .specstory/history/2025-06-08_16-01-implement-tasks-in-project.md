@@ -192,43 +192,43 @@ topyazadam@Hamlet topyaz %
 ---
 
 ```bash
-find "/Applications/Topaz Gigapixel AI.app" -name "*gigapixel*" -o -name "*gpai*" -o -name "*.exe" 2>/dev/null
+find "/Applications/Topaz Gigapixel AI.app" -name "*_gigapixel*" -o -name "*gpai*" -o -name "*.exe" 2>/dev/null
 ```
 
 ```
 topyazadam@Hamlet topyaz % find "/Applications/Topaz Gigapixel AI.app" -name "*g
 igapixel*" -o -name "*gpai*find "/Applications/Topaz Gigapixel AI.app" -name "*g
 igapixel*" -o -name "*gpai*" -o -name "*.exe" 2>/dev/null
-/Applications/Topaz Gigapixel AI.app/Contents/Resources/bin/gigapixel
+/Applications/Topaz Gigapixel AI.app/Contents/Resources/bin/_gigapixel
 topyazadam@Hamlet topyaz %
 ```
 
 ---
 
 ```bash
-ls -la "/Applications/Topaz Gigapixel AI.app/Contents/Resources/bin/gigapixel"
+ls -la "/Applications/Topaz Gigapixel AI.app/Contents/Resources/bin/_gigapixel"
 ```
 
 ```
 topyazadam@Hamlet topyaz % ls -la "/Applications/Topaz Gigapixel AI.app/Contents
-/Resources/bin/gigapixel"  ls -la "/Applications/Topaz Gigapixel AI.app/Contents
-/Resources/bin/gigapixel"
+/Resources/bin/_gigapixel"  ls -la "/Applications/Topaz Gigapixel AI.app/Contents
+/Resources/bin/_gigapixel"
 -rwxr-xr-x  1 root  admin  75 May 28 17:58 /Applications/Topaz Gigapixel AI.app/
-Contents/Resources/bin/gigapixel
+Contents/Resources/bin/_gigapixel
 topyazadam@Hamlet topyaz %
 ```
 
 ---
 
 ```bash
-file "/Applications/Topaz Gigapixel AI.app/Contents/Resources/bin/gigapixel"
+file "/Applications/Topaz Gigapixel AI.app/Contents/Resources/bin/_gigapixel"
 ```
 
 ```
 topyazadam@Hamlet topyaz % file "/Applications/Topaz Gigapixel AI.app/Contents/R
-esources/bin/gigapixel"    file "/Applications/Topaz Gigapixel AI.app/Contents/R
-esources/bin/gigapixel"
-/Applications/Topaz Gigapixel AI.app/Contents/Resources/bin/gigapixel: Bourne-Ag
+esources/bin/_gigapixel"    file "/Applications/Topaz Gigapixel AI.app/Contents/R
+esources/bin/_gigapixel"
+/Applications/Topaz Gigapixel AI.app/Contents/Resources/bin/_gigapixel: Bourne-Ag
 ain shell script text executable, ASCII text
 topyazadam@Hamlet topyaz %
 ```
@@ -236,13 +236,13 @@ topyazadam@Hamlet topyaz %
 ---
 
 ```bash
-cat "/Applications/Topaz Gigapixel AI.app/Contents/Resources/bin/gigapixel"
+cat "/Applications/Topaz Gigapixel AI.app/Contents/Resources/bin/_gigapixel"
 ```
 
 ```
 topyazadam@Hamlet topyaz % cat "/Applications/Topaz Gigapixel AI.app/Contents/Re
-sources/bin/gigapixel"     cat "/Applications/Topaz Gigapixel AI.app/Contents/Re
-sources/bin/gigapixel"
+sources/bin/_gigapixel"     cat "/Applications/Topaz Gigapixel AI.app/Contents/Re
+sources/bin/_gigapixel"
 #!/bin/bash
 
 "$(dirname "${0}")/../../MacOS/Topaz Gigapixel AI" "$@" --cli
@@ -303,7 +303,7 @@ Great! Now I understand the issues. Let me analyze what needs to be fixed:
 
 ## Analysis of Issues:
 
-1. **Task 1 (Gigapixel AI executable not found)**: The `_find_executable` function is looking for both `/Applications/Topaz Gigapixel AI.app/Contents/MacOS/gigapixel` (which doesn't exist) and `/Applications/Topaz Gigapixel AI.app/Contents/Resources/bin/gpai` (which doesn't exist). The correct path is `/Applications/Topaz Gigapixel AI.app/Contents/Resources/bin/gigapixel`.
+1. **Task 1 (Gigapixel AI executable not found)**: The `_find_executable` function is looking for both `/Applications/Topaz Gigapixel AI.app/Contents/MacOS/_gigapixel` (which doesn't exist) and `/Applications/Topaz Gigapixel AI.app/Contents/Resources/bin/gpai` (which doesn't exist). The correct path is `/Applications/Topaz Gigapixel AI.app/Contents/Resources/bin/_gigapixel`.
 
 2. **Task 2 (Photo AI invalid argument)**: The command being sent to Photo AI is likely malformed. Looking at the command structure in the `photo` function, the issue seems to be with how boolean parameters are being formatted for the Photo AI CLI.
 
@@ -315,14 +315,14 @@ Let me implement the fixes:
 
 ```diff
               paths = {
-                  "gigapixel": [
--                     "/Applications/Topaz Gigapixel AI.app/Contents/MacOS/gigapixel",
+                  "_gigapixel": [
+-                     "/Applications/Topaz Gigapixel AI.app/Contents/MacOS/_gigapixel",
 -                     "/Applications/Topaz Gigapixel AI.app/Contents/Resources/bin/gpai",
-+                     "/Applications/Topaz Gigapixel AI.app/Contents/Resources/bin/gigapixel",
++                     "/Applications/Topaz Gigapixel AI.app/Contents/Resources/bin/_gigapixel",
 +                     "/Applications/Topaz Gigapixel AI.app/Contents/MacOS/Topaz Gigapixel AI",
                   ],
-                  "video_ai": ["/Applications/Topaz Video AI.app/Contents/MacOS/ffmpeg"],
-                  "photo_ai": [
+                  "_video_ai": ["/Applications/Topaz Video AI.app/Contents/MacOS/ffmpeg"],
+                  "_photo_ai": [
 -                     "/Applications/Topaz Photo AI.app/Contents/MacOS/Topaz Photo AI",
                       "/Applications/Topaz Photo AI.app/Contents/Resources/bin/tpai",
 +                     "/Applications/Topaz Photo AI.app/Contents/MacOS/Topaz Photo AI",
@@ -1067,7 +1067,7 @@ Now let me update the TODO.md file to mark these tasks as completed and add some
 + **Issue**: `_find_executable` function was looking for incorrect paths on macOS.
 + 
 + **Solution**: Updated executable paths to match actual Topaz installation structure:
-+ - Gigapixel AI: `/Applications/Topaz Gigapixel AI.app/Contents/Resources/bin/gigapixel`
++ - Gigapixel AI: `/Applications/Topaz Gigapixel AI.app/Contents/Resources/bin/_gigapixel`
 + - Photo AI: `/Applications/Topaz Photo AI.app/Contents/Resources/bin/tpai`
 + - Video AI: `/Applications/Topaz Video AI.app/Contents/MacOS/ffmpeg`
 + 

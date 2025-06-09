@@ -25,9 +25,9 @@ alwaysApply: false
 
 ### Media-Specific Transformations
 - **File Paths**: 
-  - `topyaz/products/video_ai.py`
+  - `topyaz/products/_video_ai.py`
   - `topyaz/products/gigapixel_ai.py`
-  - `topyaz/products/photo_ai.py`
+  - `topyaz/products/_photo_ai.py`
 - **Importance**: 85
 - Model-specific processing parameter optimization
 - Generative upscaling with AI prompt integration

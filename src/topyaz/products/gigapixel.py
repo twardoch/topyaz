@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# this_file: src/topyaz/products/gigapixel.py
+# this_file: src/topyaz/products/_gigapixel.py
 """
 Topaz Gigapixel AI implementation for topyaz.
 
@@ -26,7 +26,7 @@ class GigapixelAI(MacOSTopazProduct):
     Topaz Gigapixel AI implementation.
 
     Provides image upscaling and enhancement capabilities using Gigapixel AI's
-    various models and processing options.
+    various models and processing _options.
 
     Used in:
     - topyaz/cli.py
@@ -39,8 +39,8 @@ class GigapixelAI(MacOSTopazProduct):
         Initialize Gigapixel AI instance.
 
         Args:
-            executor: Command executor for running operations
-            options: Processing options and configuration
+            executor: Command _executor for running operations
+            options: Processing _options and configuration
 
         """
         super().__init__(executor, options, Product.GIGAPIXEL)
@@ -53,7 +53,7 @@ class GigapixelAI(MacOSTopazProduct):
     @property
     def executable_name(self) -> str:
         """Name of the executable file."""
-        return "gigapixel"
+        return "_gigapixel"
 
     @property
     def app_name(self) -> str:
@@ -63,7 +63,7 @@ class GigapixelAI(MacOSTopazProduct):
     @property
     def app_executable_path(self) -> str:
         """Relative path to executable within app bundle."""
-        return "Contents/Resources/bin/gigapixel"
+        return "Contents/Resources/bin/_gigapixel"
 
     @property
     def supported_formats(self) -> list[str]:
@@ -77,16 +77,16 @@ class GigapixelAI(MacOSTopazProduct):
             return [
                 Path("/Applications/Topaz Gigapixel AI.app/Contents/Resources/bin/gigapixel"),
                 Path("/Applications/Topaz Gigapixel AI.app/Contents/MacOS/Topaz Gigapixel AI"),
-                Path.home() / "Applications/Topaz Gigapixel AI.app/Contents/Resources/bin/gigapixel",
+                Path.home() / "Applications/Topaz Gigapixel AI.app/Contents/Resources/bin/_gigapixel",
             ]
         if platform.system() == "Windows":
             # Windows paths
             return [
-                Path("C:/Program Files/Topaz Labs LLC/Topaz Gigapixel AI/bin/gigapixel.exe"),
-                Path("C:/Program Files (x86)/Topaz Labs LLC/Topaz Gigapixel AI/bin/gigapixel.exe"),
+                Path("C:/Program Files/Topaz Labs LLC/Topaz Gigapixel AI/bin/_gigapixel.exe"),
+                Path("C:/Program Files (x86)/Topaz Labs LLC/Topaz Gigapixel AI/bin/_gigapixel.exe"),
             ]
         # Linux or other platforms
-        return [Path("/usr/local/bin/gigapixel"), Path("/opt/gigapixel/bin/gigapixel")]
+        return [Path("/usr/local/bin/_gigapixel"), Path("/opt/_gigapixel/bin/_gigapixel")]
 
     def validate_params(self, **kwargs) -> None:
         """
@@ -110,8 +110,8 @@ class GigapixelAI(MacOSTopazProduct):
         texture = kwargs.get("texture")
         face_recovery = kwargs.get("face_recovery")
         face_recovery_version = kwargs.get("face_recovery_version", 2)
-        format_param = kwargs.get("format", "preserve")
-        quality = kwargs.get("quality", 95)
+        format_param = kwargs.get("format_output", "preserve")
+        quality = kwargs.get("quality_output", 95)
         bit_depth = kwargs.get("bit_depth", 0)
         parallel_read = kwargs.get("parallel_read", 1)
 
@@ -174,13 +174,13 @@ class GigapixelAI(MacOSTopazProduct):
             msg = f"Face recovery version must be 1 or 2, got {face_recovery_version}"
             raise ValidationError(msg)
 
-        # Validate output format
+        # Validate output format_output
         valid_formats = {"preserve", "jpg", "jpeg", "png", "tif", "tiff"}
         if format_param.lower() not in valid_formats:
-            msg = f"Invalid format '{format_param}'. Valid formats: {', '.join(sorted(valid_formats))}"
+            msg = f"Invalid format_output '{format_param}'. Valid formats: {', '.join(sorted(valid_formats))}"
             raise ValidationError(msg)
 
-        # Validate quality
+        # Validate quality_output
         if not (1 <= quality <= 100):
             msg = f"Quality must be between 1 and 100, got {quality}"
             raise ValidationError(msg)
@@ -257,15 +257,15 @@ class GigapixelAI(MacOSTopazProduct):
         if prompt:
             cmd.extend(["--prompt", prompt])
 
-        # Add output format options
-        format_param = kwargs.get("format", "preserve")
+        # Add output format_output _options
+        format_param = kwargs.get("format_output", "preserve")
         if format_param.lower() != "preserve":
             cmd.extend(["-f", format_param])
 
-        # Add quality for JPEG output
-        quality = kwargs.get("quality", 95)
+        # Add quality_output for JPEG output
+        quality = kwargs.get("quality_output", 95)
         if format_param.lower() in ["jpg", "jpeg"] or format_param.lower() == "preserve":
-            cmd.extend(["--jpeg-quality", str(quality)])
+            cmd.extend(["--jpeg-quality_output", str(quality)])
 
         # Add bit depth
         bit_depth = kwargs.get("bit_depth", 0)
@@ -322,6 +322,16 @@ class GigapixelAI(MacOSTopazProduct):
             # Look for memory usage
             if "Memory used:" in line:
                 info["memory_used"] = line.split("Memory used:")[-1].strip()
+
+        # Check for licensing issues
+        if stdout and ("Gigapixel CLI requires a Pro license" in stdout or stdout.strip().endswith("False")):
+            info["licensing_error"] = True
+            info["error_type"] = "licensing"
+            info["user_message"] = (
+                "Gigapixel AI CLI requires a Pro license. "
+                "Please contact enterprise@topazlabs.com or upgrade your license to use CLI features. "
+                "Alternatively, use the desktop application which works with your current license."
+            )
 
         # Parse any errors from stderr
         if stderr:
@@ -402,7 +412,7 @@ class GigapixelAI(MacOSTopazProduct):
 
     def _get_output_suffix(self) -> str:
         """Get suffix to add to output filenames."""
-        return "_gigapixel"
+        return "_iGigapixelAI"
 
     def _find_output_file(self, temp_dir: Path, input_path: Path) -> Path:
         """Find Gigapixel AI output file in temporary directory."""

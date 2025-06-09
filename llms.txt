@@ -67,9 +67,9 @@ src/
     products/
       __init__.py
       base.py
-      gigapixel.py
-      photo_ai.py
-      video_ai.py
+      _gigapixel.py
+      _photo_ai.py
+      _video_ai.py
     system/
       __init__.py
       environment.py
@@ -200,9 +200,9 @@ alwaysApply: false
 
 ### Media-Specific Transformations
 - **File Paths**: 
-  - `topyaz/products/video_ai.py`
+  - `topyaz/products/_video_ai.py`
   - `topyaz/products/gigapixel_ai.py`
-  - `topyaz/products/photo_ai.py`
+  - `topyaz/products/_photo_ai.py`
 - **Importance**: 85
 - Model-specific processing parameter optimization
 - Generative upscaling with AI prompt integration
@@ -613,7 +613,7 @@ class Config:
             "default_quality": 18,
             "device": 0,
         },
-        "gigapixel": {
+        "_gigapixel": {
             "default_model": "std",
             "default_format": "preserve",
             "default_scale": 2,
@@ -632,16 +632,16 @@ class Config:
             "keepalive_interval": 60,
         },
         "paths": {
-            "gigapixel": {
+            "_gigapixel": {
                 "macos": [
-                    "/Applications/Topaz Gigapixel AI.app/Contents/Resources/bin/gigapixel",
+                    "/Applications/Topaz Gigapixel AI.app/Contents/Resources/bin/_gigapixel",
                     "/Applications/Topaz Gigapixel AI.app/Contents/MacOS/Topaz Gigapixel AI",
                 ],
                 "windows": [
-                    "C:\\Program Files\\Topaz Labs LLC\\Topaz Gigapixel AI\\bin\\gigapixel.exe",
+                    "C:\\Program Files\\Topaz Labs LLC\\Topaz Gigapixel AI\\bin\\_gigapixel.exe",
                 ],
             },
-            "video_ai": {
+            "_video_ai": {
                 "macos": [
                     "/Applications/Topaz Video AI.app/Contents/MacOS/ffmpeg",
                 ],
@@ -649,7 +649,7 @@ class Config:
                     "C:\\Program Files\\Topaz Labs LLC\\Topaz Video AI\\ffmpeg.exe",
                 ],
             },
-            "photo_ai": {
+            "_photo_ai": {
                 "macos": [
                     "/Applications/Topaz Photo AI.app/Contents/Resources/bin/tpai",
                     "/Applications/Topaz Photo AI.app/Contents/MacOS/Topaz Photo AI",
@@ -890,7 +890,7 @@ class Config:
         Get executable paths for a specific product.
 
         Args:
-            product: Product name (gigapixel, video_ai, photo_ai)
+            product: Product name (_gigapixel, _video_ai, _photo_ai)
             platform: Platform name (macos, windows). Auto-detected if None.
 
         Returns:
@@ -968,7 +968,7 @@ class AuthenticationError(TopazError):
     - topyaz/__init__.py
     - topyaz/core/__init__.py
     - topyaz/execution/remote.py
-    - topyaz/products/video_ai.py
+    - topyaz/products/_video_ai.py
     """
 
     pass
@@ -1018,7 +1018,7 @@ class ProcessingError(TopazError):
     - topyaz/execution/local.py
     - topyaz/execution/remote.py
     - topyaz/products/base.py
-    - topyaz/products/photo_ai.py
+    - topyaz/products/_photo_ai.py
     """
 
     pass
@@ -1042,9 +1042,9 @@ class ValidationError(TopazError):
     - topyaz/__init__.py
     - topyaz/core/__init__.py
     - topyaz/products/base.py
-    - topyaz/products/gigapixel.py
-    - topyaz/products/photo_ai.py
-    - topyaz/products/video_ai.py
+    - topyaz/products/_gigapixel.py
+    - topyaz/products/_photo_ai.py
+    - topyaz/products/_video_ai.py
     - topyaz/system/paths.py
     """
 
@@ -1119,9 +1119,9 @@ providing a unified interface for image and video processing.
 """
 
 from topyaz.products.base import MacOSTopazProduct, TopazProduct, create_product
-from topyaz.products.gigapixel import GigapixelAI
-from topyaz.products.photo_ai import PhotoAI
-from topyaz.products.video_ai import VideoAI
+from topyaz.products._gigapixel import GigapixelAI
+from topyaz.products._photo_ai import PhotoAI
+from topyaz.products._video_ai import VideoAI
 
 __all__ = [
     # Product implementations
@@ -1638,7 +1638,7 @@ class MemoryManager:
             op_lower = operation_type.lower()
             if "video" in op_lower:
                 product = Product.VIDEO_AI
-            elif "gigapixel" in op_lower:
+            elif "_gigapixel" in op_lower:
                 product = Product.GIGAPIXEL
             elif "photo" in op_lower:
                 product = Product.PHOTO_AI
@@ -1719,7 +1719,7 @@ class MemoryManager:
             op_lower = operation_type.lower()
             if "video" in op_lower:
                 memory_per_item = self.MEMORY_PER_ITEM[Product.VIDEO_AI]
-            elif "gigapixel" in op_lower:
+            elif "_gigapixel" in op_lower:
                 memory_per_item = self.MEMORY_PER_ITEM[Product.GIGAPIXEL]
             elif "photo" in op_lower:
                 memory_per_item = self.MEMORY_PER_ITEM[Product.PHOTO_AI]
@@ -2376,7 +2376,7 @@ This module provides comprehensive control over Topaz Photo AI's autopilot
 settings by manipulating the macOS preferences file before CLI execution.
 
 Used in:
-- src/topyaz/products/photo_ai.py
+- src/topyaz/products/_photo_ai.py
 """
 
 import platform
@@ -2791,7 +2791,7 @@ preference files and other configuration systems across different platforms.
 
 Used in:
 - src/topyaz/system/photo_ai_prefs.py
-- src/topyaz/products/photo_ai.py
+- src/topyaz/products/_photo_ai.py
 """
 
 import plistlib
@@ -3395,8 +3395,8 @@ python -m pytest
 #!/usr/bin/env bash
 
 echo "---------- GIGAPIXEL AI ----------"
-echo "$ topyaz gp ./testdata/palms.jpg"
-topyaz gp ./testdata/man.jpg --scale 2
+echo "$ topyaz giga ./testdata/palms.jpg"
+topyaz giga ./testdata/man.jpg --scale 2
 
 echo "---------- PHOTO AI ----------"
 echo "$ topyaz photo ./testdata/man.jpg --override-autopilot --upscale True --noise False"
@@ -3476,16 +3476,16 @@ class Product(Enum):
     - topyaz/cli.py
     - topyaz/core/__init__.py
     - topyaz/products/base.py
-    - topyaz/products/gigapixel.py
-    - topyaz/products/photo_ai.py
-    - topyaz/products/video_ai.py
+    - topyaz/products/_gigapixel.py
+    - topyaz/products/_photo_ai.py
+    - topyaz/products/_video_ai.py
     - topyaz/system/memory.py
     - topyaz/system/paths.py
     """
 
-    GIGAPIXEL = "gigapixel"
-    VIDEO_AI = "video_ai"
-    PHOTO_AI = "photo_ai"
+    GIGAPIXEL = "_gigapixel"
+    VIDEO_AI = "_video_ai"
+    PHOTO_AI = "_photo_ai"
 
 
 class LogLevel(Enum):
@@ -3515,9 +3515,9 @@ class ProcessingOptions:
     - topyaz/cli.py
     - topyaz/core/__init__.py
     - topyaz/products/base.py
-    - topyaz/products/gigapixel.py
-    - topyaz/products/photo_ai.py
-    - topyaz/products/video_ai.py
+    - topyaz/products/_gigapixel.py
+    - topyaz/products/_photo_ai.py
+    - topyaz/products/_video_ai.py
     """
 
     verbose: bool = True
@@ -3559,7 +3559,7 @@ class GigapixelParams:
 
     Used in:
     - topyaz/core/__init__.py
-    - topyaz/products/gigapixel.py
+    - topyaz/products/_gigapixel.py
     """
 
     model: str = "std"
@@ -3588,7 +3588,7 @@ class VideoAIParams:
 
     Used in:
     - topyaz/core/__init__.py
-    - topyaz/products/video_ai.py
+    - topyaz/products/_video_ai.py
     """
 
     model: str = "amq-13"
@@ -3616,7 +3616,7 @@ class PhotoAIParams:
 
     Used in:
     - topyaz/core/__init__.py
-    - topyaz/products/photo_ai.py
+    - topyaz/products/_photo_ai.py
     """
 
     autopilot_preset: str = "default"
@@ -3837,9 +3837,9 @@ class CommandExecutor(ABC):
     - topyaz/execution/local.py
     - topyaz/execution/remote.py
     - topyaz/products/base.py
-    - topyaz/products/gigapixel.py
-    - topyaz/products/photo_ai.py
-    - topyaz/products/video_ai.py
+    - topyaz/products/_gigapixel.py
+    - topyaz/products/_photo_ai.py
+    - topyaz/products/_video_ai.py
     """
 
     @abstractmethod
@@ -4622,9 +4622,9 @@ defining common functionality and ensuring consistent implementation across
 all supported products.
 
 Used in:
-- topyaz/products/gigapixel.py
-- topyaz/products/photo_ai.py
-- topyaz/products/video_ai.py
+- topyaz/products/_gigapixel.py
+- topyaz/products/_photo_ai.py
+- topyaz/products/_video_ai.py
 """
 
 import platform
@@ -4667,9 +4667,9 @@ class TopazProduct(ABC):
             product_type: Type of product (from Product enum)
 
         Used in:
-        - topyaz/products/gigapixel.py
-        - topyaz/products/photo_ai.py
-        - topyaz/products/video_ai.py
+        - topyaz/products/_gigapixel.py
+        - topyaz/products/_photo_ai.py
+        - topyaz/products/_video_ai.py
         """
         self.executor = executor
         self.options = options
@@ -4809,9 +4809,9 @@ class TopazProduct(ABC):
             ExecutableNotFoundError: If executable cannot be found
 
         Used in:
-        - topyaz/products/gigapixel.py
-        - topyaz/products/photo_ai.py
-        - topyaz/products/video_ai.py
+        - topyaz/products/_gigapixel.py
+        - topyaz/products/_photo_ai.py
+        - topyaz/products/_video_ai.py
         """
         executable = self.find_executable()
         if not executable:
@@ -5091,9 +5091,9 @@ class MacOSTopazProduct(TopazProduct):
 
     Used in:
     - topyaz/products/__init__.py
-    - topyaz/products/gigapixel.py
-    - topyaz/products/photo_ai.py
-    - topyaz/products/video_ai.py
+    - topyaz/products/_gigapixel.py
+    - topyaz/products/_photo_ai.py
+    - topyaz/products/_video_ai.py
     """
 
     @property
@@ -5175,24 +5175,24 @@ def create_product(product_type: Product, executor: CommandExecutor, options: Pr
     """
     # Import here to avoid circular imports
     if product_type == Product.GIGAPIXEL:
-        from topyaz.products.gigapixel import GigapixelAI
+        from topyaz.products._gigapixel import GigapixelAI
 
         return GigapixelAI(executor, options)
     if product_type == Product.VIDEO_AI:
-        from topyaz.products.video_ai import VideoAI
+        from topyaz.products._video_ai import VideoAI
 
         return VideoAI(executor, options)
     if product_type == Product.PHOTO_AI:
-        from topyaz.products.photo_ai import PhotoAI
+        from topyaz.products._photo_ai import PhotoAI
 
         return PhotoAI(executor, options)
     msg = f"Unsupported product type: {product_type}"
     raise ValueError(msg)
 </file>
 
-<file path="src/topyaz/products/gigapixel.py">
+<file path="src/topyaz/products/_gigapixel.py">
 #!/usr/bin/env python3
-# this_file: src/topyaz/products/gigapixel.py
+# this_file: src/topyaz/products/_gigapixel.py
 """
 Topaz Gigapixel AI implementation for topyaz.
 
@@ -5246,7 +5246,7 @@ class GigapixelAI(MacOSTopazProduct):
     @property
     def executable_name(self) -> str:
         """Name of the executable file."""
-        return "gigapixel"
+        return "_gigapixel"
 
     @property
     def app_name(self) -> str:
@@ -5256,7 +5256,7 @@ class GigapixelAI(MacOSTopazProduct):
     @property
     def app_executable_path(self) -> str:
         """Relative path to executable within app bundle."""
-        return "Contents/Resources/bin/gigapixel"
+        return "Contents/Resources/bin/_gigapixel"
 
     @property
     def supported_formats(self) -> list[str]:
@@ -5268,18 +5268,18 @@ class GigapixelAI(MacOSTopazProduct):
         if platform.system() == "Darwin":
             # macOS paths
             return [
-                Path("/Applications/Topaz Gigapixel AI.app/Contents/Resources/bin/gigapixel"),
+                Path("/Applications/Topaz Gigapixel AI.app/Contents/Resources/bin/_gigapixel"),
                 Path("/Applications/Topaz Gigapixel AI.app/Contents/MacOS/Topaz Gigapixel AI"),
-                Path.home() / "Applications/Topaz Gigapixel AI.app/Contents/Resources/bin/gigapixel",
+                Path.home() / "Applications/Topaz Gigapixel AI.app/Contents/Resources/bin/_gigapixel",
             ]
         if platform.system() == "Windows":
             # Windows paths
             return [
-                Path("C:/Program Files/Topaz Labs LLC/Topaz Gigapixel AI/bin/gigapixel.exe"),
-                Path("C:/Program Files (x86)/Topaz Labs LLC/Topaz Gigapixel AI/bin/gigapixel.exe"),
+                Path("C:/Program Files/Topaz Labs LLC/Topaz Gigapixel AI/bin/_gigapixel.exe"),
+                Path("C:/Program Files (x86)/Topaz Labs LLC/Topaz Gigapixel AI/bin/_gigapixel.exe"),
             ]
         # Linux or other platforms
-        return [Path("/usr/local/bin/gigapixel"), Path("/opt/gigapixel/bin/gigapixel")]
+        return [Path("/usr/local/bin/_gigapixel"), Path("/opt/_gigapixel/bin/_gigapixel")]
 
     def validate_params(self, **kwargs) -> None:
         """
@@ -5612,9 +5612,9 @@ class GigapixelAI(MacOSTopazProduct):
         return image_files[0]
 </file>
 
-<file path="src/topyaz/products/photo_ai.py">
+<file path="src/topyaz/products/_photo_ai.py">
 #!/usr/bin/env python3
-# this_file: src/topyaz/products/photo_ai.py
+# this_file: src/topyaz/products/_photo_ai.py
 """
 Topaz Photo AI implementation for topyaz.
 
@@ -6330,9 +6330,9 @@ class PhotoAI(MacOSTopazProduct):
         )
 </file>
 
-<file path="src/topyaz/products/video_ai.py">
+<file path="src/topyaz/products/_video_ai.py">
 #!/usr/bin/env python3
-# this_file: src/topyaz/products/video_ai.py
+# this_file: src/topyaz/products/_video_ai.py
 """
 Topaz Video AI implementation for topyaz.
 
@@ -7621,27 +7621,27 @@ class TopyazCLI:
         logger.info("topyaz wrapper initialized successfully")
 
     @property
-    def gigapixel(self) -> GigapixelAI:
+    def _gigapixel(self) -> GigapixelAI:
         """Get Gigapixel AI instance (lazy loaded)."""
         if self._gigapixel is None:
             self._gigapixel = GigapixelAI(self.executor, self.options)
         return self._gigapixel
 
     @property
-    def video_ai(self) -> VideoAI:
+    def _video_ai(self) -> VideoAI:
         """Get Video AI instance (lazy loaded)."""
         if self._video_ai is None:
             self._video_ai = VideoAI(self.executor, self.options)
         return self._video_ai
 
     @property
-    def photo_ai(self) -> PhotoAI:
+    def _photo_ai(self) -> PhotoAI:
         """Get Photo AI instance (lazy loaded)."""
         if self._photo_ai is None:
             self._photo_ai = PhotoAI(self.executor, self.options)
         return self._photo_ai
 
-    def gp(
+    def giga(
         self,
         input_path: str,
         model: str = "std",
@@ -7692,7 +7692,7 @@ class TopyazCLI:
         try:
             logger.info(f"Processing {input_path} with Gigapixel AI")
 
-            result = self.gigapixel.process(
+            result = self._gigapixel.process(
                 input_path=input_path,
                 output_path=output,
                 model=model,
@@ -7768,7 +7768,7 @@ class TopyazCLI:
         try:
             logger.info(f"Processing {input_path} with Video AI")
 
-            result = self.video_ai.process(
+            result = self._video_ai.process(
                 input_path=input_path,
                 output_path=output,
                 model=model,
@@ -7851,7 +7851,7 @@ class TopyazCLI:
                 if not output_path_obj:
                     output_path_obj = input_path_obj.parent / f"{input_path_obj.name}_processed"
 
-                results = self.photo_ai.process_batch_directory(
+                results = self._photo_ai.process_batch_directory(
                     input_dir=input_path_obj,
                     output_dir=output_path_obj,
                     autopilot_preset=autopilot_preset,
@@ -7875,7 +7875,7 @@ class TopyazCLI:
                 return all(result.get("success", False) for result in results)
 
             # Single file processing
-            result = self.photo_ai.process(
+            result = self._photo_ai.process(
                 input_path=input_path,
                 output_path=output,
                 autopilot_preset=autopilot_preset,
@@ -7901,7 +7901,7 @@ class TopyazCLI:
             logger.error(f"Photo AI processing failed: {e}")
             return False
 
-    def system_info(self) -> dict[str, Any]:
+    def _sysinfo(self) -> dict[str, Any]:
         """
         Get comprehensive system information.
 
@@ -7915,9 +7915,9 @@ class TopyazCLI:
                 "gpu": self.gpu_manager.get_status().to_dict(),
                 "memory": self.memory_manager.get_status(),
                 "products": {
-                    "gigapixel": self.gigapixel.get_info(),
-                    "video_ai": self.video_ai.get_info(),
-                    "photo_ai": self.photo_ai.get_info(),
+                    "_gigapixel": self._gigapixel.get_info(),
+                    "_video_ai": self._video_ai.get_info(),
+                    "_photo_ai": self._photo_ai.get_info(),
                 },
                 "executor": self.executor.get_info(),
             }
@@ -7925,7 +7925,7 @@ class TopyazCLI:
             logger.error(f"Failed to get system info: {e}")
             return {"error": str(e)}
 
-    def validate_environment(self) -> bool:
+    def info(self) -> bool:
         """
         Validate system environment and requirements.
 
@@ -7948,7 +7948,7 @@ class TopyazCLI:
             logger.error(f"Environment validation failed: {e}")
             return False
 
-    def version_info(self) -> dict[str, str]:
+    def version(self) -> dict[str, str]:
         """
         Get version information for all components.
 
@@ -7961,9 +7961,9 @@ class TopyazCLI:
 
             return {
                 "topyaz": __version__,
-                "gigapixel": self.gigapixel.get_version() or "unknown",
-                "video_ai": self.video_ai.get_version() or "unknown",
-                "photo_ai": self.photo_ai.get_version() or "unknown",
+                "_gigapixel": self._gigapixel.get_version() or "unknown",
+                "_video_ai": self._video_ai.get_version() or "unknown",
+                "_photo_ai": self._photo_ai.get_version() or "unknown",
             }
         except Exception as e:
             logger.error(f"Failed to get version info: {e}")
@@ -7998,9 +7998,9 @@ from topyaz.cli import TopyazCLI
 from topyaz.core.errors import ValidationError
 from topyaz.core.types import ProcessingOptions
 from topyaz.execution.local import LocalExecutor
-from topyaz.products.gigapixel import GigapixelAI
-from topyaz.products.photo_ai import PhotoAI
-from topyaz.products.video_ai import VideoAI
+from topyaz.products._gigapixel import GigapixelAI
+from topyaz.products._photo_ai import PhotoAI
+from topyaz.products._video_ai import VideoAI
 
 
 class TestRefactoringBasics:
@@ -8025,33 +8025,33 @@ class TestRefactoringBasics:
         assert wrapper._photo_ai is None
 
         # Accessing properties should create instances
-        gp = wrapper.gigapixel
-        video = wrapper.video_ai
-        photo = wrapper.photo_ai
+        giga = wrapper._gigapixel
+        video = wrapper._video_ai
+        photo = wrapper._photo_ai
 
-        assert isinstance(gp, GigapixelAI)
+        assert isinstance(giga, GigapixelAI)
         assert isinstance(video, VideoAI)
         assert isinstance(photo, PhotoAI)
 
         # Should return same instances on subsequent access
-        assert wrapper.gigapixel is gp
-        assert wrapper.video_ai is video
-        assert wrapper.photo_ai is photo
+        assert wrapper._gigapixel is giga
+        assert wrapper._video_ai is video
+        assert wrapper._photo_ai is photo
 
     def test_product_initialization(self):
         """Test that individual products initialize correctly."""
         executor = Mock()
         options = ProcessingOptions(verbose=True, dry_run=True)
 
-        gp = GigapixelAI(executor, options)
+        giga = GigapixelAI(executor, options)
         video = VideoAI(executor, options)
         photo = PhotoAI(executor, options)
 
-        assert gp.product_name == "Topaz Gigapixel AI"
+        assert giga.product_name == "Topaz Gigapixel AI"
         assert video.product_name == "Topaz Video AI"
         assert photo.product_name == "Topaz Photo AI"
 
-        assert gp.executable_name == "gigapixel"
+        assert giga.executable_name == "_gigapixel"
         assert video.executable_name == "ffmpeg"
         assert photo.executable_name == "tpai"
 
@@ -8059,22 +8059,22 @@ class TestRefactoringBasics:
         """Test Gigapixel AI parameter validation."""
         executor = Mock()
         options = ProcessingOptions()
-        gp = GigapixelAI(executor, options)
+        giga = GigapixelAI(executor, options)
 
         # Valid parameters should pass
-        gp.validate_params(model="std", scale=2, denoise=50)
+        giga.validate_params(model="std", scale=2, denoise=50)
 
         # Invalid model should raise error
         with pytest.raises(ValidationError, match="Invalid model"):
-            gp.validate_params(model="invalid_model")
+            giga.validate_params(model="invalid_model")
 
         # Invalid scale should raise error
         with pytest.raises(ValidationError, match="Scale must be between 1 and 6"):
-            gp.validate_params(scale=10)
+            giga.validate_params(scale=10)
 
         # Invalid denoise should raise error
         with pytest.raises(ValidationError, match="denoise must be between 1 and 100"):
-            gp.validate_params(denoise=150)
+            giga.validate_params(denoise=150)
 
     def test_video_ai_parameter_validation(self):
         """Test Video AI parameter validation."""
@@ -8118,17 +8118,17 @@ class TestRefactoringBasics:
         with pytest.raises(ValidationError, match="Bit depth must be 8 or 16"):
             photo.validate_params(bit_depth=32)
 
-    @patch("topyaz.products.gigapixel.GigapixelAI.get_executable_path")
+    @patch("topyaz.products._gigapixel.GigapixelAI.get_executable_path")
     @patch("topyaz.execution.local.LocalExecutor.execute")
     def test_dry_run_mode(self, mock_execute, mock_executable):
         """Test that dry run mode works correctly."""
-        mock_executable.return_value = Path("/fake/gigapixel")
+        mock_executable.return_value = Path("/fake/_gigapixel")
         mock_execute.return_value = (0, "dry-run-output", "")
 
         wrapper = TopyazCLI(verbose=False, dry_run=True)
 
         # Should succeed without actually executing
-        result = wrapper.gp("test_input.jpg", output="test_output.jpg")
+        result = wrapper.giga("test_input.jpg", output="test_output.jpg")
 
         assert result is True
         # Should not have called the real executor
@@ -8141,14 +8141,14 @@ class TestRefactoringBasics:
         executor = Mock()
         options = ProcessingOptions()
 
-        gp = GigapixelAI(executor, options)
+        giga = GigapixelAI(executor, options)
         video = VideoAI(executor, options)
         photo = PhotoAI(executor, options)
 
         # Check that common formats are supported
-        assert "jpg" in gp.supported_formats
-        assert "png" in gp.supported_formats
-        assert "tiff" in gp.supported_formats
+        assert "jpg" in giga.supported_formats
+        assert "png" in giga.supported_formats
+        assert "tiff" in giga.supported_formats
 
         assert "mp4" in video.supported_formats
         assert "mov" in video.supported_formats
@@ -8163,15 +8163,15 @@ class TestRefactoringBasics:
         executor = Mock()
         options = ProcessingOptions(verbose=True)
 
-        with patch("topyaz.products.gigapixel.GigapixelAI.get_executable_path") as mock_path:
-            mock_path.return_value = Path("/fake/gigapixel")
+        with patch("topyaz.products._gigapixel.GigapixelAI.get_executable_path") as mock_path:
+            mock_path.return_value = Path("/fake/_gigapixel")
 
-            gp = GigapixelAI(executor, options)
-            cmd = gp.build_command(Path("input.jpg"), Path("output.jpg"), model="std", scale=2, denoise=50)
+            giga = GigapixelAI(executor, options)
+            cmd = giga.build_command(Path("input.jpg"), Path("output.jpg"), model="std", scale=2, denoise=50)
 
             # Check that command contains expected elements
             cmd_str = " ".join(cmd)
-            assert "/fake/gigapixel" in cmd_str
+            assert "/fake/_gigapixel" in cmd_str
             assert "--cli" in cmd_str
             assert "-i" in cmd_str
             assert "input.jpg" in cmd_str
@@ -8189,16 +8189,16 @@ class TestRefactoringBasics:
         wrapper = TopyazCLI(verbose=False, dry_run=True)
 
         # These method signatures should match the original
-        assert hasattr(wrapper, "gp")
+        assert hasattr(wrapper, "giga")
         assert hasattr(wrapper, "video")
         assert hasattr(wrapper, "photo")
-        assert hasattr(wrapper, "system_info")
+        assert hasattr(wrapper, "_sysinfo")
 
         # Methods should be callable
-        assert callable(wrapper.gp)
+        assert callable(wrapper.giga)
         assert callable(wrapper.video)
         assert callable(wrapper.photo)
-        assert callable(wrapper.system_info)
+        assert callable(wrapper._sysinfo)
 </file>
 
 <file path="CHANGELOG.md">
@@ -8238,9 +8238,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 #### ✅ **Phase 1d: Product Implementations** (4/4 COMPLETED)
 
 - `products/base.py`: Abstract product interfaces with TopazProduct and MacOSTopazProduct base classes
-- `products/gigapixel.py`: Gigapixel AI implementation with Pro license validation and all CLI parameters
-- `products/video_ai.py`: Video AI implementation with FFmpeg integration and environment variable setup
-- `products/photo_ai.py`: Photo AI implementation with intelligent 450-image batch limit handling
+- `products/_gigapixel.py`: Gigapixel AI implementation with Pro license validation and all CLI parameters
+- `products/_video_ai.py`: Video AI implementation with FFmpeg integration and environment variable setup
+- `products/_photo_ai.py`: Photo AI implementation with intelligent 450-image batch limit handling
 
 #### ✅ **Phase 1e: Integration** (2/2 COMPLETED)
 
@@ -8272,7 +8272,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - **Critical Issue #1**: Fixed Gigapixel AI executable not found error
 
   - Updated `_find_executable` function with correct macOS application paths
-  - Gigapixel AI now correctly found at `/Applications/Topaz Gigapixel AI.app/Contents/Resources/bin/gigapixel`
+  - Gigapixel AI now correctly found at `/Applications/Topaz Gigapixel AI.app/Contents/Resources/bin/_gigapixel`
   - Photo AI now correctly found at `/Applications/Topaz Photo AI.app/Contents/Resources/bin/tpai`
   - Video AI now correctly found at `/Applications/Topaz Video AI.app/Contents/MacOS/ffmpeg`
 
@@ -8706,7 +8706,7 @@ pip install topyaz
 topyaz video input.mp4 --scale 2 --model amq-13
 
 # Batch upscale images with Gigapixel AI (Pro license required)
-topyaz gp photos/ --scale 4 --model recovery --denoise 40
+topyaz giga photos/ --scale 4 --model recovery --denoise 40
 
 # Enhance photos with Photo AI Autopilot
 topyaz photo raw_photos/ --format jpg --quality 95
@@ -8749,7 +8749,7 @@ video:
   default_codec: 'hevc_videotoolbox'
   default_quality: 18
 
-gigapixel:
+_gigapixel:
   default_model: 'std'
   default_format: 'preserve'
   parallel_read: 4
@@ -8802,13 +8802,13 @@ topyaz video videos/ \
 
 ```bash
 # Standard upscaling
-topyaz gp images/ --scale 4 --model std
+topyaz giga images/ --scale 4 --model std
 
 # Art & CG optimization
-topyaz gp artwork/ --scale 2 --model art --sharpen 30
+topyaz giga artwork/ --scale 2 --model art --sharpen 30
 
 # Generative upscaling with prompts
-topyaz gp photos/ \
+topyaz giga photos/ \
     --model redefine \
     --scale 2 \
     --creativity 4 \
@@ -8816,7 +8816,7 @@ topyaz gp photos/ \
     --prompt "high resolution portrait photography"
 
 # Face recovery enhancement
-topyaz gp portraits/ \
+topyaz giga portraits/ \
     --scale 2 \
     --model recovery \
     --face-recovery 80 \
@@ -8857,7 +8857,7 @@ topyaz video large_file.mp4 \
     --scale 4
 
 # Distributed processing across multiple machines
-topyaz gp large_collection/ \
+topyaz giga large_collection/ \
     --remote-host server1,server2,server3 \
     --parallel-jobs 3 \
     --load-balance
@@ -8884,7 +8884,7 @@ topyaz diagnose --show-env
 topyaz setup --verify-licenses
 
 # Check Pro license for Gigapixel AI
-topyaz validate --check-gigapixel-pro
+topyaz validate --check-_gigapixel-pro
 ```
 
 **Memory Issues**
@@ -8916,7 +8916,7 @@ topyaz integrates with popular community tools:
 
 - **[vai-docker](https://github.com/jojje/vai-docker)**: Docker containerization for Video AI
 - **[ComfyUI-TopazVideoAI](https://github.com/sh570655308/ComfyUI-TopazVideoAI)**: ComfyUI workflow integration
-- **[gigapixel-automator](https://github.com/halfSpinDoctor/gigapixel-automator)**: Legacy AppleScript automation
+- **[_gigapixel-automator](https://github.com/halfSpinDoctor/_gigapixel-automator)**: Legacy AppleScript automation
 
 ## 📊 Performance
 
@@ -9015,7 +9015,7 @@ pip install topyaz
 topyaz video input.mp4 --scale 2 --model amq-13
 
 # Batch upscale images with Gigapixel AI (Pro license required)
-topyaz gp photos/ --scale 4 --model recovery --denoise 40
+topyaz giga photos/ --scale 4 --model recovery --denoise 40
 
 # Enhance photos with Photo AI Autopilot
 topyaz photo raw_photos/ --format jpg --quality 95
@@ -9058,7 +9058,7 @@ video:
   default_codec: 'hevc_videotoolbox'
   default_quality: 18
 
-gigapixel:
+_gigapixel:
   default_model: 'std'
   default_format: 'preserve'
   parallel_read: 4
@@ -9111,13 +9111,13 @@ topyaz video videos/ \
 
 ```bash
 # Standard upscaling
-topyaz gp images/ --scale 4 --model std
+topyaz giga images/ --scale 4 --model std
 
 # Art & CG optimization
-topyaz gp artwork/ --scale 2 --model art --sharpen 30
+topyaz giga artwork/ --scale 2 --model art --sharpen 30
 
 # Generative upscaling with prompts
-topyaz gp photos/ \
+topyaz giga photos/ \
     --model redefine \
     --scale 2 \
     --creativity 4 \
@@ -9125,7 +9125,7 @@ topyaz gp photos/ \
     --prompt "high resolution portrait photography"
 
 # Face recovery enhancement
-topyaz gp portraits/ \
+topyaz giga portraits/ \
     --scale 2 \
     --model recovery \
     --face-recovery 80 \
@@ -9166,7 +9166,7 @@ topyaz video large_file.mp4 \
     --scale 4
 
 # Distributed processing across multiple machines
-topyaz gp large_collection/ \
+topyaz giga large_collection/ \
     --remote-host server1,server2,server3 \
     --parallel-jobs 3 \
     --load-balance
@@ -9193,7 +9193,7 @@ topyaz diagnose --show-env
 topyaz setup --verify-licenses
 
 # Check Pro license for Gigapixel AI
-topyaz validate --check-gigapixel-pro
+topyaz validate --check-_gigapixel-pro
 ```
 
 **Memory Issues**
@@ -9225,7 +9225,7 @@ topyaz integrates with popular community tools:
 
 - **[vai-docker](https://github.com/jojje/vai-docker)**: Docker containerization for Video AI
 - **[ComfyUI-TopazVideoAI](https://github.com/sh570655308/ComfyUI-TopazVideoAI)**: ComfyUI workflow integration
-- **[gigapixel-automator](https://github.com/halfSpinDoctor/gigapixel-automator)**: Legacy AppleScript automation
+- **[_gigapixel-automator](https://github.com/halfSpinDoctor/_gigapixel-automator)**: Legacy AppleScript automation
 
 ## 8. 📊 Performance
 
@@ -9249,7 +9249,7 @@ Performance benchmarks on Apple M3 Max (128GB RAM):
 
 ## 10. Topaz Gigapixel AI
 
-Topaz Gigapixel AI in CLI operates via its `gigapixel` CLI tool. 
+Topaz Gigapixel AI in CLI operates via its `_gigapixel` CLI tool.
 
 ```
 gpai="/Applications/Topaz Gigapixel AI.app/Contents/Resources/bin/gpai"
@@ -9359,7 +9359,7 @@ arguments:
 ```
 
 
-Released in version 7.3.0, Gigapixel's Command Line Interface (CLI) feature, [available exclusively to Pro License users](https://www.topazlabs.com/gigapixel-pro), offers advanced functionality for efficient batch processing and integration into automated workflows. Users can leverage this feature to upscale images with precision and speed directly from the command line, ensuring seamless integration with existing software systems and maximizing productivity.
+Released in version 7.3.0, Gigapixel's Command Line Interface (CLI) feature, [available exclusively to Pro License users](https://www.topazlabs.com/_gigapixel-pro), offers advanced functionality for efficient batch processing and integration into automated workflows. Users can leverage this feature to upscale images with precision and speed directly from the command line, ensuring seamless integration with existing software systems and maximizing productivity.
 
 ---
 
@@ -9368,7 +9368,7 @@ Released in version 7.3.0, Gigapixel's Command Line Interface (CLI) feature, [av
 *Updated May 21st, 2025
 Command line flags subject to change.*
 
-After install, you should be able to access it from the command line/powershell/terminal by typing in **gigapixel** (or **gigapixel-alpha/gigapixel-beta** depending on release type) as the command.
+After install, you should be able to access it from the command line/powershell/terminal by typing in **_gigapixel** (or **_gigapixel-alpha/_gigapixel-beta** depending on release type) as the command.
 
 With no arguments, this should print a usage dialog.
 
@@ -9462,13 +9462,13 @@ recovery accepts additional --mv flag, either 1 or 2 (default).
 *Example for running Redefine with a prompt*
 
 ```
-gigapixel.exe -i image.png -o output_folder -m redefine --cr 3 --tx 3 --prompt " This would be where I would put the image prompt if I had one" --am
+_gigapixel.exe -i image.png -o output_folder -m redefine --cr 3 --tx 3 --prompt " This would be where I would put the image prompt if I had one" --am
 ```
 
 *In more detail*
 
 ```
-gigapixel.exe        # CLI executable command
+_gigapixel.exe        # CLI executable command
     -i image.png     # Input image
     -o output_folder # Output folder/path
     -m redefine      # Model name
@@ -9484,7 +9484,7 @@ gigapixel.exe        # CLI executable command
 
 #### 10.0.4. Examples
 
-The **gigapixel** executable should be on the path by default after install, but if not you can add it to your path. The default paths should be:
+The **_gigapixel** executable should be on the path by default after install, but if not you can add it to your path. The default paths should be:
 
 **Windows**
 
@@ -9502,19 +9502,19 @@ C:\Program Files\Topaz Labs LLC\Topaz Gigapixel AI\bin
 *Upscale all files in a folder by 2x using auto settings, preserving all aspects of image format (extension, bit depth, etc)*
 
 ```
-gigapixel --recursive -i ~/Pictures/inputs -o ~/Pictures/outputs --scale 2
+_gigapixel --recursive -i ~/Pictures/inputs -o ~/Pictures/outputs --scale 2
 ```
 
 *Upscale all files inside input directory recursively*
 
 ```
-gigapixel --recursive -i ~/Pictures/inputs -o ~/Pictures/outputs --scale 2
+_gigapixel --recursive -i ~/Pictures/inputs -o ~/Pictures/outputs --scale 2
 ```
 
 Upscale a single raw and convert it to a jpg without using autopilot (all model parameters are set)
 
 ```
-gigapixel --recursive -i ~/Pictures/input.cr3 -o ~/Pictures/outputs --scale 2 -m std \
+_gigapixel --recursive -i ~/Pictures/input.cr3 -o ~/Pictures/outputs --scale 2 -m std \
 --mv 2 --denoise 30 --sharpen 10 --compression 5 --image-format jpg \
 --jpeg-quality 95
 ```
@@ -9522,7 +9522,7 @@ gigapixel --recursive -i ~/Pictures/input.cr3 -o ~/Pictures/outputs --scale 2 -m
 *Upscale using face recovery set to 80 strength*
 
 ```
-gigapixel --recursive -i ~/Pictures/input.jpg -o ~/Pictures/outputs --scale 2 --face-recovery 80
+_gigapixel --recursive -i ~/Pictures/input.jpg -o ~/Pictures/outputs --scale 2 --face-recovery 80
 ```
 
 
@@ -10176,7 +10176,7 @@ The real-time progress parsing and rich progress bars add significant complexity
 This phase will centralize the file processing workflow (temp directory creation, execution, file moving) into the base product class.
 
 #### **Step 2.1: Implement Template Method in `TopazProduct`**
-The `process` methods in `gigapixel.py` and `photo_ai.py` are very similar. This logic will be moved to `products/base.py`.
+The `process` methods in `_gigapixel.py` and `_photo_ai.py` are very similar. This logic will be moved to `products/base.py`.
 
 *   **In `src/topyaz/products/base.py` (`TopazProduct` class):**
     1.  Make the existing `process` method non-abstract and implement the full workflow logic there. It will be the "template method."
@@ -10202,16 +10202,16 @@ The `process` methods in `gigapixel.py` and `photo_ai.py` are very similar. This
             pass
         ```
 
-*   **In `src/topyaz/products/gigapixel.py` (`GigapixelAI` class):**
+*   **In `src/topyaz/products/_gigapixel.py` (`GigapixelAI` class):**
     1.  Remove the `process` method entirely. The base class implementation will be used.
     2.  Implement the `_find_output_file` method. This method will contain the logic to glob the temp directory for the expected output file (e.g., `*.jpg`, `*.png`).
     3.  The `build_command` method needs a slight adjustment: its `output_path` parameter should now be named `temp_output_dir` to reflect that it's writing to a temporary location.
 
-*   **In `src/topyaz/products/photo_ai.py` (`PhotoAI` class):**
+*   **In `src/topyaz/products/_photo_ai.py` (`PhotoAI` class):**
     1.  Follow the same steps as for `GigapixelAI`: remove `process`, implement `_find_output_file`, and adjust `build_command`.
     2.  The `_find_output_file` implementation will contain the logic to find filenames like `original-stem-tpai.ext`.
 
-*   **In `src/topyaz/products/video_ai.py` (`VideoAI` class):**
+*   **In `src/topyaz/products/_video_ai.py` (`VideoAI` class):**
     1.  `VideoAI` does not use a temporary directory; it writes directly to the final output file.
     2.  Therefore, `VideoAI` will **override** the base `process` method with its current, direct-writing implementation. It will not need to implement `_find_output_file`.
 
@@ -10242,12 +10242,12 @@ This will encapsulate the backup/update/restore workflow.
             self.cleanup_all_backups()
         ```
 
-*   **In `src/topyaz/products/photo_ai.py` (`PhotoAI` class):**
+*   **In `src/topyaz/products/_photo_ai.py` (`PhotoAI` class):**
     1.  Refactor the `process` method (which, after Phase 2, is now `_process_with_preferences`).
     2.  The logic for checking `if autopilot_params:` and then calling the preferences handler should be clean and use a `with` statement.
 
         ```python
-        # In src/topyaz/products/photo_ai.py
+        # In src/topyaz/products/_photo_ai.py
         
         def _process_with_preferences(self, input_path: Path, final_output_path: Path, **kwargs) -> ProcessingResult:
             """Processes image using the preferences context manager."""
@@ -10312,8 +10312,8 @@ Ensure the main `cli.py` is clean and delegates responsibility correctly.
 
 *   **In `src/topyaz/cli.py`:**
     1.  The `__init__` is already well-structured by grouping options into `ProcessingOptions` and `RemoteOptions`. This is good, no major change needed here.
-    2.  The product-specific methods (`gp`, `video`, `photo`) correctly gather parameters and pass them to the product's `process` method. This delegation is the correct pattern.
-    3.  **Action:** Remove the `system_info`, `validate_environment`, and `get_optimal_batch_size` methods. These are diagnostic/optimization features, not core processing, and add to the "fluff." This aligns with the goal of a lean, focused tool. If desired, they can be added back later under a separate `topyaz diagnose` command.
+    2.  The product-specific methods (`giga`, `video`, `photo`) correctly gather parameters and pass them to the product's `process` method. This delegation is the correct pattern.
+    3.  **Action:** Remove the `_sysinfo`, `info`, and `get_optimal_batch_size` methods. These are diagnostic/optimization features, not core processing, and add to the "fluff." This aligns with the goal of a lean, focused tool. If desired, they can be added back later under a separate `topyaz diagnose` command.
 
 ## Task: 
 
@@ -10728,7 +10728,7 @@ select = [
     'TID', # flake8-tidy-imports: checks for tidy import statements
     'UP', # pyupgrade: checks for opportunities to use newer Python features
     'W', # pycodestyle warnings: PEP 8 style guide warnings
-    'YTT', # flake8-2020: checks for misuse of sys.version or sys.version_info
+    'YTT', # flake8-2020: checks for misuse of sys.version or sys.version
 
 ]
 # Rules to ignore (with reasons)

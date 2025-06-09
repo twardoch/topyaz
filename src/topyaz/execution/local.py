@@ -29,7 +29,7 @@ class LocalExecutor(CommandExecutor):
 
     def __init__(self, context: ExecutorContext | None = None):
         """
-        Initialize local executor.
+        Initialize local _executor.
 
         Args:
             context: Execution context with environment and settings
@@ -88,7 +88,7 @@ class LocalExecutor(CommandExecutor):
 
             # Execute command
             start_time = time.time()
-            result = subprocess.run(command, **kwargs, check=False)
+            result = subprocess.run(command, **kwargs)
             execution_time = time.time() - start_time
 
             logger.debug(f"Command completed in {execution_time:.2f}s with return code: {result.returncode}")
@@ -122,7 +122,7 @@ class LocalExecutor(CommandExecutor):
             raise ProcessingError(msg)
 
     def get_info(self) -> dict[str, str]:
-        """Get information about this executor.
+        """Get information about this _executor.
 
         Used in:
         - topyaz/cli.py

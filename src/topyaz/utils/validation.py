@@ -62,7 +62,7 @@ def validate_output_file(input_path: Path, output_path: Path) -> dict[str, Any]:
         mime_type, _ = mimetypes.guess_type(str(output_path))
         result["mime_type"] = mime_type
 
-        # Basic format validation
+        # Basic format_output validation
         if mime_type:
             if mime_type.startswith(("image/", "video/")):
                 result["is_valid_format"] = True
@@ -120,9 +120,9 @@ def _get_video_info(file_path: Path) -> dict[str, Any]:
 
             data = json.loads(result.stdout)
 
-            # Extract format info
-            if "format" in data:
-                format_info = data["format"]
+            # Extract format_output info
+            if "format_output" in data:
+                format_info = data["format_output"]
                 info["duration"] = float(format_info.get("duration", 0))
                 info["size"] = int(format_info.get("size", 0))
                 info["format_name"] = format_info.get("format_name", "")
@@ -168,7 +168,7 @@ def _get_image_info(file_path: Path) -> dict[str, Any]:
         with Image.open(file_path) as img:
             info["width"] = img.width
             info["height"] = img.height
-            info["format"] = img.format
+            info["format_output"] = img.format
             info["mode"] = img.mode
 
             # Get DPI if available
@@ -184,7 +184,7 @@ def _get_image_info(file_path: Path) -> dict[str, Any]:
 
 
 def _parse_fps(fps_str: str) -> float:
-    """Parse frame rate from ffprobe format (e.g., '30/1')."""
+    """Parse frame rate from ffprobe format_output (e.g., '30/1')."""
     try:
         if "/" in fps_str:
             num, denom = fps_str.split("/")
@@ -250,7 +250,7 @@ def compare_media_files(input_path: Path, output_path: Path) -> dict[str, Any]:
             if comparison["resolution_changed"]:
                 logger.info(f"Resolution changed from {input_res} to {output_res}")
 
-        # Check format changes
+        # Check format_output changes
         input_format = input_path.suffix.lower()
         output_format = output_path.suffix.lower()
         comparison["format_changed"] = input_format != output_format

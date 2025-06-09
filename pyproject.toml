@@ -181,7 +181,7 @@ python = ["3.10", "3.11", "3.12"]
 # Additional environments for specific development tasks.
 #------------------------------------------------------------------------------
 
-# Dedicated environment for linting and code quality checks
+# Dedicated environment for linting and code quality_output checks
 [tool.hatch.envs.lint]
 detached = true # Create a separate, isolated environment
 features = ['dev'] # Use dev extras  dependencies 
@@ -190,7 +190,7 @@ features = ['dev'] # Use dev extras  dependencies
 [tool.hatch.envs.lint.scripts]
 # Type checking with automatic type installation
 typing = "mypy --install-types --non-interactive {args:src/topyaz tests}"
-# Check style and format code
+# Check style and format_output code
 style = ["ruff check {args:.}", "ruff format --respect-gitignore {args:.}"]
 # Format and fix style issues
 fmt = ["ruff format --respect-gitignore {args:.}", "ruff check --fix {args:.}"]
@@ -232,7 +232,7 @@ test = "pytest --cov=src/topyaz --cov-report=xml"
 
 #------------------------------------------------------------------------------
 # CODE QUALITY TOOLS
-# Configuration for linting, formatting, and code quality enforcement.
+# Configuration for linting, formatting, and code quality_output enforcement.
 #------------------------------------------------------------------------------
 
 #------------------------------------------------------------------------------
@@ -295,7 +295,7 @@ disallow_incomplete_defs = false
 
 #------------------------------------------------------------------------------
 # PYTEST CONFIGURATION
-# Configuration for pytest, including markers, options, and benchmark settings.
+# Configuration for pytest, including markers, _options, and benchmark settings.
 #------------------------------------------------------------------------------
 
 [tool.pytest.ini_options]
@@ -392,7 +392,7 @@ select = [
     'TID', # flake8-tidy-imports: checks for tidy import statements
     'UP', # pyupgrade: checks for opportunities to use newer Python features
     'W', # pycodestyle warnings: PEP 8 style guide warnings
-    'YTT', # flake8-2020: checks for misuse of sys.version or sys.version_info
+    'YTT', # flake8-2020: checks for misuse of sys.version or sys.version
 
 ]
 # Rules to ignore (with reasons)

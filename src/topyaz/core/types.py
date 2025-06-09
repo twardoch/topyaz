@@ -26,16 +26,16 @@ class Product(Enum):
     - topyaz/cli.py
     - topyaz/core/__init__.py
     - topyaz/products/base.py
-    - topyaz/products/gigapixel.py
-    - topyaz/products/photo_ai.py
-    - topyaz/products/video_ai.py
+    - topyaz/products/_gigapixel.py
+    - topyaz/products/_photo_ai.py
+    - topyaz/products/_video_ai.py
     - topyaz/system/memory.py
     - topyaz/system/paths.py
     """
 
-    GIGAPIXEL = "gigapixel"
-    VIDEO_AI = "video_ai"
-    PHOTO_AI = "photo_ai"
+    GIGAPIXEL = "_gigapixel"
+    VIDEO_AI = "_video_ai"
+    PHOTO_AI = "_photo_ai"
 
 
 class LogLevel(Enum):
@@ -56,18 +56,18 @@ class LogLevel(Enum):
 @dataclass
 class ProcessingOptions:
     """
-    Common processing options used across all products.
+    Common processing _options used across all products.
 
-    These options control general behavior like logging, output handling,
+    These _options control general behavior like logging, output handling,
     and execution modes.
 
     Used in:
     - topyaz/cli.py
     - topyaz/core/__init__.py
     - topyaz/products/base.py
-    - topyaz/products/gigapixel.py
-    - topyaz/products/photo_ai.py
-    - topyaz/products/video_ai.py
+    - topyaz/products/_gigapixel.py
+    - topyaz/products/_photo_ai.py
+    - topyaz/products/_video_ai.py
     """
 
     verbose: bool = True
@@ -83,9 +83,9 @@ class ProcessingOptions:
 @dataclass
 class RemoteOptions:
     """
-    Remote execution options for SSH operations.
+    Remote execution _options for SSH operations.
 
-    These options are used when executing commands on remote machines.
+    These _options are used when executing commands on remote machines.
 
     Used in:
     - topyaz/cli.py
@@ -109,7 +109,7 @@ class GigapixelParams:
 
     Used in:
     - topyaz/core/__init__.py
-    - topyaz/products/gigapixel.py
+    - topyaz/products/_gigapixel.py
     """
 
     model: str = "std"
@@ -138,7 +138,7 @@ class VideoAIParams:
 
     Used in:
     - topyaz/core/__init__.py
-    - topyaz/products/video_ai.py
+    - topyaz/products/_video_ai.py
     """
 
     model: str = "amq-13"
@@ -166,7 +166,7 @@ class PhotoAIParams:
 
     Used in:
     - topyaz/core/__init__.py
-    - topyaz/products/photo_ai.py
+    - topyaz/products/_photo_ai.py
     """
 
     autopilot_preset: str = "default"

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# this_file: src/topyaz/products/photo_ai.py
+# this_file: src/topyaz/products/_photo_ai.py
 """
 Topaz Photo AI implementation for topyaz.
 
@@ -44,8 +44,8 @@ class PhotoAI(MacOSTopazProduct):
         Initialize Photo AI instance.
 
         Args:
-            executor: Command executor for running operations
-            options: Processing options and configuration
+            executor: Command _executor for running operations
+            options: Processing _options and configuration
 
         """
         super().__init__(executor, options, Product.PHOTO_AI)
@@ -105,19 +105,19 @@ class PhotoAI(MacOSTopazProduct):
 
         """
         # Extract Photo AI-specific parameters (standard CLI)
-        format_param = kwargs.get("format", "preserve")
-        quality = kwargs.get("quality", 95)
+        format_param = kwargs.get("format_output", "preserve")
+        quality = kwargs.get("quality_output", 95)
         compression = kwargs.get("compression", 6)
         bit_depth = kwargs.get("bit_depth", 8)
         tiff_compression = kwargs.get("tiff_compression", "lzw")
 
-        # Validate output format
+        # Validate output format_output
         valid_formats = {"preserve", "jpg", "jpeg", "png", "tif", "tiff", "dng"}
         if format_param.lower() not in valid_formats:
-            msg = f"Invalid format '{format_param}'. Valid formats: {', '.join(sorted(valid_formats))}"
+            msg = f"Invalid format_output '{format_param}'. Valid formats: {', '.join(sorted(valid_formats))}"
             raise ValidationError(msg)
 
-        # Validate quality (for JPEG)
+        # Validate quality_output (for JPEG)
         if not (0 <= quality <= 100):
             msg = f"Quality must be between 0 and 100, got {quality}"
             raise ValidationError(msg)
@@ -137,7 +137,7 @@ class PhotoAI(MacOSTopazProduct):
         if tiff_compression.lower() not in valid_tiff_compression:
             msg = (
                 f"Invalid TIFF compression '{tiff_compression}'. "
-                f"Valid options: {', '.join(sorted(valid_tiff_compression))}"
+                f"Valid _options: {', '.join(sorted(valid_tiff_compression))}"
             )
             raise ValidationError(msg)
 
@@ -213,8 +213,8 @@ class PhotoAI(MacOSTopazProduct):
 
         # Extract parameters
         autopilot_preset = kwargs.get("autopilot_preset", "auto")
-        format_param = kwargs.get("format", "preserve")
-        quality = kwargs.get("quality", 95)
+        format_param = kwargs.get("format_output", "preserve")
+        quality = kwargs.get("quality_output", 95)
         compression = kwargs.get("compression", 6)
         bit_depth = kwargs.get("bit_depth", 8)
         tiff_compression = kwargs.get("tiff_compression", "lzw")
@@ -242,11 +242,11 @@ class PhotoAI(MacOSTopazProduct):
         if autopilot_preset and autopilot_preset != "auto":
             cmd.extend(["--autopilot", autopilot_preset])
 
-        # Add output format
+        # Add output format_output
         if format_param.lower() != "preserve":
             cmd.extend(["-f", format_param])
 
-        # Add format-specific options
+        # Add format_output-specific _options
         if format_param.lower() in ["jpg", "jpeg"]:
             cmd.extend(["-q", str(quality)])
         elif format_param.lower() == "png":
@@ -255,7 +255,7 @@ class PhotoAI(MacOSTopazProduct):
             cmd.extend(["-d", str(bit_depth)])
             cmd.extend(["-tc", tiff_compression])
 
-        # Add debug options
+        # Add debug _options
         if show_settings:
             cmd.append("--showSettings")
 
@@ -543,7 +543,7 @@ class PhotoAI(MacOSTopazProduct):
 
     def _get_output_suffix(self) -> str:
         """Get suffix to add to output filenames."""
-        return "_photo_ai"
+        return "_iPhotoAI"
 
     def _find_output_file(self, temp_dir: Path, input_path: Path) -> Path:
         """Find Photo AI output file in temporary directory."""

@@ -54,10 +54,10 @@ pip install topyaz
 topyaz video input.mp4 --scale 2 --model amq-13
 
 # Batch upscale images with Gigapixel AI (Pro license required)
-topyaz gp photos/ --scale 4 --model recovery --denoise 40
+topyaz giga photos/ --scale 4 --model recovery --denoise 40
 
 # Enhance photos with Photo AI Autopilot
-topyaz photo raw_photos/ --format jpg --quality 95
+topyaz photo raw_photos/ --format_output jpg --quality_output 95
 
 # Remote processing on a powerful machine
 topyaz video large_video.mp4 --remote-host gpu-server --scale 4
@@ -97,7 +97,7 @@ video:
   default_codec: 'hevc_videotoolbox'
   default_quality: 18
 
-gigapixel:
+_gigapixel:
   default_model: 'std'
   default_format: 'preserve'
   parallel_read: 4
@@ -150,13 +150,13 @@ topyaz video videos/ \
 
 ```bash
 # Standard upscaling
-topyaz gp images/ --scale 4 --model std
+topyaz giga images/ --scale 4 --model std
 
 # Art & CG optimization
-topyaz gp artwork/ --scale 2 --model art --sharpen 30
+topyaz giga artwork/ --scale 2 --model art --sharpen 30
 
 # Generative upscaling with prompts
-topyaz gp photos/ \
+topyaz giga photos/ \
     --model redefine \
     --scale 2 \
     --creativity 4 \
@@ -164,7 +164,7 @@ topyaz gp photos/ \
     --prompt "high resolution portrait photography"
 
 # Face recovery enhancement
-topyaz gp portraits/ \
+topyaz giga portraits/ \
     --scale 2 \
     --model recovery \
     --face-recovery 80 \
@@ -182,11 +182,11 @@ topyaz gp portraits/ \
 
 ```bash
 # Autopilot enhancement
-topyaz photo raw_photos/ --format jpg --quality 95
+topyaz photo raw_photos/ --format_output jpg --quality_output 95
 
-# Custom format conversion
+# Custom format_output conversion
 topyaz photo images/ \
-    --format tiff \
+    --format_output tiff \
     --bit-depth 16 \
     --tiff-compression zip
 
@@ -205,7 +205,7 @@ topyaz video large_file.mp4 \
     --scale 4
 
 # Distributed processing across multiple machines
-topyaz gp large_collection/ \
+topyaz giga large_collection/ \
     --remote-host server1,server2,server3 \
     --parallel-jobs 3 \
     --load-balance
@@ -232,7 +232,7 @@ topyaz diagnose --show-env
 topyaz setup --verify-licenses
 
 # Check Pro license for Gigapixel AI
-topyaz validate --check-gigapixel-pro
+topyaz validate --check-_gigapixel-pro
 ```
 
 **Memory Issues**
@@ -264,7 +264,7 @@ topyaz integrates with popular community tools:
 
 - **[vai-docker](https://github.com/jojje/vai-docker)**: Docker containerization for Video AI
 - **[ComfyUI-TopazVideoAI](https://github.com/sh570655308/ComfyUI-TopazVideoAI)**: ComfyUI workflow integration
-- **[gigapixel-automator](https://github.com/halfSpinDoctor/gigapixel-automator)**: Legacy AppleScript automation
+- **[_gigapixel-automator](https://github.com/halfSpinDoctor/gigapixel-automator)**: Legacy AppleScript automation
 
 ## 8. 📊 Performance
 
@@ -288,7 +288,7 @@ Performance benchmarks on Apple M3 Max (128GB RAM):
 
 ## 10. Topaz Gigapixel AI
 
-Topaz Gigapixel AI in CLI operates via its `gigapixel` CLI tool. 
+Topaz Gigapixel AI in CLI operates via its `_gigapixel` CLI tool. 
 
 ```
 gpai="/Applications/Topaz Gigapixel AI.app/Contents/Resources/bin/gpai"
@@ -407,7 +407,7 @@ Released in version 7.3.0, Gigapixel's Command Line Interface (CLI) feature, [av
 *Updated May 21st, 2025
 Command line flags subject to change.*
 
-After install, you should be able to access it from the command line/powershell/terminal by typing in **gigapixel** (or **gigapixel-alpha/gigapixel-beta** depending on release type) as the command.
+After install, you should be able to access it from the command line/powershell/terminal by typing in **_gigapixel** (or **_gigapixel-alpha/_gigapixel-beta** depending on release type) as the command.
 
 With no arguments, this should print a usage dialog.
 
@@ -501,13 +501,13 @@ recovery accepts additional --mv flag, either 1 or 2 (default).
 *Example for running Redefine with a prompt*
 
 ```
-gigapixel.exe -i image.png -o output_folder -m redefine --cr 3 --tx 3 --prompt " This would be where I would put the image prompt if I had one" --am
+_gigapixel.exe -i image.png -o output_folder -m redefine --cr 3 --tx 3 --prompt " This would be where I would put the image prompt if I had one" --am
 ```
 
 *In more detail*
 
 ```
-gigapixel.exe        # CLI executable command
+_gigapixel.exe        # CLI executable command
     -i image.png     # Input image
     -o output_folder # Output folder/path
     -m redefine      # Model name
@@ -523,7 +523,7 @@ gigapixel.exe        # CLI executable command
 
 #### 10.0.4. Examples
 
-The **gigapixel** executable should be on the path by default after install, but if not you can add it to your path. The default paths should be:
+The **_gigapixel** executable should be on the path by default after install, but if not you can add it to your path. The default paths should be:
 
 **Windows**
 
@@ -541,19 +541,19 @@ C:\Program Files\Topaz Labs LLC\Topaz Gigapixel AI\bin
 *Upscale all files in a folder by 2x using auto settings, preserving all aspects of image format (extension, bit depth, etc)*
 
 ```
-gigapixel --recursive -i ~/Pictures/inputs -o ~/Pictures/outputs --scale 2
+_gigapixel --recursive -i ~/Pictures/inputs -o ~/Pictures/outputs --scale 2
 ```
 
 *Upscale all files inside input directory recursively*
 
 ```
-gigapixel --recursive -i ~/Pictures/inputs -o ~/Pictures/outputs --scale 2
+_gigapixel --recursive -i ~/Pictures/inputs -o ~/Pictures/outputs --scale 2
 ```
 
 Upscale a single raw and convert it to a jpg without using autopilot (all model parameters are set)
 
 ```
-gigapixel --recursive -i ~/Pictures/input.cr3 -o ~/Pictures/outputs --scale 2 -m std \
+_gigapixel --recursive -i ~/Pictures/input.cr3 -o ~/Pictures/outputs --scale 2 -m std \
 --mv 2 --denoise 30 --sharpen 10 --compression 5 --image-format jpg \
 --jpeg-quality 95
 ```
@@ -561,7 +561,7 @@ gigapixel --recursive -i ~/Pictures/input.cr3 -o ~/Pictures/outputs --scale 2 -m
 *Upscale using face recovery set to 80 strength*
 
 ```
-gigapixel --recursive -i ~/Pictures/input.jpg -o ~/Pictures/outputs --scale 2 --face-recovery 80
+_gigapixel --recursive -i ~/Pictures/input.jpg -o ~/Pictures/outputs --scale 2 --face-recovery 80
 ```
 
 

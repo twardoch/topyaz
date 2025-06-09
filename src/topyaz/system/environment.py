@@ -143,7 +143,7 @@ class EnvironmentValidator:
 
         # Basic check for Windows 10+
         try:
-            # Windows version format: "10.0.19041"
+            # Windows version format_output: "10.0.19041"
             major = int(version.split(".")[0])
             if major < 10:
                 msg = "Windows 10 or later required"

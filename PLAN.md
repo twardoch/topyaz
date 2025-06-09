@@ -169,7 +169,7 @@ __all__ = [
 
 ### Step 2.1: Implement Template Method in TopazProduct ✅ MEDIUM PRIORITY
 
-**Problem:** Duplication in `process` methods across gigapixel.py and photo_ai.py
+**Problem:** Duplication in `process` methods across _gigapixel.py and _photo_ai.py
 **Solution:** Move common logic to base class using Template Method pattern
 
 **File: `src/topyaz/products/base.py`**
@@ -196,132 +196,133 @@ def _find_output_file(self, temp_dir: Path, input_path: Path) -> Path:
 ```
 
 2. Replace the abstract `process` method with a concrete template method:
+
 ```python
 def process(self, input_path: Path | str, output_path: Path | str | None = None, **kwargs) -> ProcessingResult:
-    """
-    Template method for processing files. Uses temporary directory workflow.
-    Override this method only if you need different behavior (like VideoAI).
-    """
-    # Convert to Path objects
-    input_path = Path(input_path)
-    if output_path:
-        output_path = Path(output_path)
+   """
+   Template method for processing files. Uses temporary directory workflow.
+   Override this method only if you need different behavior (like VideoAI).
+   """
+   # Convert to Path objects
+   input_path = Path(input_path)
+   if output_path:
+      output_path = Path(output_path)
 
-    # Validate inputs
-    self.validate_input_path(input_path)
-    self.validate_params(**kwargs)
+   # Validate inputs
+   self.validate_input_path(input_path)
+   self.validate_params(**kwargs)
 
-    # Determine final output path  
-    if output_path:
-        final_output_path = self.path_validator.validate_output_path(output_path)
-    else:
-        output_dir = input_path.parent
-        suffix = self._get_output_suffix()
-        stem = input_path.stem
-        extension = input_path.suffix
-        output_filename = f"{stem}{suffix}{extension}"
-        final_output_path = output_dir / output_filename
+   # Determine final output path  
+   if output_path:
+      final_output_path = self.path_validator.validate_output_path(output_path)
+   else:
+      output_dir = input_path.parent
+      suffix = self._get_output_suffix()
+      stem = input_path.stem
+      extension = input_path.suffix
+      output_filename = f"{stem}{suffix}{extension}"
+      final_output_path = output_dir / output_filename
 
-    # Ensure executable is available
-    self.get_executable_path()
+   # Ensure executable is available
+   self.get_executable_path()
 
-    # Create temporary directory for processing
-    with tempfile.TemporaryDirectory(prefix=f"topyaz_{self.product_type.value}_") as temp_dir:
-        temp_output_dir = Path(temp_dir)
+   # Create temporary directory for processing
+   with tempfile.TemporaryDirectory(prefix=f"topyaz_{self.product_type.value}_") as temp_dir:
+      temp_output_dir = Path(temp_dir)
 
-        # Build command with temp directory
-        command = self.build_command(input_path, temp_output_dir, **kwargs)
+      # Build command with temp directory
+      command = self.build_command(input_path, temp_output_dir, **kwargs)
 
-        try:
-            logger.info(f"Processing {input_path} with {self.product_name}")
+      try:
+         logger.info(f"Processing {input_path} with {self.product_name}")
 
-            if self.options.dry_run:
-                logger.info(f"DRY RUN: Would execute: {' '.join(command)}")
-                return ProcessingResult(
-                    success=True,
-                    input_path=input_path,
-                    output_path=final_output_path,
-                    command=command,
-                    stdout="DRY RUN - no output",
-                    stderr="",
-                    execution_time=0.0,
-                    file_size_before=0,
-                    file_size_after=0,
-                )
-
-            import time
-            start_time = time.time()
-            file_size_before = input_path.stat().st_size if input_path.is_file() else 0
-
-            # Execute the command
-            exit_code, stdout, stderr = self.executor.execute(command, timeout=self.options.timeout)
-            execution_time = time.time() - start_time
-
-            # Check if processing was successful
-            if exit_code != 0:
-                error_msg = f"{self.product_name} processing failed (exit code {exit_code})"
-                if stderr:
-                    error_msg += f": {stderr}"
-                return ProcessingResult(
-                    success=False,
-                    input_path=input_path,
-                    output_path=final_output_path,
-                    command=command,
-                    stdout=stdout,
-                    stderr=stderr,
-                    execution_time=execution_time,
-                    file_size_before=file_size_before,
-                    file_size_after=0,
-                    error_message=error_msg,
-                )
-
-            # Find the generated file using subclass-specific logic
-            temp_output_file = self._find_output_file(temp_output_dir, input_path)
-
-            # Ensure output directory exists and move file to final location
-            final_output_path.parent.mkdir(parents=True, exist_ok=True)
-            shutil.move(str(temp_output_file), str(final_output_path))
-
-            # Get file size after processing
-            file_size_after = final_output_path.stat().st_size if final_output_path.exists() else 0
-
-            # Parse output for additional information
-            parsed_info = self.parse_output(stdout, stderr)
-
-            logger.info(f"Successfully processed {input_path} -> {final_output_path} in {execution_time:.2f}s")
-
-            result = ProcessingResult(
-                success=True,
-                input_path=input_path,
-                output_path=final_output_path,
-                command=command,
-                stdout=stdout,
-                stderr=stderr,
-                execution_time=execution_time,
-                file_size_before=file_size_before,
-                file_size_after=file_size_after,
-                additional_info=parsed_info,
-            )
-
-            return result
-
-        except Exception as e:
-            logger.error(f"Error processing {input_path} with {self.product_name}: {e}")
+         if self._options.dry_run:
+            logger.info(f"DRY RUN: Would execute: {' '.join(command)}")
             return ProcessingResult(
-                success=False,
-                input_path=input_path,
-                output_path=final_output_path,
-                command=command,
-                stdout="",
-                stderr=str(e),
-                execution_time=0.0,
-                file_size_before=0,
-                file_size_after=0,
-                error_message=str(e),
+               success=True,
+               input_path=input_path,
+               output_path=final_output_path,
+               command=command,
+               stdout="DRY RUN - no output",
+               stderr="",
+               execution_time=0.0,
+               file_size_before=0,
+               file_size_after=0,
             )
+
+         import time
+         start_time = time.time()
+         file_size_before = input_path.stat().st_size if input_path.is_file() else 0
+
+         # Execute the command
+         exit_code, stdout, stderr = self._executor.execute(command, timeout=self._options.timeout)
+         execution_time = time.time() - start_time
+
+         # Check if processing was successful
+         if exit_code != 0:
+            error_msg = f"{self.product_name} processing failed (exit code {exit_code})"
+            if stderr:
+               error_msg += f": {stderr}"
+            return ProcessingResult(
+               success=False,
+               input_path=input_path,
+               output_path=final_output_path,
+               command=command,
+               stdout=stdout,
+               stderr=stderr,
+               execution_time=execution_time,
+               file_size_before=file_size_before,
+               file_size_after=0,
+               error_message=error_msg,
+            )
+
+         # Find the generated file using subclass-specific logic
+         temp_output_file = self._find_output_file(temp_output_dir, input_path)
+
+         # Ensure output directory exists and move file to final location
+         final_output_path.parent.mkdir(parents=True, exist_ok=True)
+         shutil.move(str(temp_output_file), str(final_output_path))
+
+         # Get file size after processing
+         file_size_after = final_output_path.stat().st_size if final_output_path.exists() else 0
+
+         # Parse output for additional information
+         parsed_info = self.parse_output(stdout, stderr)
+
+         logger.info(f"Successfully processed {input_path} -> {final_output_path} in {execution_time:.2f}s")
+
+         result = ProcessingResult(
+            success=True,
+            input_path=input_path,
+            output_path=final_output_path,
+            command=command,
+            stdout=stdout,
+            stderr=stderr,
+            execution_time=execution_time,
+            file_size_before=file_size_before,
+            file_size_after=file_size_after,
+            additional_info=parsed_info,
+         )
+
+         return result
+
+      except Exception as e:
+         logger.error(f"Error processing {input_path} with {self.product_name}: {e}")
+         return ProcessingResult(
+            success=False,
+            input_path=input_path,
+            output_path=final_output_path,
+            command=command,
+            stdout="",
+            stderr=str(e),
+            execution_time=0.0,
+            file_size_before=0,
+            file_size_after=0,
+            error_message=str(e),
+         )
 ```
 
-**File: `src/topyaz/products/gigapixel.py`**
+**File: `src/topyaz/products/_gigapixel.py`**
 
 3. Update GigapixelAI class:
    - Delete the entire `process` method (base class will handle it)
@@ -344,7 +345,7 @@ def _find_output_file(self, temp_dir: Path, input_path: Path) -> Path:
     return image_files[0]
 ```
 
-**File: `src/topyaz/products/photo_ai.py`**
+**File: `src/topyaz/products/_photo_ai.py`**
 
 4. Update PhotoAI class:
    - Delete the `_process_standard` method (base class handles this now)
@@ -375,7 +376,7 @@ def _find_output_file(self, temp_dir: Path, input_path: Path) -> Path:
     raise ProcessingError(error_msg)
 ```
 
-**File: `src/topyaz/products/video_ai.py`**
+**File: `src/topyaz/products/_video_ai.py`**
 
 5. VideoAI keeps its current `process` method (no temp directory needed):
    - Add comment explaining why it overrides the base method
@@ -402,7 +403,7 @@ def __exit__(self, exc_type, exc_val, exc_tb):
     self.cleanup_all_backups()
 ```
 
-**File: `src/topyaz/products/photo_ai.py`**
+**File: `src/topyaz/products/_photo_ai.py`**
 
 2. Simplify preferences usage in `_process_with_preferences`:
 
@@ -476,13 +477,13 @@ def validate_input_path(self, input_path: Path) -> None:
 **File: `src/topyaz/cli.py`**
 
 1. Remove diagnostic methods (move to future `topyaz diagnose` command):
-   - Delete `system_info()` method
-   - Delete `validate_environment()` method  
+   - Delete `_sysinfo()` method
+   - Delete `info()` method  
    - Delete `get_optimal_batch_size()` method
-   - Delete `version_info()` method
+   - Delete `version()` method
 
 2. Keep only core processing methods:
-   - `gp()` - Gigapixel processing
+   - `giga()` - Gigapixel processing
    - `video()` - Video AI processing
    - `photo()` - Photo AI processing
 
@@ -512,8 +513,8 @@ def validate_input_path(self, input_path: Path) -> None:
 ### Testing Strategy:
 After each phase:
 1. Run `python -m pytest tests/`
-2. Test CLI commands: `python -m topyaz gp --help`, `python -m topyaz video --help`, `python -m topyaz photo --help`
-3. Test dry run: `python -m topyaz gp testdata/man.jpg --dry-run`
+2. Test CLI commands: `python -m topyaz giga --help`, `python -m topyaz video --help`, `python -m topyaz photo --help`
+3. Test dry run: `python -m topyaz giga testdata/man.jpg --dry-run`
 4. Verify imports work: `python -c "import topyaz; print('OK')"`
 
 ### Validation Criteria:
@@ -537,8 +538,8 @@ After each phase:
 - `src/topyaz/execution/local.py` (simplify)
 - `src/topyaz/execution/remote.py` (simplify)
 - `src/topyaz/products/base.py` (add template method)
-- `src/topyaz/products/gigapixel.py` (remove process method)
-- `src/topyaz/products/photo_ai.py` (remove process method)
+- `src/topyaz/products/_gigapixel.py` (remove process method)
+- `src/topyaz/products/_photo_ai.py` (remove process method)
 - `src/topyaz/cli.py` (remove logging manager, remove diagnostic methods)
 
 **Minor Updates:**

@@ -28,33 +28,33 @@ class TestRefactoringBasics:
         """Test that TopyazCLI initializes correctly."""
         wrapper = TopyazCLI(verbose=False, dry_run=True)
 
-        assert wrapper.options.verbose is False
-        assert wrapper.options.dry_run is True
-        assert wrapper.executor is not None
-        assert isinstance(wrapper.executor, LocalExecutor)
+        assert wrapper._options.verbose is False
+        assert wrapper._options.dry_run is True
+        assert wrapper._executor is not None
+        assert isinstance(wrapper._executor, LocalExecutor)
 
     def test_lazy_loading_products(self):
         """Test that products are lazy-loaded correctly."""
         wrapper = TopyazCLI(verbose=False, dry_run=True)
 
         # Products should be None initially
-        assert wrapper._gigapixel is None
-        assert wrapper._video_ai is None
-        assert wrapper._photo_ai is None
+        assert wrapper._iGigapixelAI is None
+        assert wrapper._iVideoAI is None
+        assert wrapper._iPhotoAI is None
 
         # Accessing properties should create instances
-        gp = wrapper.gigapixel
-        video = wrapper.video_ai
-        photo = wrapper.photo_ai
+        gp = wrapper._gigapixel
+        video = wrapper._video_ai
+        photo = wrapper._photo_ai
 
         assert isinstance(gp, GigapixelAI)
         assert isinstance(video, VideoAI)
         assert isinstance(photo, PhotoAI)
 
         # Should return same instances on subsequent access
-        assert wrapper.gigapixel is gp
-        assert wrapper.video_ai is video
-        assert wrapper.photo_ai is photo
+        assert wrapper._gigapixel is gp
+        assert wrapper._video_ai is video
+        assert wrapper._photo_ai is photo
 
     def test_product_initialization(self):
         """Test that individual products initialize correctly."""
@@ -69,7 +69,7 @@ class TestRefactoringBasics:
         assert video.product_name == "Topaz Video AI"
         assert photo.product_name == "Topaz Photo AI"
 
-        assert gp.executable_name == "gigapixel"
+        assert gp.executable_name == "_gigapixel"
         assert video.executable_name == "ffmpeg"
         assert photo.executable_name == "tpai"
 
@@ -111,7 +111,7 @@ class TestRefactoringBasics:
         with pytest.raises(ValidationError, match="Scale must be between 1 and 4"):
             video.validate_params(scale=5)
 
-        # Invalid quality should raise error
+        # Invalid quality_output should raise error
         with pytest.raises(ValidationError, match="Quality must be between 1 and 51"):
             video.validate_params(quality=100)
 
@@ -124,11 +124,11 @@ class TestRefactoringBasics:
         # Valid parameters should pass
         photo.validate_params(format="jpg", quality=95, compression=6)
 
-        # Invalid format should raise error
-        with pytest.raises(ValidationError, match="Invalid format"):
+        # Invalid format_output should raise error
+        with pytest.raises(ValidationError, match="Invalid format_output"):
             photo.validate_params(format="invalid_format")
 
-        # Invalid quality should raise error
+        # Invalid quality_output should raise error
         with pytest.raises(ValidationError, match="Quality must be between 0 and 100"):
             photo.validate_params(quality=150)
 
@@ -136,23 +136,23 @@ class TestRefactoringBasics:
         with pytest.raises(ValidationError, match="Bit depth must be 8 or 16"):
             photo.validate_params(bit_depth=32)
 
-    @patch("topyaz.products.gigapixel.GigapixelAI.get_executable_path")
+    @patch("topyaz.products._gigapixel.GigapixelAI.get_executable_path")
     @patch("topyaz.execution.local.LocalExecutor.execute")
     def test_dry_run_mode(self, mock_execute, mock_executable):
         """Test that dry run mode works correctly."""
-        mock_executable.return_value = Path("/fake/gigapixel")
+        mock_executable.return_value = Path("/fake/_gigapixel")
         mock_execute.return_value = (0, "dry-run-output", "")
 
         wrapper = TopyazCLI(verbose=False, dry_run=True)
 
         # Should succeed without actually executing
-        result = wrapper.gp("test_input.jpg", output="test_output.jpg")
+        result = wrapper.giga("test_input.jpg", output="test_output.jpg")
 
         assert result is True
-        # Should not have called the real executor
+        # Should not have called the real _executor
         mock_execute.assert_called_once()
         call_args = mock_execute.call_args
-        assert "dry-run" in str(call_args).lower() or wrapper.options.dry_run
+        assert "dry-run" in str(call_args).lower() or wrapper._options.dry_run
 
     def test_supported_formats(self):
         """Test that products report correct supported formats."""
@@ -181,15 +181,15 @@ class TestRefactoringBasics:
         executor = Mock()
         options = ProcessingOptions(verbose=True)
 
-        with patch("topyaz.products.gigapixel.GigapixelAI.get_executable_path") as mock_path:
-            mock_path.return_value = Path("/fake/gigapixel")
+        with patch("topyaz.products._gigapixel.GigapixelAI.get_executable_path") as mock_path:
+            mock_path.return_value = Path("/fake/_gigapixel")
 
             gp = GigapixelAI(executor, options)
             cmd = gp.build_command(Path("input.jpg"), Path("output.jpg"), model="std", scale=2, denoise=50)
 
             # Check that command contains expected elements
             cmd_str = " ".join(cmd)
-            assert "/fake/gigapixel" in cmd_str
+            assert "/fake/_gigapixel" in cmd_str
             assert "--cli" in cmd_str
             assert "-i" in cmd_str
             assert "input.jpg" in cmd_str
@@ -207,13 +207,13 @@ class TestRefactoringBasics:
         wrapper = TopyazCLI(verbose=False, dry_run=True)
 
         # These method signatures should match the original
-        assert hasattr(wrapper, "gp")
+        assert hasattr(wrapper, "giga")
         assert hasattr(wrapper, "video")
         assert hasattr(wrapper, "photo")
-        assert hasattr(wrapper, "system_info")
+        assert hasattr(wrapper, "_sysinfo")
 
         # Methods should be callable
-        assert callable(wrapper.gp)
+        assert callable(wrapper.giga)
         assert callable(wrapper.video)
         assert callable(wrapper.photo)
-        assert callable(wrapper.system_info)
+        assert callable(wrapper._sysinfo)
