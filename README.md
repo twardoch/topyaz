@@ -211,70 +211,10 @@ topyaz giga large_collection/ \
     --load-balance
 ```
 
-## 🔍 Troubleshooting
 
-### Common Issues
 
-**"No such filter: tvai_up" Error**
 
-```bash
-# Check Video AI installation
-topyaz validate --check-video-ai
 
-# Verify environment variables
-topyaz diagnose --show-env
-```
-
-**Authentication Failures**
-
-```bash
-# Re-authenticate with Topaz products
-topyaz setup --verify-licenses
-
-# Check Pro license for Gigapixel AI
-topyaz validate --check-_gigapixel-pro
-```
-
-**Memory Issues**
-
-```bash
-# Process with smaller batches
-topyaz video large_video.mp4 --scale 2 --segment-size 60
-
-# Monitor memory usage
-topyaz profile --memory --operation video
-```
-
-### Diagnostic Tools
-
-```bash
-# System diagnostic report
-topyaz diagnose --full-report
-
-# Performance benchmark
-topyaz benchmark --test-local --test-remote
-
-# Validate system requirements
-topyaz validate --check-all
-```
-
-## 🤝 Community Integration
-
-topyaz integrates with popular community tools:
-
-- **[vai-docker](https://github.com/jojje/vai-docker)**: Docker containerization for Video AI
-- **[ComfyUI-TopazVideoAI](https://github.com/sh570655308/ComfyUI-TopazVideoAI)**: ComfyUI workflow integration
-- **[_gigapixel-automator](https://github.com/halfSpinDoctor/gigapixel-automator)**: Legacy AppleScript automation
-
-## 📊 Performance
-
-Performance benchmarks on Apple M3 Max (128GB RAM):
-
-| Operation      | Files      | Size | Time   | Speed                 |
-| -------------- | ---------- | ---- | ------ | --------------------- |
-| Video AI 2x    | 10 videos  | 50GB | 45 min | ~2x faster than GUI   |
-| Gigapixel 4x   | 100 images | 5GB  | 16 min | ~2x faster than GUI   |
-| Photo AI batch | 500 images | 10GB | 8 min  | ~1.5x faster than GUI |
 
 ## 🔒 Security
 

@@ -98,6 +98,7 @@ class RemoteOptions:
     ssh_key: Path | None = None
     ssh_port: int = 22
     connection_timeout: int = 30
+    remote_folder: str | None = None
 
 
 @dataclass

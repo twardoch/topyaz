@@ -49,6 +49,7 @@ class TopyazCLI:
         ssh_key: str | None = None,
         ssh_port: int = 22,
         connection_timeout: int = 30,
+        remote_folder: str | None = None,
         config_file: str | None = None,
         parallel_jobs: int = 1,
         dry_run: bool = False,
@@ -68,6 +69,7 @@ class TopyazCLI:
             ssh_key: SSH key file path
             ssh_port: SSH port number
             connection_timeout: SSH connection timeout
+            remote_folder: Remote working directory for file transfers
             config_file: Configuration file path
             parallel_jobs: Number of parallel jobs (not implemented yet)
             dry_run: Enable dry run mode (don't actually process)
@@ -98,6 +100,7 @@ class TopyazCLI:
             ssh_key=Path(ssh_key) if ssh_key else None,
             ssh_port=ssh_port,
             connection_timeout=connection_timeout,
+            remote_folder=remote_folder,
         )
 
         # Initialize configuration
@@ -199,7 +202,26 @@ class TopyazCLI:
         try:
             logger.info(f"Processing {input_path} with Gigapixel AI")
 
-            result = self._gigapixel.process(
+            # Handle remote execution if remote options provided
+            gigapixel_instance = self._gigapixel
+            if remote_host:
+                from topyaz.core.types import RemoteOptions
+                from topyaz.execution.remote import RemoteExecutor
+                from topyaz.products.gigapixel_ai import GigapixelAI
+
+                # Create temporary remote executor and Gigapixel AI instance
+                remote_options = RemoteOptions(
+                    host=remote_host,
+                    user=remote_user,
+                    ssh_key=Path(ssh_key) if ssh_key else None,
+                    ssh_port=ssh_port,
+                    connection_timeout=connection_timeout,
+                )
+                remote_executor = RemoteExecutor(remote_options)
+                gigapixel_instance = GigapixelAI(remote_executor, self._options)
+                logger.info(f"Using remote execution: {remote_user}@{remote_host}")
+
+            result = gigapixel_instance.process(
                 input_path=input_path,
                 output_path=output,
                 model=model,
@@ -285,6 +307,12 @@ class TopyazCLI:
             interpolate: Enable frame interpolation
             custom_filters: Custom FFmpeg filters
             device: GPU device index (-1 for CPU)
+            # Remote execution options
+            remote_host: SSH hostname/IP for remote processing
+            remote_user: SSH username for remote processing
+            ssh_key: Path to SSH private key for authentication
+            ssh_port: SSH port number (default: 22)
+            connection_timeout: SSH connection timeout in seconds (default: 30)
             output: Output file path
             **kwargs: Additional parameters
 
@@ -295,7 +323,26 @@ class TopyazCLI:
         try:
             logger.info(f"Processing {input_path} with Video AI")
 
-            result = self._video_ai.process(
+            # Handle remote execution if remote options provided
+            video_ai_instance = self._video_ai
+            if remote_host:
+                from topyaz.core.types import RemoteOptions
+                from topyaz.execution.remote import RemoteExecutor
+                from topyaz.products.video_ai import VideoAI
+
+                # Create temporary remote executor and Video AI instance
+                remote_options = RemoteOptions(
+                    host=remote_host,
+                    user=remote_user,
+                    ssh_key=Path(ssh_key) if ssh_key else None,
+                    ssh_port=ssh_port,
+                    connection_timeout=connection_timeout,
+                )
+                remote_executor = RemoteExecutor(remote_options)
+                video_ai_instance = VideoAI(remote_executor, self._options)
+                logger.info(f"Using remote execution: {remote_user}@{remote_host}")
+
+            result = video_ai_instance.process(
                 input_path=input_path,
                 output_path=output,
                 model=model,
