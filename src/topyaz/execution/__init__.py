@@ -3,34 +3,16 @@
 """
 Execution module for topyaz.
 
-This module contains components for executing commands locally and remotely.
+This module contains components for executing commands locally.
 """
 
 from topyaz.execution.base import CommandExecutor, ExecutorContext
-from topyaz.execution.coordination import RemoteFileCoordinator, RemoteSession
-from topyaz.execution.fabric_remote import FabricRemoteExecutor
 from topyaz.execution.local import LocalExecutor
-from topyaz.execution.remote import (
-    RemoteConnectionPool,
-    RemoteExecutor,
-    get_remote_executor,
-    return_remote_executor,
-)
 
 __all__ = [
     # Base interfaces
     "CommandExecutor",
     "ExecutorContext",
-    # Remote execution (fabric-based)
-    "FabricRemoteExecutor",
     # Local execution
     "LocalExecutor",
-    # Remote execution (paramiko-based)
-    "RemoteConnectionPool",
-    "RemoteExecutor",
-    # Remote coordination
-    "RemoteFileCoordinator",
-    "RemoteSession",
-    "get_remote_executor",
-    "return_remote_executor",
 ]

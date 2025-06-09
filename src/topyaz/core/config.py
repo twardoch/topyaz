@@ -11,7 +11,7 @@ with support for nested keys and default values.
 
 import os
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any
 
 import yaml
 from loguru import logger
@@ -65,11 +65,6 @@ class Config:
             "default_quality": 95,
             "autopilot_preset": "default",
             "bit_depth": 16,
-        },
-        "remote": {
-            "ssh_port": 22,
-            "connection_timeout": 30,
-            "keepalive_interval": 60,
         },
         "paths": {
             "_gigapixel": {

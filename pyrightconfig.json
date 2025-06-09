@@ -1,0 +1,13 @@
+{
+  "include": [
+    "**/*.py"
+  ],
+  "exclude": [
+    "src",
+    "**/node_modules",
+    "**/__pycache__"
+  ],
+  "reportMissingImports": false,
+  "reportMissingTypeStubs": false,
+  "pythonVersion": "3.10"
+}

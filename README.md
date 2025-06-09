@@ -5,7 +5,6 @@
 **🎯 Core Purpose:**
 
 - Single CLI tool for all Topaz products instead of using separate GUIs
-- Enable remote processing via SSH on powerful machines
 - Batch operations with progress monitoring and error recovery
 
 **📋 Requirements:**
@@ -23,7 +22,6 @@
 **💡 Key Value:**
 
 - ~2x faster than GUI for batch operations
-- Remote execution on GPU servers
 - Unified interface across Video AI (upscaling), Gigapixel AI (image enhancement), Photo AI (auto-enhancement)
 - Production-ready error handling and recovery mechanisms
 
@@ -32,7 +30,6 @@
 ## ✨ Features
 
 - **🎯 Unified Interface**: Single command-line tool for all three Topaz products
-- **🌐 Remote Execution**: Run processing on remote machines via SSH
 - **🔄 Batch Processing**: Intelligent batch operations with progress monitoring
 - **🛡️ Failsafe Design**: Comprehensive error handling and recovery mechanisms
 - **📊 Progress Tracking**: Real-time progress with ETA calculations
@@ -58,9 +55,6 @@ topyaz giga photos/ --scale 4 --model recovery --denoise 40
 
 # Enhance photos with Photo AI Autopilot
 topyaz photo raw_photos/ --format_output jpg --quality_output 95
-
-# Remote processing on a powerful machine
-topyaz video large_video.mp4 --remote-host gpu-server --scale 4
 ```
 
 ## 📋 Requirements
@@ -105,12 +99,6 @@ _gigapixel:
 photo:
   default_format: 'jpg'
   default_quality: 95
-
-remote_hosts:
-  gpu-server:
-    host: '192.168.1.100'
-    user: 'admin'
-    key: '~/.ssh/topaz_key'
 ```
 
 ## 📖 Documentation
@@ -194,33 +182,8 @@ topyaz photo images/ \
 topyaz photo test_image.jpg --show-settings --skip-processing
 ```
 
-### Remote Execution
-
-```bash
-# Process on remote machine
-topyaz video large_file.mp4 \
-    --remote-host gpu-server \
-    --ssh-user processor \
-    --ssh-key ~/.ssh/render_key \
-    --scale 4
-
-# Distributed processing across multiple machines
-topyaz giga large_collection/ \
-    --remote-host server1,server2,server3 \
-    --parallel-jobs 3 \
-    --load-balance
-```
-
-
-
-
-
-
 ## 🔒 Security
 
-- SSH key-based authentication only
-- No password storage or transmission
-- Secure file transfer protocols
 - Command injection prevention
 - Audit logging for all operations
 

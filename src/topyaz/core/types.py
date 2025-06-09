@@ -10,7 +10,7 @@ throughout the topyaz package for type safety and better code organization.
 from dataclasses import dataclass, field
 from enum import Enum
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any
 
 # Type aliases for clarity
 FilePath = Path | str
@@ -78,27 +78,6 @@ class ProcessingOptions:
     preserve_structure: bool = True
     backup_originals: bool = False
     log_level: str = "INFO"
-
-
-@dataclass
-class RemoteOptions:
-    """
-    Remote execution _options for SSH operations.
-
-    These _options are used when executing commands on remote machines.
-
-    Used in:
-    - topyaz/cli.py
-    - topyaz/core/__init__.py
-    - topyaz/execution/remote.py
-    """
-
-    host: str | None = None
-    user: str | None = None
-    ssh_key: Path | None = None
-    ssh_port: int = 22
-    connection_timeout: int = 30
-    remote_folder: str | None = None
 
 
 @dataclass
