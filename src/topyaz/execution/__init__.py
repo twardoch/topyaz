@@ -7,6 +7,7 @@ This module contains components for executing commands locally and remotely.
 """
 
 from topyaz.execution.base import CommandExecutor, ExecutorContext
+from topyaz.execution.coordination import RemoteFileCoordinator, RemoteSession
 from topyaz.execution.local import LocalExecutor
 from topyaz.execution.remote import (
     RemoteConnectionPool,
@@ -24,6 +25,9 @@ __all__ = [
     # Remote execution
     "RemoteConnectionPool",
     "RemoteExecutor",
+    # Remote coordination
+    "RemoteFileCoordinator",
+    "RemoteSession",
     "get_remote_executor",
     "return_remote_executor",
 ]

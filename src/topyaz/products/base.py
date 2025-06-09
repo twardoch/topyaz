@@ -378,8 +378,20 @@ class TopazProduct(ABC):
                 start_time = time.time()
                 file_size_before = input_path.stat().st_size if input_path.is_file() else 0
 
-                # Execute the command
-                exit_code, stdout, stderr = self.executor.execute(command, timeout=self.options.timeout)
+                # Execute the command with remote coordination if needed
+                from topyaz.execution.remote import RemoteExecutor
+
+                if isinstance(self.executor, RemoteExecutor):
+                    # Use remote file coordination for transparent remote processing
+                    from topyaz.execution.coordination import RemoteFileCoordinator
+
+                    coordinator = RemoteFileCoordinator(
+                        self.executor, getattr(self.executor.remote_options, "remote_folder", None) or "/tmp/topyaz"
+                    )
+                    exit_code, stdout, stderr = coordinator.execute_with_files(command)
+                else:
+                    # Local execution unchanged
+                    exit_code, stdout, stderr = self.executor.execute(command, timeout=self.options.timeout)
                 execution_time = time.time() - start_time
 
                 # Check if processing was successful
