@@ -79,7 +79,6 @@ class LocalExecutor(CommandExecutor):
                 "timeout": actual_timeout,
                 "encoding": "utf-8",
                 "errors": "ignore",
-                "check": False,
                 "env": self.context.get_env(),
             }
 
@@ -88,7 +87,7 @@ class LocalExecutor(CommandExecutor):
 
             # Execute command
             start_time = time.time()
-            result = subprocess.run(command, **kwargs, check=False)
+            result = subprocess.run(command, **kwargs)
             execution_time = time.time() - start_time
 
             logger.debug(f"Command completed in {execution_time:.2f}s with return code: {result.returncode}")
