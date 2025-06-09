@@ -40,3 +40,7 @@ The last 5 are too complex.
 - Think whether any given piece of code is necessary or an unnecessary complication. Simplify the unnecessary complications. 
 - `cli.py` must be simpler. It shouldn't contain complicated per-product logic. It really should just be a CLI class with methods that accept parameters (because Fire CLI works so), and then these should be calling Topaz-product-specific code elsewhere. The logic should not be in cli.py
 
+
+
+
+You may offload some of the code inside the methods from `cli.py` to dedicated locations, so that `cli.py` really is just the CLI interface, but no logic. But the methods in `cli.py` must retain the full explicit signatures and docstrings! 

@@ -572,15 +572,15 @@ def create_product(product_type: Product, executor: CommandExecutor, options: Pr
     """
     # Import here to avoid circular imports
     if product_type == Product.GIGAPIXEL:
-        from topyaz.products.gigapixel import GigapixelAI
+        from topyaz.products.gigapixel.api import GigapixelAI
 
         return GigapixelAI(executor, options)
     if product_type == Product.VIDEO_AI:
-        from topyaz.products.video_ai import VideoAI
+        from topyaz.products.video_ai.api import VideoAI
 
         return VideoAI(executor, options)
     if product_type == Product.PHOTO_AI:
-        from topyaz.products.photo_ai import PhotoAI
+        from topyaz.products.photo_ai.api import PhotoAI
 
         return PhotoAI(executor, options)
     msg = f"Unsupported product type: {product_type}"
