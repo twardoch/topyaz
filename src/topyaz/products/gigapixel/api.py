@@ -53,7 +53,7 @@ class GigapixelAI(MacOSTopazProduct):
     @property
     def executable_name(self) -> str:
         """Name of the executable file."""
-        return "_gigapixel"
+        return "gigapixel"
 
     @property
     def app_name(self) -> str:
@@ -63,7 +63,7 @@ class GigapixelAI(MacOSTopazProduct):
     @property
     def app_executable_path(self) -> str:
         """Relative path to executable within app bundle."""
-        return "Contents/Resources/bin/_gigapixel"
+        return "Contents/Resources/bin/gigapixel"
 
     @property
     def supported_formats(self) -> list[str]:
@@ -77,7 +77,7 @@ class GigapixelAI(MacOSTopazProduct):
             return [
                 Path("/Applications/Topaz Gigapixel AI.app/Contents/Resources/bin/gigapixel"),
                 Path("/Applications/Topaz Gigapixel AI.app/Contents/MacOS/Topaz Gigapixel AI"),
-                Path.home() / "Applications/Topaz Gigapixel AI.app/Contents/Resources/bin/_gigapixel",
+                Path.home() / "Applications/Topaz Gigapixel AI.app/Contents/Resources/bin/gigapixel",
             ]
         if platform.system() == "Windows":
             # Windows paths
@@ -195,13 +195,13 @@ class GigapixelAI(MacOSTopazProduct):
             msg = f"Parallel read must be between 1 and 10, got {parallel_read}"
             raise ValidationError(msg)
 
-    def build_command(self, input_path: Path, temp_output_dir: Path, **kwargs) -> CommandList:
+    def build_command(self, input_path: Path, output_path: Path, **kwargs) -> CommandList:
         """
         Build Gigapixel AI command line using temporary output directory.
 
         Args:
             input_path: Input file path
-            temp_output_dir: Temporary output directory path
+            output_path: Output file path
             **kwargs: Gigapixel-specific parameters
 
         Returns:
@@ -209,81 +209,12 @@ class GigapixelAI(MacOSTopazProduct):
 
         """
         executable = self.get_executable_path()
-
-        # Build base command
-        cmd = [str(executable), "--cli"]
-
-        # Add input and temp output directory
-        cmd.extend(["-i", str(input_path.resolve())])
-        cmd.extend(["-o", str(temp_output_dir.resolve())])
-
-        # Create output folder if needed
-        cmd.append("--create-folder")
-
-        # Add append model flag to include model name in filename
-        cmd.append("--am")
-
-        # Add model
-        model = kwargs.get("model", "std")
-        cmd.extend(["-m", model])
-
-        # Add scale
-        scale = kwargs.get("scale", 2)
-        cmd.extend(["--scale", str(scale)])
-
-        # Add optional parameters
-        optional_params = [
-            ("denoise", "--denoise"),
-            ("sharpen", "--sharpen"),
-            ("compression", "--compression"),
-            ("detail", "--detail"),
-            ("creativity", "--creativity"),
-            ("texture", "--texture"),
-            ("face_recovery", "--face-recovery"),
-        ]
-
-        for param_name, flag in optional_params:
-            value = kwargs.get(param_name)
-            if value is not None:
-                cmd.extend([flag, str(value)])
-
-        # Add face recovery version if face recovery is enabled
-        if kwargs.get("face_recovery") is not None:
-            face_recovery_version = kwargs.get("face_recovery_version", 2)
-            cmd.extend(["--face-recovery-version", str(face_recovery_version)])
-
-        # Add prompt if provided (for generative models)
-        prompt = kwargs.get("prompt")
-        if prompt:
-            cmd.extend(["--prompt", prompt])
-
-        # Add output format_output _options
-        format_param = kwargs.get("format_output", "preserve")
-        if format_param.lower() != "preserve":
-            cmd.extend(["-f", format_param])
-
-        # Add quality_output for JPEG output
-        quality = kwargs.get("quality_output", 95)
-        if format_param.lower() in ["jpg", "jpeg"] or format_param.lower() == "preserve":
-            cmd.extend(["--jpeg-quality_output", str(quality)])
-
-        # Add bit depth
-        bit_depth = kwargs.get("bit_depth", 0)
-        if bit_depth > 0:
-            cmd.extend(["--bit-depth", str(bit_depth)])
-
-        # Add parallel read optimization
-        parallel_read = kwargs.get("parallel_read", 1)
-        if parallel_read > 1:
-            cmd.extend(["-p", str(parallel_read)])
-
-        # Add processing flags
-        if input_path.is_dir():
-            cmd.append("--recursive")
-
+        cmd = [str(executable), "--cli", "-i", str(input_path.resolve()), "-o", str(output_path.resolve())]
+        for key, value in kwargs.items():
+            if value is not None and key not in ["output_path", "input_path"]:
+                cmd.extend([f"--{key.replace('_', '-')}", str(value)])
         if self.options.verbose:
             cmd.append("--verbose")
-
         return cmd
 
     def parse_output(self, stdout: str, stderr: str) -> dict[str, Any]:
@@ -416,14 +347,9 @@ class GigapixelAI(MacOSTopazProduct):
 
     def _find_output_file(self, temp_dir: Path, input_path: Path) -> Path:
         """Find Gigapixel AI output file in temporary directory."""
-        # Look for image files in temp directory
-        image_files = list(temp_dir.glob("*"))
-        image_files = [f for f in image_files if f.suffix.lower() in [".jpg", ".jpeg", ".png", ".tiff", ".tif"]]
-
-        if not image_files:
-            error_msg = f"No output files found in temporary directory {temp_dir}"
-            logger.error(error_msg)
-            raise ProcessingError(error_msg)
-
-        # Use the first (and likely only) generated image file
-        return image_files[0]
+        # Gigapixel AI preserves the input filename in the output directory
+        output_file = temp_dir / input_path.name
+        if not output_file.exists():
+            msg = f"Output file not found in temp directory: {output_file}"
+            raise ProcessingError(msg)
+        return output_file

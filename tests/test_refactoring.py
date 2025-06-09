@@ -7,6 +7,7 @@ This module contains tests to ensure the new modular architecture
 maintains backward compatibility and functions correctly.
 """
 
+import tempfile
 from pathlib import Path
 from unittest.mock import Mock, patch
 
@@ -69,7 +70,7 @@ class TestRefactoringBasics:
         assert video.product_name == "Topaz Video AI"
         assert photo.product_name == "Topaz Photo AI"
 
-        assert gp.executable_name == "_gigapixel"
+        assert gp.executable_name == "gigapixel"
         assert video.executable_name == "ffmpeg"
         assert photo.executable_name == "tpai"
 
@@ -125,7 +126,7 @@ class TestRefactoringBasics:
         photo.validate_params(format="jpg", quality=95, compression=6)
 
         # Invalid format_output should raise error
-        with pytest.raises(ValidationError, match="Invalid format_output"):
+        with pytest.raises(ValidationError, match="Invalid format"):
             photo.validate_params(format="invalid_format")
 
         # Invalid quality_output should raise error
@@ -136,23 +137,21 @@ class TestRefactoringBasics:
         with pytest.raises(ValidationError, match="Bit depth must be 8 or 16"):
             photo.validate_params(bit_depth=32)
 
-    @patch("topyaz.products._gigapixel.GigapixelAI.get_executable_path")
+    @patch("topyaz.products.gigapixel.api.GigapixelAI.get_executable_path")
     @patch("topyaz.execution.local.LocalExecutor.execute")
     def test_dry_run_mode(self, mock_execute, mock_executable):
         """Test that dry run mode works correctly."""
-        mock_executable.return_value = Path("/fake/_gigapixel")
+        mock_executable.return_value = Path("/fake/gigapixel")
         mock_execute.return_value = (0, "dry-run-output", "")
 
-        wrapper = TopyazCLI(verbose=False, dry_run=True)
+        wrapper = TopyazCLI(verbose=True, dry_run=True)
 
-        # Should succeed without actually executing
-        result = wrapper.giga("test_input.jpg", output="test_output.jpg")
+        with tempfile.NamedTemporaryFile(suffix=".jpg", delete=True) as temp_file:
+            # Should succeed without actually executing
+            result = wrapper._gigapixel.process(temp_file.name, output="test_output.jpg")
 
-        assert result is True
-        # Should not have called the real _executor
-        mock_execute.assert_called_once()
-        call_args = mock_execute.call_args
-        assert "dry-run" in str(call_args).lower() or wrapper._options.dry_run
+            assert result.success is True
+            assert "DRY RUN" in result.stdout
 
     def test_supported_formats(self):
         """Test that products report correct supported formats."""
@@ -181,15 +180,15 @@ class TestRefactoringBasics:
         executor = Mock()
         options = ProcessingOptions(verbose=True)
 
-        with patch("topyaz.products._gigapixel.GigapixelAI.get_executable_path") as mock_path:
-            mock_path.return_value = Path("/fake/_gigapixel")
+        with patch("topyaz.products.gigapixel.api.GigapixelAI.get_executable_path") as mock_path:
+            mock_path.return_value = Path("/fake/gigapixel")
 
             gp = GigapixelAI(executor, options)
             cmd = gp.build_command(Path("input.jpg"), Path("output.jpg"), model="std", scale=2, denoise=50)
 
             # Check that command contains expected elements
             cmd_str = " ".join(cmd)
-            assert "/fake/_gigapixel" in cmd_str
+            assert "/fake/gigapixel" in cmd_str
             assert "--cli" in cmd_str
             assert "-i" in cmd_str
             assert "input.jpg" in cmd_str

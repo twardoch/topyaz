@@ -1,7 +1,9 @@
-from pathlib import Path
 import shutil
 import tempfile
+from pathlib import Path
+
 from loguru import logger
+
 from topyaz.core.errors import ProcessingError
 
 
@@ -99,7 +101,8 @@ class PhotoAIBatch:
             return False
         if exit_code == 254:
             logger.error(f"Batch {batch_num} failed: Invalid log token - login required")
-            raise ProcessingError("Photo AI authentication required. Please log in via the Photo AI GUI.")
+            msg = "Photo AI authentication required. Please log in via the Photo AI GUI."
+            raise ProcessingError(msg)
         if exit_code == 253:
             logger.error(f"Batch {batch_num} failed: Invalid argument")
             if stderr:

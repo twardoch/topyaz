@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# this_file: src/topyaz/products/_video_ai.py
+# this_file: src/topyaz/products/video_ai/api.py
 """
 Topaz Video AI implementation for topyaz.
 
@@ -19,6 +19,7 @@ from topyaz.core.errors import ValidationError
 from topyaz.core.types import CommandList, ProcessingOptions, Product, VideoAIParams
 from topyaz.execution.base import CommandExecutor
 from topyaz.products.base import MacOSTopazProduct
+from topyaz.products.video_ai.params import VideoAIParams
 
 
 class VideoAI(MacOSTopazProduct):
@@ -44,6 +45,7 @@ class VideoAI(MacOSTopazProduct):
 
         """
         super().__init__(executor, options, Product.VIDEO_AI)
+        self.param_handler = VideoAIParams()
         self._setup_environment()
 
     @property
@@ -190,132 +192,7 @@ class VideoAI(MacOSTopazProduct):
             ValidationError: If parameters are invalid
 
         """
-        # Extract Video AI-specific parameters
-        model = kwargs.get("model", "amq-13")
-        scale = kwargs.get("scale", 2)
-        fps = kwargs.get("fps")
-        codec = kwargs.get("codec", "hevc_videotoolbox")
-        quality = kwargs.get("quality_output", 18)
-        denoise = kwargs.get("denoise")
-        details = kwargs.get("details")
-        halo = kwargs.get("halo")
-        blur = kwargs.get("blur")
-        compression = kwargs.get("compression")
-        device = kwargs.get("device", 0)
-
-        # Validate model
-        valid_models = {
-            "amq-13",
-            "amq-12",
-            "amq-11",
-            "amq-10",
-            "amq-9",
-            "amq-8",
-            "amq-7",
-            "amq-6",
-            "amq-5",
-            "amq-4",
-            "amq-3",
-            "amq-2",
-            "amq-1",
-            "prob-4",
-            "prob-3",
-            "prob-2",
-            "prob-1",
-            "ahq-13",
-            "ahq-12",
-            "ahq-11",
-            "ahq-10",
-            "ahq-9",
-            "ahq-8",
-            "ahq-7",
-            "ahq-6",
-            "ahq-5",
-            "ahq-4",
-            "ahq-3",
-            "ahq-2",
-            "ahq-1",
-            "chv-1",
-            "chv-2",
-            "chv-3",
-            "chv-4",
-            "rev-1",
-            "rev-2",
-            "rev-3",
-            "thq-1",
-            "thq-2",
-            "thq-3",
-            "dv-1",
-            "dv-2",
-            "iris-1",
-            "iris-2",
-            "dion-1",
-            "dion-2",
-            "gaia-1",
-            "nyx-1",
-            "nyx-2",
-            "nyx-3",
-            "artemis-lq-v12",
-            "artemis-mq-v12",
-            "artemis-hq-v12",
-            "proteus-v4",
-        }
-
-        if model.lower() not in valid_models:
-            msg = f"Invalid model '{model}'. Valid models: {', '.join(sorted(valid_models))}"
-            raise ValidationError(msg)
-
-        # Validate scale
-        if not (1 <= scale <= 4):
-            msg = f"Scale must be between 1 and 4, got {scale}"
-            raise ValidationError(msg)
-
-        # Validate FPS
-        if fps is not None and not (1 <= fps <= 240):
-            msg = f"FPS must be between 1 and 240, got {fps}"
-            raise ValidationError(msg)
-
-        # Validate quality_output (CRF value)
-        if not (1 <= quality <= 51):
-            msg = f"Quality must be between 1 and 51, got {quality}"
-            raise ValidationError(msg)
-
-        # Validate optional numeric parameters
-        if denoise is not None and not (0 <= denoise <= 100):
-            msg = f"Denoise must be between 0 and 100, got {denoise}"
-            raise ValidationError(msg)
-
-        if details is not None and not (-100 <= details <= 100):
-            msg = f"Details must be between -100 and 100, got {details}"
-            raise ValidationError(msg)
-
-        for param_name, value in [("halo", halo), ("blur", blur), ("compression", compression)]:
-            if value is not None and not (0 <= value <= 100):
-                msg = f"{param_name} must be between 0 and 100, got {value}"
-                raise ValidationError(msg)
-
-        # Validate device
-        if not (-1 <= device <= 10):
-            msg = f"Device must be between -1 and 10, got {device}"
-            raise ValidationError(msg)
-
-        # Validate codec
-        valid_codecs = {
-            "hevc_videotoolbox",
-            "hevc_nvenc",
-            "hevc_amf",
-            "libx265",
-            "h264_videotoolbox",
-            "h264_nvenc",
-            "h264_amf",
-            "libx264",
-            "prores",
-            "prores_ks",
-            "copy",
-        }
-        if codec.lower() not in valid_codecs:
-            msg = f"Invalid codec '{codec}'. Valid codecs: {', '.join(sorted(valid_codecs))}"
-            raise ValidationError(msg)
+        self.param_handler.validate_params(**kwargs)
 
     def build_command(self, input_path: Path, output_path: Path, **kwargs) -> CommandList:
         """
@@ -334,103 +211,7 @@ class VideoAI(MacOSTopazProduct):
 
         """
         executable = self.get_executable_path()
-
-        # Extract parameters
-        model = kwargs.get("model", "amq-13")
-        scale = kwargs.get("scale", 2)
-        fps = kwargs.get("fps")
-        denoise = kwargs.get("denoise")
-        details = kwargs.get("details")
-        halo = kwargs.get("halo")
-        blur = kwargs.get("blur")
-        compression = kwargs.get("compression")
-        kwargs.get("stabilize", False)
-        interpolate = kwargs.get("interpolate", False)
-        device = kwargs.get("device", 0)
-
-        # Build base command with high-quality_output settings
-        cmd = [str(executable)]
-
-        # Add ffmpeg flags
-        cmd.extend(["-hide_banner", "-nostdin", "-y"])
-
-        # Add hardware acceleration for macOS
-        if platform.system() == "Darwin":
-            cmd.extend(["-strict", "2", "-hwaccel", "auto"])
-
-        # Input file
-        cmd.extend(["-i", str(input_path.resolve())])
-
-        # Build filter chain
-        filters = []
-
-        # Main upscaling filter with Topaz AI
-        tvai_filter = f"tvai_up=model={model}:scale={scale}"
-
-        # Add optional parameters to upscaling filter
-        filter_params = []
-        if denoise is not None:
-            filter_params.append(f"denoise={denoise}")
-        if details is not None:
-            filter_params.append(f"details={details}")
-        if halo is not None:
-            filter_params.append(f"halo={halo}")
-        if blur is not None:
-            filter_params.append(f"blur={blur}")
-        if compression is not None:
-            filter_params.append(f"compression={compression}")
-        if device != 0:
-            filter_params.append(f"device={device}")
-
-        if filter_params:
-            tvai_filter += ":" + ":".join(filter_params)
-
-        filters.append(tvai_filter)
-
-        # Add frame interpolation if requested
-        if interpolate and fps:
-            fi_filter = f"tvai_fi=model=chr-2:fps={fps}"
-            if device != 0:
-                fi_filter += f":device={device}"
-            filters.append(fi_filter)
-
-        # Note: Stabilization requires two-pass processing and is handled separately
-        # in the process method if stabilize=True
-
-        # Apply filters
-        if filters:
-            cmd.extend(["-vf", ",".join(filters)])
-
-        # High-quality_output encoding settings (adapted for TVAI's ffmpeg and macOS)
-        if platform.system() == "Darwin":
-            # Use VideoToolbox encoder on macOS (compatible with TVAI)
-            cmd.extend(["-c:v", "hevc_videotoolbox"])
-            cmd.extend(["-profile:v", "main"])
-            cmd.extend(["-pix_fmt", "yuv420p"])
-            cmd.extend(["-allow_sw", "1"])
-            cmd.extend(["-tag:v", "hvc1"])
-            # Try to set quality_output equivalent to CRF 18
-            cmd.extend(["-global_quality", "18"])
-        else:
-            # Fallback to libx265 for other platforms
-            cmd.extend(["-c:v", "libx265"])
-            cmd.extend(["-crf", "18"])
-            cmd.extend(["-tag:v", "hvc1"])
-
-        # Audio settings from TODO
-        cmd.extend(["-c:a", "aac"])
-        cmd.extend(["-b:a", "192k"])
-
-        # Progress reporting
-        if self.options.verbose:
-            cmd.extend(["-progress", "pipe:1"])
-        else:
-            cmd.extend(["-loglevel", "error"])
-
-        # Output file
-        cmd.append(str(output_path.resolve()))
-
-        return cmd
+        return self.param_handler.build_command(executable, input_path, output_path, self.options.verbose, **kwargs)
 
     def parse_output(self, stdout: str, stderr: str) -> dict[str, Any]:
         """

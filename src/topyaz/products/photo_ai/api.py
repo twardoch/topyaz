@@ -7,6 +7,7 @@ This module provides the Photo AI product implementation with support
 for automatic and manual photo enhancement.
 """
 
+import contextlib
 import platform
 from pathlib import Path
 from typing import Any
@@ -19,6 +20,7 @@ from topyaz.execution.base import CommandExecutor
 from topyaz.products.base import MacOSTopazProduct
 from topyaz.products.photo_ai.batch import PhotoAIBatch
 from topyaz.products.photo_ai.params import PhotoAIParams
+from topyaz.products.photo_ai.preferences import PhotoAIAutopilotSettings, PhotoAIPreferences
 
 
 class PhotoAI(MacOSTopazProduct):
@@ -79,10 +81,8 @@ class PhotoAI(MacOSTopazProduct):
             for line in lines:
                 line = line.strip()
                 if "images processed" in line.lower():
-                    try:
+                    with contextlib.suppress(ValueError, IndexError):
                         info["images_processed"] = int(line.split()[0])
-                    except (ValueError, IndexError):
-                        pass
                 if "autopilot:" in line.lower():
                     info["autopilot_preset"] = line.split(":")[-1].strip()
                 if "enhancements applied:" in line.lower():
@@ -106,7 +106,8 @@ class PhotoAI(MacOSTopazProduct):
         matching_files = list(temp_dir.glob(pattern))
         if matching_files:
             return max(matching_files, key=lambda f: f.stat().st_mtime)
-        raise ProcessingError(f"No output files found in temporary directory {temp_dir}")
+        msg = f"No output files found in temporary directory {temp_dir}"
+        raise ProcessingError(msg)
 
     def get_default_params(self) -> PhotoAIParams:
         return PhotoAIParams()
@@ -121,8 +122,6 @@ class PhotoAI(MacOSTopazProduct):
         self, input_path: Path | str, output_path: Path | str | None, **kwargs
     ) -> ProcessingResult:
         try:
-            from topyaz.system.photo_ai_prefs import PhotoAIAutopilotSettings, PhotoAIPreferences
-
             autopilot_settings = self._build_autopilot_settings(**kwargs)
             with PhotoAIPreferences() as prefs:
                 backup_id = prefs.backup()
@@ -141,8 +140,6 @@ class PhotoAI(MacOSTopazProduct):
             return super().process(input_path, output_path, **kwargs)
 
     def _build_autopilot_settings(self, **kwargs):
-        from topyaz.system.photo_ai_prefs import PhotoAIAutopilotSettings
-
         return PhotoAIAutopilotSettings(
             face_strength=kwargs.get("face_strength", 80),
             face_detection=kwargs.get("face_detection", "subject"),

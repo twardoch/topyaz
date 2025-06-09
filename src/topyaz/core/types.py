@@ -81,6 +81,22 @@ class ProcessingOptions:
 
 
 @dataclass
+class RemoteOptions:
+    """
+    Remote execution _options for SSH operations.
+
+    These _options are used when executing commands on remote machines.
+    """
+
+    host: str | None = None
+    user: str | None = None
+    ssh_key: Path | None = None
+    ssh_port: int = 22
+    connection_timeout: int = 30
+    remote_folder: str | None = None
+
+
+@dataclass
 class GigapixelParams:
     """
     Gigapixel AI processing parameters.

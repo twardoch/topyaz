@@ -1,7 +1,9 @@
+from pathlib import Path
+
+from loguru import logger
+
 from topyaz.core.errors import ValidationError
 from topyaz.core.types import CommandList
-from pathlib import Path
-from loguru import logger
 
 
 class PhotoAIParams:
@@ -9,32 +11,33 @@ class PhotoAIParams:
         """
         Validate Photo AI parameters including enhanced autopilot settings.
         """
-        format_param = kwargs.get("format_output", "preserve")
-        quality = kwargs.get("quality_output", 95)
+        format_param = kwargs.get("format", "preserve")
+        quality = kwargs.get("quality", 95)
         compression = kwargs.get("compression", 6)
         bit_depth = kwargs.get("bit_depth", 8)
         tiff_compression = kwargs.get("tiff_compression", "lzw")
 
         valid_formats = {"preserve", "jpg", "jpeg", "png", "tif", "tiff", "dng"}
         if format_param.lower() not in valid_formats:
-            raise ValidationError(
-                f"Invalid format_output '{format_param}'. Valid formats: {', '.join(sorted(valid_formats))}"
-            )
+            msg = f"Invalid format '{format_param}'. Valid formats: {', '.join(sorted(valid_formats))}"
+            raise ValidationError(msg)
 
         if not (0 <= quality <= 100):
-            raise ValidationError(f"Quality must be between 0 and 100, got {quality}")
+            msg = f"Quality must be between 0 and 100, got {quality}"
+            raise ValidationError(msg)
 
         if not (0 <= compression <= 10):
-            raise ValidationError(f"Compression must be between 0 and 10, got {compression}")
+            msg = f"Compression must be between 0 and 10, got {compression}"
+            raise ValidationError(msg)
 
         if bit_depth not in [8, 16]:
-            raise ValidationError(f"Bit depth must be 8 or 16, got {bit_depth}")
+            msg = f"Bit depth must be 8 or 16, got {bit_depth}"
+            raise ValidationError(msg)
 
         valid_tiff_compression = {"none", "lzw", "zip"}
         if tiff_compression.lower() not in valid_tiff_compression:
-            raise ValidationError(
-                f"Invalid TIFF compression '{tiff_compression}'. Valid _options: {', '.join(sorted(valid_tiff_compression))}"
-            )
+            msg = f"Invalid TIFF compression '{tiff_compression}'. Valid _options: {', '.join(sorted(valid_tiff_compression))}"
+            raise ValidationError(msg)
 
         autopilot_params = {k: v for k, v in kwargs.items() if self._is_autopilot_param(k)}
         if autopilot_params:
@@ -46,7 +49,8 @@ class PhotoAIParams:
             except ImportError:
                 logger.warning("Preferences system not available - skipping autopilot parameter validation")
             except Exception as e:
-                raise ValidationError(f"Invalid autopilot parameter: {e}")
+                msg = f"Invalid autopilot parameter: {e}"
+                raise ValidationError(msg)
 
     def _is_autopilot_param(self, param_name: str) -> bool:
         autopilot_params = {
@@ -87,8 +91,8 @@ class PhotoAIParams:
         Build Photo AI command line.
         """
         autopilot_preset = kwargs.get("autopilot_preset", "auto")
-        format_param = kwargs.get("format_output", "preserve")
-        quality = kwargs.get("quality_output", 95)
+        format_param = kwargs.get("format", "preserve")
+        quality = kwargs.get("quality", 95)
         compression = kwargs.get("compression", 6)
         bit_depth = kwargs.get("bit_depth", 8)
         tiff_compression = kwargs.get("tiff_compression", "lzw")
