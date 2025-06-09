@@ -353,7 +353,7 @@ class RemoteFileCoordinator:
                 # Check if remote path is a file or directory
                 file_exit_code, _, _ = self.executor.execute(["test", "-f", remote_path])
                 dir_exit_code, _, _ = self.executor.execute(["test", "-d", remote_path])
-                
+
                 if file_exit_code == 0:
                     # It's a file, download directly
                     logger.debug(f"Downloading {remote_path} to {local_path}")
@@ -373,7 +373,7 @@ class RemoteFileCoordinator:
     def _download_directory_contents(self, remote_dir: str, local_dir: str, session: RemoteSession) -> None:
         """
         Download all files from a remote directory to a local directory.
-        
+
         Args:
             remote_dir: Remote directory path
             local_dir: Local directory path
@@ -381,48 +381,50 @@ class RemoteFileCoordinator:
         """
         try:
             # List files in remote directory
-            exit_code, stdout, stderr = self.executor.execute(["find", remote_dir, "-type", "f", "-exec", "basename", "{}", ";"])
-            
+            exit_code, stdout, stderr = self.executor.execute(
+                ["find", remote_dir, "-type", "f", "-exec", "basename", "{}", ";"]
+            )
+
             if exit_code != 0:
                 logger.warning(f"Failed to list files in remote directory {remote_dir}: {stderr}")
                 return
-                
-            files = [f.strip() for f in stdout.strip().split('\n') if f.strip()]
-            
+
+            files = [f.strip() for f in stdout.strip().split("\n") if f.strip()]
+
             if not files:
                 logger.warning(f"No files found in remote directory: {remote_dir}")
                 return
-                
+
             logger.debug(f"Found {len(files)} files in remote directory: {files}")
-            
+
             # Ensure local directory exists
             local_path = Path(local_dir)
             local_path.mkdir(parents=True, exist_ok=True)
-            
+
             # Download each file
             for filename in files:
                 remote_file = f"{remote_dir}/{filename}"
                 local_file = str(local_path / filename)
-                
+
                 logger.debug(f"Downloading {remote_file} to {local_file}")
                 self.executor.download_file(remote_file, local_file)
-                
+
         except Exception as e:
             logger.error(f"Failed to download directory contents from {remote_dir}: {e}")
 
     def _debug_remote_session_contents(self, session: RemoteSession) -> None:
         """
         Debug method to list all contents of the remote session directory.
-        
+
         Args:
             session: Remote session to debug
         """
         try:
             logger.debug(f"Debugging remote session contents for {session.session_id}")
-            
+
             # List all contents recursively
             exit_code, stdout, stderr = self.executor.execute(["find", session.remote_base_dir, "-type", "f", "-ls"])
-            
+
             if exit_code == 0:
                 if stdout.strip():
                     logger.debug(f"Remote session files:\n{stdout}")
@@ -430,16 +432,16 @@ class RemoteFileCoordinator:
                     logger.debug("No files found in remote session directory")
             else:
                 logger.debug(f"Failed to list remote session contents: {stderr}")
-                
+
             # Also check the outputs directory specifically
             outputs_dir = f"{session.remote_base_dir}/outputs"
             exit_code, stdout, stderr = self.executor.execute(["ls", "-la", outputs_dir])
-            
+
             if exit_code == 0:
                 logger.debug(f"Outputs directory contents:\n{stdout}")
             else:
                 logger.debug(f"Failed to list outputs directory: {stderr}")
-                
+
         except Exception as e:
             logger.debug(f"Failed to debug remote session contents: {e}")
 
@@ -553,7 +555,7 @@ class RemoteFileCoordinator:
                     version_file = f"{self.cache_dir}/{bundle_hash}/wrapper_v2.1"
                     wrapper_exists = self.executor.execute(["test", "-f", wrapper_path])[0] == 0
                     version_current = self.executor.execute(["test", "-f", version_file])[0] == 0
-                    
+
                     if not wrapper_exists or not version_current:
                         logger.debug("Wrapper missing or outdated, regenerating it")
                         self._create_wrapper_script(f"{self.cache_dir}/{bundle_hash}", wrapper_path)
@@ -607,7 +609,7 @@ class RemoteFileCoordinator:
         # Create wrapper script
         wrapper_path = f"{cache_base}/tpai_wrapper"
         self._create_wrapper_script(cache_base, wrapper_path)
-        
+
         # Mark wrapper version
         version_file = f"{cache_base}/wrapper_v2.1"
         self.executor.execute(["touch", version_file])
@@ -661,14 +663,14 @@ export NO_GUI=true
 if [[ "$@" == *"--cli"* ]]; then
     # CLI mode - try to run tpai binary directly without app bundle
     echo "Running in CLI mode with minimal setup" >&2
-    
+
     # Check if we can even run the binary
     if ! ./tpai --help >/dev/null 2>&1; then
         echo "ERROR: Unable to run tpai binary. This usually means Photo AI requires an active GUI session." >&2
         echo "Photo AI cannot run on remote machines without an active desktop session." >&2
         exit 1
     fi
-    
+
     # Try to run the actual command
     exec ./tpai "$@" 2>&1
 else

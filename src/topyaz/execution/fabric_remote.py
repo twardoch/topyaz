@@ -206,7 +206,7 @@ class VirtualDisplayManager:
     def _setup_macos_launchctl(self, command: CommandList) -> CommandList:
         """Set up macOS GUI context with direct execution and error capture."""
         # Simpler approach - run directly with environment but capture errors
-        
+
         # Quote the command properly to handle spaces in paths
         quoted_command = []
         for arg in command:
@@ -216,14 +216,14 @@ class VirtualDisplayManager:
                 quoted_command.append(f"'{escaped}'")
             else:
                 quoted_command.append(arg)
-        
+
         # Build command with environment and error handling
         env_setup = [
             "export DISPLAY=:99",
             "export QT_QPA_PLATFORM=offscreen",
             "export NSUnbufferedIO=YES",
             "export CI=true",
-            "export HEADLESS=true", 
+            "export HEADLESS=true",
             "export NO_GUI=true",
             "export TERM=xterm-256color",
             "export DYLD_LIBRARY_PATH=/System/Library/Frameworks/ApplicationServices.framework/Versions/A/Frameworks/CoreGraphics.framework/Versions/A:$DYLD_LIBRARY_PATH",
@@ -231,14 +231,14 @@ class VirtualDisplayManager:
             "export NSUIElement=1",
             "export LSUIElement=1",
         ]
-        
+
         # Run command directly - let Fabric handle timeouts
         # Add error handling to see what's happening
-        
+
         return [
             "bash",
-            "-c", 
-            f"{'; '.join(env_setup)}; {' '.join(quoted_command)} 2>&1 || echo 'Command failed with exit code: '$?"
+            "-c",
+            f"{'; '.join(env_setup)}; {' '.join(quoted_command)} 2>&1 || echo 'Command failed with exit code: '$?",
         ]
 
     def _setup_macos_environment(self, command: CommandList) -> CommandList:

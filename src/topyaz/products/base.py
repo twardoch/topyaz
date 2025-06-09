@@ -379,10 +379,10 @@ class TopazProduct(ABC):
                 file_size_before = input_path.stat().st_size if input_path.is_file() else 0
 
                 # Execute the command with remote coordination if needed
+                from topyaz.execution.fabric_remote import EnhancedFabricRemoteExecutor, FabricRemoteExecutor
                 from topyaz.execution.remote import RemoteExecutor
-                from topyaz.execution.fabric_remote import FabricRemoteExecutor, EnhancedFabricRemoteExecutor
 
-                if isinstance(self.executor, (RemoteExecutor, FabricRemoteExecutor, EnhancedFabricRemoteExecutor)):
+                if isinstance(self.executor, RemoteExecutor | FabricRemoteExecutor | EnhancedFabricRemoteExecutor):
                     # Use remote file coordination for transparent remote processing
                     from topyaz.execution.coordination import RemoteFileCoordinator
 
