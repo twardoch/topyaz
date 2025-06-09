@@ -1,46 +1,48 @@
 ---
 description: Technical specification for remote execution system enabling distributed processing via SSH with security and hardware optimization
-globs: **/remote.py,**/execution/**,**/security/**,**/optimization/hardware.py
+globs: src/topyaz/execution/remote.py,src/topyaz/execution/base.py,src/topyaz/system/**
 alwaysApply: false
 ---
 
 
 # remote-execution
 
-The remote execution system implements the following key business components:
+### SSH Implementation
+- Implements secure remote task execution through SSH protocol
+- Enables distributed processing on powerful remote machines
+- File transfer protocols for secure media file handling between local and remote systems
+- SSH key-based authentication system for secure connections
 
-### SSH-Based Remote Processing
-- Located in `topyaz/execution/remote.py`
-- Enables distributed processing of media files across remote machines
-- Handles connection management and task distribution
-- Supports both synchronous and asynchronous processing modes
-
-### Security Implementation
-- Located in `topyaz/security/__init__.py`  
-- SSH key-based authentication for secure remote access
-- Secure file transfer protocols for media transmission
-- Command injection prevention mechanisms
-- Validates remote host integrity and permissions
+### Security Measures
+- SSH key validation and verification before establishing connections
+- Secure file transfer protocols for media files
+- Command injection prevention through parameterized execution
+- Authentication state validation throughout remote sessions
 
 ### Hardware Optimization
-- Located in `topyaz/optimization/hardware.py`
-- Automatically detects and optimizes for remote system capabilities:
-  - CPU architecture (Apple Silicon vs Intel)
-  - GPU availability and specifications
-  - Storage speed and capacity
-- Dynamically adjusts processing parameters based on hardware specs
+- Automatic detection of remote system hardware capabilities
+- Optimization for different architectures (Apple Silicon/Intel)
+- Resource allocation based on available remote system capabilities
+- Dynamic workload distribution across remote processing nodes
 
-### Remote Configuration
-- Managed via YAML configuration
-- Stores remote host details
-- Defines processing preferences per remote machine
-- Handles connection retry policies and timeout settings
+### Relevant File Paths
+```
+src/topyaz/execution/remote.py      # RemoteExecutor class implementation
+src/topyaz/execution/base.py        # Base command execution framework
+src/topyaz/system/paths.py          # System path validation and hardware detection
+```
+
+### Component Integration
+- RemoteExecutor class manages SSH connections and command distribution
+- PathValidator ensures valid remote system paths and permissions
+- CommandExecutor handles remote command execution and monitoring
+- Hardware detection components optimize processing parameters
 
 Importance Scores:
-- SSH Implementation: 85 (Key integration point for distributed processing)
-- Security Measures: 90 (Critical for protecting remote operations)
-- Hardware Optimization: 75 (Important for processing efficiency)
-- Remote Configuration: 65 (Supporting functionality)
+- Remote Execution Core: 95 (Critical business functionality)
+- Security Implementation: 90 (Essential for secure operations)
+- Hardware Optimization: 85 (Key performance feature)
+- Path Validation: 75 (Important for reliable operation)
 
 $END$
 

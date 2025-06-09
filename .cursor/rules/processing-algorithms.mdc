@@ -1,67 +1,73 @@
 ---
-description: Core algorithms and transformations for media processing, batch operations, and hardware optimization
-globs: **/processing/**,**/algorithms/**,**/batch/**,**/optimization/**
+description: Core documentation of processing algorithms, batch operations, and domain-specific data transformations for media enhancement
+globs: src/topyaz/products/**/*.py,src/topyaz/execution/**/*.py,src/topyaz/system/**/*.py
 alwaysApply: false
 ---
 
+# === USER INSTRUCTIONS ===
+  - `topyaz/products/_video_ai.py`
+  - `topyaz/products/_photo_ai.py`
+# === END USER INSTRUCTIONS ===
 
 # processing-algorithms
 
 ## Core Processing Components
 
-### Hardware-Aware Processing Engine
-- **File Path**: `topyaz/optimization/hardware.py`
-- **Importance**: 95
-- Intelligent detection and optimization for Apple Silicon vs Intel architectures
-- Dynamic resource allocation based on available GPU capabilities
-- Storage speed detection for optimizing batch processing throughput
+### Media Enhancement Algorithms 
+- Photo AI processing with autopilot presets and enhancement options including noise reduction, sharpening, and upscaling
+- Gigapixel AI upscaling with model selection (standard, art & CG, recovery, generative) 
+- Video AI processing with frame interpolation, stabilization and denoising capabilities
 
-### Batch Processing Pipeline
-- **File Path**: `topyaz/cli/batch.py`
-- **Importance**: 90
-- Real-time progress monitoring with ETA calculations
-- Intelligent job queuing based on hardware capabilities
-- Recovery mechanisms for interrupted processing tasks
+Importance Score: 95
 
-### Media-Specific Transformations
-- **File Paths**: 
-  - `topyaz/products/_video_ai.py`
-  - `topyaz/products/gigapixel_ai.py`
-  - `topyaz/products/_photo_ai.py`
-- **Importance**: 85
-- Model-specific processing parameter optimization
-- Generative upscaling with AI prompt integration
-- Custom enhancement algorithms for face recovery and denoising
+### Batch Processing Engine
+- Intelligent batch operations management with real-time progress monitoring
+- Error recovery mechanisms for handling processing failures
+- Remote execution support for distributed workload management
+- Enhanced autopilot control through preferences manipulation
 
-### Remote Processing Engine
-- **File Path**: `topyaz/execution/remote.py`
-- **Importance**: 80
-- Distributed processing across remote machines via SSH
-- Load balancing for multi-machine batch operations
-- Secure file transfer protocols for media processing
+Importance Score: 85
 
-## Domain-Specific Algorithms
+### Domain-Specific Transformations
+1. Photo Enhancement
+```python
+src/topyaz/products/_photo_ai.py
+- Autopilot preset handling
+- Format conversion optimization
+- Multi-parameter enhancement control
+```
 
-### AI Model Integration
-- **File Path**: `topyaz/products/gigapixel_ai.py`
-- **Importance**: 85
-- Generative upscaling algorithms with custom creativity settings
-- Texture-aware processing pipelines
-- Adaptive model selection based on input characteristics
+2. Video Processing 
+```python
+src/topyaz/products/_video_ai.py
+- Frame interpolation algorithms
+- Model-specific parameter mapping
+- Video stabilization coordination
+```
 
-### Performance Optimization
-- **File Path**: `topyaz/benchmark/__init__.py`
-- **Importance**: 75
-- Benchmarking algorithms for processing efficiency
-- Comparative analysis against GUI tool performance
-- Resource utilization optimization strategies
+3. Image Upscaling
+```python
+src/topyaz/products/_gigapixel.py
+- Model-specific upscaling logic
+- Art & CG special handling
+- Recovery mode processing
+```
 
-### Error Recovery Logic
-- **File Path**: `topyaz/error_handling/__init__.py`
-- **Importance**: 70
-- Intelligent retry mechanisms for failed operations
-- State preservation during batch processing
-- Automatic error classification and recovery procedures
+Importance Score: 90
+
+### Hardware Optimization
+- Automatic detection and optimization for Apple Silicon/Intel
+- System resource allocation for batch processing
+- GPU utilization management
+
+File Paths:
+```
+src/topyaz/system/paths.py
+src/topyaz/execution/base.py
+src/topyaz/products/base.py
+```
+
+Importance Score: 75
 
 $END$
 

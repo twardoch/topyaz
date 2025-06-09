@@ -1,64 +1,59 @@
 ---
-description: Documents data movement patterns between local and remote processing components, including file handling and monitoring
-globs: topyaz/execution/*.py,topyaz/cli/batch.py,topyaz/error_handling/*.py
+description: Documents data flow patterns for processing media files locally and remotely, including progress monitoring and error handling.
+globs: src/topyaz/execution/**/*.py,src/topyaz/products/**/*.py
 alwaysApply: false
 ---
 
 
-# Data-Flow
+# data-flow
 
-## Core Data Movement Patterns
+### Core Data Flow Components
 
-1. Remote Processing Pipeline
-- Location: `topyaz/execution/remote.py`
-- Handles bidirectional file transfer between local and remote systems
-- Manages SSH-based data streaming for media file processing
-- Implements resumable file transfers for large media collections
-- Importance Score: 95
+1. Remote Execution Pipeline
+- Files are transferred to remote hosts via SSH for processing
+- Status updates and results streamed back to local client
+- File path: `src/topyaz/execution/remote.py`
 
-2. Batch Operation Data Flow
-- Location: `topyaz/cli/batch.py`
-- Orchestrates parallel processing streams for multiple files
-- Tracks processing status and progress across file groups
-- Maintains processing state for recovery scenarios
-- Importance Score: 90
+2. Progress Monitoring Flow 
+- Real-time status updates during batch processing
+- ETA calculations based on completed items
+- Error recovery with detailed processing outcomes
+- File path: `src/topyaz/execution/base.py`
 
-3. Error Recovery Data Paths
-- Location: `topyaz/error_handling/__init__.py`
-- Implements checkpointing for batch processing operations
-- Records processing state for interrupted operations
-- Manages data integrity during failure scenarios
-- Importance Score: 85
+3. Product-Specific Processing Flows
+- Photo AI: Autopilot preferences management and format conversion
+- Video AI: Frame-by-frame processing with stabilization data
+- Gigapixel AI: Model-specific parameter handling
+- File paths:
+  - `src/topyaz/products/_photo_ai.py`
+  - `src/topyaz/products/_video_ai.py` 
+  - `src/topyaz/products/_gigapixel.py`
 
-## Data Monitoring
+4. Error Recovery Pipeline
+- Failed items tracked in ProcessingResult objects
+- Automatic retry attempts with exponential backoff
+- Detailed error reporting for manual intervention
+- File path: `src/topyaz/products/base.py`
 
-1. Progress Tracking
-- Location: `topyaz/cli/batch.py`
-- Real-time monitoring of file processing status
-- Collection of processing metrics per file
-- Aggregation of batch operation statistics
-- Importance Score: 75
+5. Batch Processing Flow
+- Intelligent grouping of files for optimal processing
+- Progress monitoring with completion estimates
+- Temporary directory management for processing
+- File path: `src/topyaz/execution/base.py`
 
-2. Error State Management
-- Location: `topyaz/error_handling/__init__.py`
-- Tracking of failed operations and their causes
-- Recording of partial processing results
-- Management of retry queues and recovery states
-- Importance Score: 80
+### Critical Data Exchange Points
 
-## File Handling
+1. Remote Host Communication
+- Secure file transfer protocols
+- Command execution via SSH
+- Status/progress streaming
+- File path: `src/topyaz/execution/remote.py`
 
-1. Media File Processing
-- Specialized handling for video and image file formats
-- Tracking of file dependencies during batch operations
-- Management of temporary processing artifacts
-- Importance Score: 85
-
-2. Configuration Data Flow
-- YAML-based configuration management
-- Remote host configuration synchronization
-- Product-specific setting propagation
-- Importance Score: 70
+2. Processing Results Collection
+- Standardized result objects across products
+- Error categorization and recovery options
+- Success/failure tracking
+- File path: `src/topyaz/products/base.py`
 
 $END$
 
