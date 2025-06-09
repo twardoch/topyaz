@@ -558,7 +558,7 @@ class RemoteFileCoordinator:
 
                     if not wrapper_exists or not version_current:
                         logger.debug("Wrapper missing or outdated, regenerating it")
-                        self._create_wrapper_script(f"{self.cache_dir}/{bundle_hash}", wrapper_path)
+                        self._create_wrapper_script(f"{self.cache_dir}/{bundle_hash}", wrapper_path, str(app_bundle_path))
                         # Mark wrapper version
                         self.executor.execute(["touch", version_file])
                     else:
@@ -608,7 +608,7 @@ class RemoteFileCoordinator:
 
         # Create wrapper script
         wrapper_path = f"{cache_base}/tpai_wrapper"
-        self._create_wrapper_script(cache_base, wrapper_path)
+        self._create_wrapper_script(cache_base, wrapper_path, str(app_bundle_path))
 
         # Mark wrapper version
         version_file = f"{cache_base}/wrapper_v2.1"
@@ -639,17 +639,20 @@ class RemoteFileCoordinator:
 
         return remote_path
 
-    def _create_wrapper_script(self, cache_base: str, wrapper_path: str) -> None:
+    def _create_wrapper_script(self, cache_base: str, wrapper_path: str, app_bundle_path_str: str) -> None:
         """
         Create a wrapper script that sets up the correct directory structure for Photo AI.
 
         Args:
             cache_base: Base cache directory
             wrapper_path: Path where wrapper should be created
+            app_bundle_path_str: The application bundle path string
         """
         # Create a wrapper script that tries to run tpai with minimal GUI requirements
-        # Version 2.1 - with better error detection
+        # Version 2.2 - with open fallback
+        APP_BUNDLE_PATH_ESCAPED = shlex.quote(app_bundle_path_str)
         wrapper_content = f'''#!/bin/bash
+APP_BUNDLE_PATH="{APP_BUNDLE_PATH_ESCAPED}"
 cd "{cache_base}"
 
 # Set up headless environment for Photo AI
@@ -661,18 +664,27 @@ export NO_GUI=true
 
 # Try to run tpai directly first (CLI mode)
 if [[ "$@" == *"--cli"* ]]; then
+    echo "Attempting direct CLI execution of tpai" >&2
     # CLI mode - try to run tpai binary directly without app bundle
-    echo "Running in CLI mode with minimal setup" >&2
+    ./tpai --version >/dev/null 2>&1
+    CLI_EXIT_CODE=$?
 
-    # Check if we can even run the binary
-    if ! ./tpai --help >/dev/null 2>&1; then
-        echo "ERROR: Unable to run tpai binary. This usually means Photo AI requires an active GUI session." >&2
-        echo "Photo AI cannot run on remote machines without an active desktop session." >&2
-        exit 1
+    if [ $CLI_EXIT_CODE -eq 0 ]; then
+        echo "Direct CLI execution possible. Executing: ./tpai "$@"" >&2
+        exec ./tpai "$@" 2>&1
+    else
+        echo "Direct CLI execution failed with exit code $CLI_EXIT_CODE. Falling back to 'open' command." >&2
+        OPEN_CMD="open -W -a \\"{APP_BUNDLE_PATH}\\" --args --cli "$@""
+        echo "Executing fallback command: $OPEN_CMD" >&2
+        eval "$OPEN_CMD"
+        OPEN_EXIT_CODE=$?
+        echo "'open' command exited with code $OPEN_EXIT_CODE" >&2
+        if [ $OPEN_EXIT_CODE -ne 0 ]; then
+            echo "ERROR: Unable to run tpai binary using both direct execution and 'open' command." >&2
+            echo "Photo AI may require an active GUI session or there might be an issue with the application bundle." >&2
+        fi
+        exit $OPEN_EXIT_CODE
     fi
-
-    # Try to run the actual command
-    exec ./tpai "$@" 2>&1
 else
     # Non-CLI mode - set up full app structure
     echo "Running in GUI mode with full app structure" >&2
@@ -680,6 +692,9 @@ else
     ln -sf "../Topaz Photo AI" MacOS/"Topaz Photo AI"
     cd Resources/bin
     ln -sf ../../tpai .
+    # In non-CLI mode, direct execution is usually expected.
+    # If this fails, it implies a more fundamental issue with the setup.
+    echo "Attempting direct execution for GUI mode setup: ./tpai "$@"" >&2
     exec ./tpai "$@" 2>&1
 fi
 '''
@@ -688,7 +703,7 @@ fi
         self.executor.execute(["bash", "-c", f"cat > {wrapper_path} << 'WRAPPER_EOF'\n{wrapper_content}WRAPPER_EOF"])
         self.executor.execute(["chmod", "+x", wrapper_path])
 
-    def _upload_directory_recursive(self, local_dir: Path, remote_dir: str) -> None:
+    def _upload_directory_recursive(self, local_dir: Path, remote_dir: str) -> None: # noqa: E501
         """
         Upload a directory and all its contents recursively.
 
