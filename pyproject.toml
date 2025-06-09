@@ -33,14 +33,15 @@ classifiers = [
 ]
 
 dependencies = [
-    "fire>=0.4.0",           # CLI framework
-    "paramiko>=2.7.0",       # SSH functionality
-    "pyyaml>=5.4.0",         # Configuration files
-    "tqdm>=4.60.0",          # Progress bars
-    "psutil>=5.8.0",         # System monitoring
-    "loguru>=0.6.0",         # Logging system
-    "rich>=13.0.0",          # CLI output formatting
-    "typing-extensions>=3.7.0",  # Type hints
+    "fire>=0.4.0", # CLI framework
+    "paramiko>=2.7.0", # SSH functionality (legacy)
+    "fabric>=3.0.0", # High-level SSH library
+    "pyyaml>=5.4.0", # Configuration files
+    "tqdm>=4.60.0", # Progress bars
+    "psutil>=5.8.0", # System monitoring
+    "loguru>=0.6.0", # Logging system
+    "rich>=13.0.0", # CLI output formatting
+    "typing-extensions>=3.7.0", # Type hints
 ]
 
 # Author information

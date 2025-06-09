@@ -18,7 +18,7 @@ def test_remote_connection():
     import getpass
 
     remote_options = RemoteOptions(
-        host="ophelia.local", user=getpass.getuser(), ssh_port=22, connection_timeout=30, remote_folder="/tmp/topyaz"
+        host="othello.local", user=getpass.getuser(), ssh_port=22, connection_timeout=30, remote_folder="/tmp/topyaz"
     )
 
     try:

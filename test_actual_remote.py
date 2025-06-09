@@ -17,7 +17,7 @@ def test_remote_coordination_with_ophelia():
 
     # Set up remote options
     remote_options = RemoteOptions(
-        host="ophelia.local",
+        host="othello.local",
         user=getpass.getuser(),  # Current user
         ssh_port=22,
         connection_timeout=30,

@@ -17,8 +17,8 @@ from loguru import logger
 
 from topyaz.core.config import Config
 from topyaz.core.types import ProcessingOptions, RemoteOptions
+from topyaz.execution.fabric_remote import EnhancedFabricRemoteExecutor, EnhancedRemoteOptions, FabricRemoteExecutor
 from topyaz.execution.local import LocalExecutor
-from topyaz.execution.remote import RemoteExecutor
 from topyaz.products import GigapixelAI, PhotoAI, VideoAI
 from topyaz.system.environment import EnvironmentValidator
 from topyaz.system.gpu import GPUManager
@@ -50,6 +50,11 @@ class TopyazCLI:
         ssh_port: int = 22,
         connection_timeout: int = 30,
         remote_folder: str | None = None,
+        # New virtual display options
+        enable_virtual_display: bool = True,
+        virtual_display_strategy: str = "auto",
+        xvfb_screen_size: str = "1024x768x24",
+        force_display_setup: bool = False,
         config_file: str | None = None,
         parallel_jobs: int = 1,
         dry_run: bool = False,
@@ -58,7 +63,7 @@ class TopyazCLI:
         **kwargs,
     ):
         """
-        Initialize topyaz wrapper.
+        Initialize topyaz wrapper with enhanced virtual display support.
 
         Args:
             output_dir: Default output directory
@@ -70,12 +75,16 @@ class TopyazCLI:
             ssh_port: SSH port number
             connection_timeout: SSH connection timeout
             remote_folder: Remote working directory for file transfers
+            enable_virtual_display: Enable virtual display for remote GUI apps
+            virtual_display_strategy: Virtual display strategy (auto, xvfb, macos_launchctl, macos_env, xquartz)
+            xvfb_screen_size: Screen size for Xvfb virtual framebuffer
+            force_display_setup: Force virtual display even for non-GUI apps
             config_file: Configuration file path
             parallel_jobs: Number of parallel jobs (not implemented yet)
             dry_run: Enable dry run mode (don't actually process)
             timeout: Command timeout in seconds
             verbose: Enable verbose logging
-            **kwargs: Additional configuration _options
+            **kwargs: Additional configuration options
 
         """
         # Set up logging first
@@ -101,13 +110,19 @@ class TopyazCLI:
             remote_user = getpass.getuser()
             logger.debug(f"Auto-detected remote user: {remote_user}")
 
-        self._remote_options = RemoteOptions(
+        # Enhanced remote options with virtual display support
+        self._remote_options = EnhancedRemoteOptions(
             host=remote_host,
             user=remote_user,
             ssh_key=Path(ssh_key) if ssh_key else None,
             ssh_port=ssh_port,
             connection_timeout=connection_timeout,
             remote_folder=remote_folder,
+            # Virtual display options
+            enable_virtual_display=enable_virtual_display,
+            virtual_display_strategy=virtual_display_strategy,
+            xvfb_screen_size=xvfb_screen_size,
+            force_display_setup=force_display_setup,
         )
 
         # Initialize configuration
@@ -119,10 +134,12 @@ class TopyazCLI:
         self._gpu_manager = GPUManager()
         self._memory_manager = MemoryManager()
 
-        # Set up _executor
+        # Set up executor with virtual display support
         if self._remote_options.host:
-            logger.info(f"Using remote execution: {self._remote_options.user}@{self._remote_options.host}")
-            self._executor = RemoteExecutor(self._remote_options)
+            logger.info(
+                f"Using remote execution with virtual display: {self._remote_options.user}@{self._remote_options.host}"
+            )
+            self._executor = EnhancedFabricRemoteExecutor(self._remote_options)
         else:
             logger.info("Using local execution")
             from topyaz.execution.base import ExecutorContext
@@ -659,6 +676,76 @@ class TopyazCLI:
             }
         except Exception as e:
             logger.error(f"Failed to get version info: {e}")
+            return {"error": str(e)}
+
+    def test_remote_display(self) -> dict:
+        """
+        Test virtual display setup on remote system.
+
+        Returns:
+            Dictionary with test results and capabilities
+        """
+        if not self._remote_options.host:
+            return {"error": "No remote host configured"}
+
+        if not isinstance(self._executor, EnhancedFabricRemoteExecutor):
+            return {"error": "Enhanced remote executor not available"}
+
+        try:
+            result = self._executor.test_virtual_display()
+            logger.info("Virtual display test completed")
+            return result
+        except Exception as e:
+            logger.error(f"Virtual display test failed: {e}")
+            return {"error": str(e)}
+
+    def debug_remote_gui(self, command: str = "echo 'GUI test'") -> dict:
+        """
+        Debug remote GUI setup with a test command.
+
+        Args:
+            command: Test command to run
+
+        Returns:
+            Debug information
+        """
+        if not isinstance(self._executor, EnhancedFabricRemoteExecutor):
+            return {"error": "Enhanced remote executor not available"}
+
+        try:
+            # Get connection and display manager
+            conn = self._executor._get_connection()
+            if self._executor._display_manager is None:
+                from topyaz.execution.fabric_remote import VirtualDisplayManager
+
+                self._executor._display_manager = VirtualDisplayManager(conn, self._remote_options)
+
+            display_manager = self._executor._display_manager
+
+            # Get system info
+            platform = display_manager.get_remote_platform()
+            capabilities = display_manager.check_display_capabilities()
+
+            # Test command transformation
+            test_command = command.split()
+            enhanced_command = display_manager.setup_virtual_display_command(test_command)
+
+            # Try to execute the enhanced command
+            command_str = self._executor._build_command_string(enhanced_command)
+
+            result = conn.run(command_str, hide=True, warn=True, timeout=30)
+
+            return {
+                "platform": platform,
+                "capabilities": capabilities,
+                "original_command": test_command,
+                "enhanced_command": enhanced_command,
+                "command_string": command_str,
+                "execution_result": {"exit_code": result.exited, "stdout": result.stdout, "stderr": result.stderr},
+            }
+
+        except Exception as e:
+            logger.error(f"Debug remote GUI failed: {e}")
             return {"error": str(e)}
 
 

@@ -380,8 +380,9 @@ class TopazProduct(ABC):
 
                 # Execute the command with remote coordination if needed
                 from topyaz.execution.remote import RemoteExecutor
+                from topyaz.execution.fabric_remote import FabricRemoteExecutor, EnhancedFabricRemoteExecutor
 
-                if isinstance(self.executor, RemoteExecutor):
+                if isinstance(self.executor, (RemoteExecutor, FabricRemoteExecutor, EnhancedFabricRemoteExecutor)):
                     # Use remote file coordination for transparent remote processing
                     from topyaz.execution.coordination import RemoteFileCoordinator
 
