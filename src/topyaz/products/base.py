@@ -17,11 +17,11 @@ import platform
 import shutil
 from abc import ABC, abstractmethod
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any
 
 from loguru import logger
 
-from topyaz.core.errors import ExecutableNotFoundError, ProcessingError, ValidationError
+from topyaz.core.errors import ExecutableNotFoundError, ValidationError
 from topyaz.core.types import (
     CommandList,
     ProcessingOptions,
@@ -132,6 +132,24 @@ class TopazProduct(ABC):
 
         Returns:
             Dictionary of parsed information
+        """
+        pass
+
+    @abstractmethod
+    def _find_output_file(self, temp_dir: Path, input_path: Path) -> Path:
+        """
+        Find the generated output file within a temporary directory.
+        This must be implemented by subclasses that use the temp dir workflow.
+
+        Args:
+            temp_dir: Temporary directory where output was generated
+            input_path: Original input file path
+
+        Returns:
+            Path to the generated output file
+
+        Raises:
+            ProcessingError: If output file cannot be found
         """
         pass
 
@@ -251,18 +269,8 @@ class TopazProduct(ABC):
             ValidationError: If path is invalid
 
         """
-        # Use path validator for basic checks
-        validated_path = self.path_validator.validate_input_path(input_path)
-
-        # Check file format if it's a file
-        if validated_path.is_file():
-            extension = validated_path.suffix.lower().lstrip(".")
-            if extension not in self.supported_formats:
-                msg = (
-                    f"File format '{extension}' not supported by {self.product_name}. "
-                    f"Supported formats: {', '.join(self.supported_formats)}"
-                )
-                raise ValidationError(msg)
+        # Use centralized path validator with product-specific file type checking
+        self.path_validator.validate_input_path(input_path, file_type=self.product_type)
 
     def prepare_output_path(self, input_path: Path, output_path: Path | None = None) -> Path:
         """
@@ -298,7 +306,8 @@ class TopazProduct(ABC):
 
     def process(self, input_path: Path | str, output_path: Path | str | None = None, **kwargs) -> ProcessingResult:
         """
-        Process file(s) with this product.
+        Template method for processing files. Uses temporary directory workflow.
+        Override this method only if you need different behavior (like VideoAI).
 
         Args:
             input_path: Input file or directory path
@@ -324,90 +333,117 @@ class TopazProduct(ABC):
         self.validate_input_path(input_path)
         self.validate_params(**kwargs)
 
-        # Prepare output path
-        output_path = self.prepare_output_path(input_path, output_path)
+        # Determine final output path
+        if output_path:
+            final_output_path = self.path_validator.validate_output_path(output_path)
+        else:
+            output_dir = input_path.parent
+            suffix = self._get_output_suffix()
+            stem = input_path.stem
+            extension = input_path.suffix
+            output_filename = f"{stem}{suffix}{extension}"
+            final_output_path = output_dir / output_filename
 
         # Ensure executable is available
         self.get_executable_path()
 
-        # Build command
-        command = self.build_command(input_path, output_path, **kwargs)
+        # Create temporary directory for processing
+        import tempfile
 
-        # Execute command
-        try:
-            logger.info(f"Processing {input_path} with {self.product_name}")
+        with tempfile.TemporaryDirectory(prefix=f"topyaz_{self.product_type.value}_") as temp_dir:
+            temp_output_dir = Path(temp_dir)
 
-            if self.options.dry_run:
-                logger.info(f"DRY RUN: Would execute: {' '.join(command)}")
-                return ProcessingResult(
+            # Build command with temp directory
+            command = self.build_command(input_path, temp_output_dir, **kwargs)
+
+            try:
+                logger.info(f"Processing {input_path} with {self.product_name}")
+
+                if self.options.dry_run:
+                    logger.info(f"DRY RUN: Would execute: {' '.join(command)}")
+                    return ProcessingResult(
+                        success=True,
+                        input_path=input_path,
+                        output_path=final_output_path,
+                        command=command,
+                        stdout="DRY RUN - no output",
+                        stderr="",
+                        execution_time=0.0,
+                        file_size_before=0,
+                        file_size_after=0,
+                    )
+
+                import time
+
+                start_time = time.time()
+                file_size_before = input_path.stat().st_size if input_path.is_file() else 0
+
+                # Execute the command
+                exit_code, stdout, stderr = self.executor.execute(command, timeout=self.options.timeout)
+                execution_time = time.time() - start_time
+
+                # Check if processing was successful
+                if exit_code != 0:
+                    error_msg = f"{self.product_name} processing failed (exit code {exit_code})"
+                    if stderr:
+                        error_msg += f": {stderr}"
+                    return ProcessingResult(
+                        success=False,
+                        input_path=input_path,
+                        output_path=final_output_path,
+                        command=command,
+                        stdout=stdout,
+                        stderr=stderr,
+                        execution_time=execution_time,
+                        file_size_before=file_size_before,
+                        file_size_after=0,
+                        error_message=error_msg,
+                    )
+
+                # Find the generated file using subclass-specific logic
+                temp_output_file = self._find_output_file(temp_output_dir, input_path)
+
+                # Ensure output directory exists and move file to final location
+                final_output_path.parent.mkdir(parents=True, exist_ok=True)
+                shutil.move(str(temp_output_file), str(final_output_path))
+
+                # Get file size after processing
+                file_size_after = final_output_path.stat().st_size if final_output_path.exists() else 0
+
+                # Parse output for additional information
+                parsed_info = self.parse_output(stdout, stderr)
+
+                logger.info(f"Successfully processed {input_path} -> {final_output_path} in {execution_time:.2f}s")
+
+                result = ProcessingResult(
                     success=True,
                     input_path=input_path,
-                    output_path=output_path,
+                    output_path=final_output_path,
                     command=command,
-                    stdout="DRY RUN - no output",
-                    stderr="",
+                    stdout=stdout,
+                    stderr=stderr,
+                    execution_time=execution_time,
+                    file_size_before=file_size_before,
+                    file_size_after=file_size_after,
+                    additional_info=parsed_info,
+                )
+
+                return result
+
+            except Exception as e:
+                logger.error(f"Error processing {input_path} with {self.product_name}: {e}")
+                return ProcessingResult(
+                    success=False,
+                    input_path=input_path,
+                    output_path=final_output_path,
+                    command=command,
+                    stdout="",
+                    stderr=str(e),
                     execution_time=0.0,
                     file_size_before=0,
                     file_size_after=0,
+                    error_message=str(e),
                 )
-
-            import time
-
-            start_time = time.time()
-
-            # Get file size before processing
-            file_size_before = input_path.stat().st_size if input_path.is_file() else 0
-
-            # Execute the command
-            exit_code, stdout, stderr = self.executor.execute(command, timeout=self.options.timeout)
-
-            execution_time = time.time() - start_time
-
-            # Check if processing was successful
-            success = exit_code == 0 and (output_path.exists() if output_path else True)
-
-            if not success:
-                error_msg = f"{self.product_name} processing failed (exit code {exit_code})"
-                if stderr:
-                    error_msg += f": {stderr}"
-                raise ProcessingError(error_msg)
-
-            # Get file size after processing
-            file_size_after = output_path.stat().st_size if output_path and output_path.exists() else 0
-
-            # Parse output for additional information
-            parsed_info = self.parse_output(stdout, stderr)
-
-            logger.info(f"Successfully processed {input_path} -> {output_path} in {execution_time:.2f}s")
-
-            return ProcessingResult(
-                success=True,
-                input_path=input_path,
-                output_path=output_path,
-                command=command,
-                stdout=stdout,
-                stderr=stderr,
-                execution_time=execution_time,
-                file_size_before=file_size_before,
-                file_size_after=file_size_after,
-                additional_info=parsed_info,
-            )
-
-        except Exception as e:
-            logger.error(f"Error processing {input_path} with {self.product_name}: {e}")
-
-            return ProcessingResult(
-                success=False,
-                input_path=input_path,
-                output_path=output_path,
-                command=command,
-                stdout="",
-                stderr=str(e),
-                execution_time=0.0,
-                file_size_before=0,
-                file_size_after=0,
-                error=str(e),
-            )
 
     def get_info(self) -> dict[str, Any]:
         """

@@ -8,19 +8,20 @@ support for authentication, file transfer, and connection management.
 
 """
 
-import io
 import time
-from typing import Optional
 
 import paramiko
 from loguru import logger
 
-from topyaz.core.errors import AuthenticationError, ProcessingError, RemoteExecutionError
+from topyaz.core.errors import (
+    AuthenticationError,
+    RemoteExecutionError,
+)
 from topyaz.core.types import CommandList, RemoteOptions
-from topyaz.execution.base import CommandExecutor, ExecutorContext, ProgressAwareExecutor, ProgressCallback
+from topyaz.execution.base import CommandExecutor, ExecutorContext
 
 
-class RemoteExecutor(ProgressAwareExecutor):
+class RemoteExecutor(CommandExecutor):
     """
     Executes commands on remote machines via SSH.
 
@@ -68,7 +69,10 @@ class RemoteExecutor(ProgressAwareExecutor):
             return False
 
     def execute(
-        self, command: CommandList, input_data: str | None = None, timeout: int | None = None
+        self,
+        command: CommandList,
+        input_data: str | None = None,
+        timeout: int | None = None,
     ) -> tuple[int, str, str]:
         """
         Execute command on remote host.
@@ -122,9 +126,15 @@ class RemoteExecutor(ProgressAwareExecutor):
             logger.debug(f"Remote command completed in {execution_time:.2f}s with exit status: {exit_status}")
 
             if stdout_data:
-                logger.debug(f"Remote STDOUT: {stdout_data[:500]}{'...' if len(stdout_data) > 500 else ''}")
+                stdout_preview = stdout_data[:500]
+                if len(stdout_data) > 500:
+                    stdout_preview += "..."
+                logger.debug(f"Remote STDOUT: {stdout_preview}")
             if stderr_data:
-                logger.debug(f"Remote STDERR: {stderr_data[:500]}{'...' if len(stderr_data) > 500 else ''}")
+                stderr_preview = stderr_data[:500]
+                if len(stderr_data) > 500:
+                    stderr_preview += "..."
+                logger.debug(f"Remote STDERR: {stderr_preview}")
 
             return exit_status, stdout_data, stderr_data
 
@@ -142,53 +152,6 @@ class RemoteExecutor(ProgressAwareExecutor):
             msg = f"Remote command execution failed: {e}"
             logger.error(msg)
             raise RemoteExecutionError(msg)
-
-    def execute_with_progress(
-        self,
-        command: CommandList,
-        callback: ProgressCallback,
-        input_data: str | None = None,
-        timeout: int | None = None,
-    ) -> tuple[int, str, str]:
-        """
-        Execute command with progress monitoring (limited on remote).
-
-        Note: Progress monitoring is limited for remote execution as we
-        can't easily monitor real-time output over SSH.
-
-        Args:
-            command: Command and arguments to execute
-            callback: Progress callback handler
-            input_data: Optional input data
-            timeout: Optional timeout override
-
-        Returns:
-            Tuple of (return_code, stdout, stderr)
-
-        """
-        if self.context.dry_run:
-            logger.info(f"DRY RUN (remote with progress): {' '.join(command)} on {self.remote_options.host}")
-            callback.on_progress(1, 1)
-            callback.on_complete(True, "Dry run completed")
-            return 0, "dry-run-output", ""
-
-        try:
-            callback.on_progress(0, 100)  # Starting
-
-            # For remote execution, we can't easily stream output
-            # So we'll just execute normally and report progress at milestones
-            exit_code, stdout, stderr = self.execute(command, input_data, timeout)
-
-            callback.on_progress(100, 100)  # Complete
-
-            success = exit_code == 0
-            callback.on_complete(success, f"Remote command completed with exit code {exit_code}")
-
-            return exit_code, stdout, stderr
-
-        except Exception as e:
-            callback.on_complete(False, str(e))
-            raise
 
     def _ensure_connection(self) -> None:
         """Ensure SSH connection is established."""

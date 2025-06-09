@@ -40,7 +40,6 @@ dependencies = [
     "psutil>=5.8.0",         # System monitoring
     "loguru>=0.6.0",         # Logging system
     "rich>=13.0.0",          # CLI output formatting
-    "pathlib>=1.0.0",        # Path handling
     "typing-extensions>=3.7.0",  # Type hints
 ]
 

@@ -1,0 +1,18 @@
+[
+  {
+    "fileName": "main-overview.mdc",
+    "description": "Complete system overview covering the unified CLI architecture, component interactions, and high-level workflow for Topaz product integration"
+  },
+  {
+    "fileName": "processing-algorithms.mdc",
+    "description": "Detailed documentation of core processing algorithms including batch operations, hardware optimization strategies, and domain-specific data transformations for media processing"
+  },
+  {
+    "fileName": "data-flow.mdc",
+    "description": "Comprehensive documentation of data flow between local and remote processing components, including file handling, progress monitoring, and error recovery mechanisms"
+  },
+  {
+    "fileName": "remote-execution.mdc",
+    "description": "Technical details of the remote execution system including SSH implementation, security measures, and hardware optimization for distributed processing"
+  }
+]

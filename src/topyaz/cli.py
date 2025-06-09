@@ -4,30 +4,28 @@
 Command-line interface for topyaz.
 
 This module provides the main CLI wrapper that integrates all the modular
-components into a unified interface compatible with the original topyazWrapper.
+components into a unified interface compatible with the original TopyazCLI.
 
 """
 
-import sys
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any
 
 import fire
 from loguru import logger
 
 from topyaz.core.config import Config
-from topyaz.core.errors import TopazError
-from topyaz.core.types import ProcessingOptions, Product, RemoteOptions
+from topyaz.core.types import ProcessingOptions, RemoteOptions
 from topyaz.execution.local import LocalExecutor
 from topyaz.execution.remote import RemoteExecutor
-from topyaz.products import GigapixelAI, PhotoAI, VideoAI, create_product
+from topyaz.products import GigapixelAI, PhotoAI, VideoAI
 from topyaz.system.environment import EnvironmentValidator
 from topyaz.system.gpu import GPUManager
 from topyaz.system.memory import MemoryManager
-from topyaz.utils.logging import LoggingManager
+from topyaz.utils.logging import setup_logging
 
 
-class topyazWrapper:
+class TopyazCLI:
     """
     Unified CLI wrapper for Topaz Labs products.
 
@@ -78,8 +76,7 @@ class topyazWrapper:
 
         """
         # Set up logging first
-        self.logging_manager = LoggingManager()
-        self.logging_manager.setup_logging(verbose=verbose)
+        setup_logging(verbose=verbose)
 
         logger.info("Initializing topyaz wrapper")
 
@@ -117,7 +114,10 @@ class topyazWrapper:
             self.executor = RemoteExecutor(self.remote_options)
         else:
             logger.info("Using local execution")
-            self.executor = LocalExecutor(self.options)
+            from topyaz.execution.base import ExecutorContext
+
+            context = ExecutorContext(timeout=self.options.timeout, dry_run=self.options.dry_run)
+            self.executor = LocalExecutor(context)
 
         # Initialize products (lazy loading)
         self._gigapixel: GigapixelAI | None = None
@@ -454,24 +454,6 @@ class topyazWrapper:
             logger.error(f"Environment validation failed: {e}")
             return False
 
-    def get_optimal_batch_size(self, product: str, file_count: int) -> int:
-        """
-        Get optimal batch size for processing.
-
-        Args:
-            product: Product name (gigapixel, video_ai, photo_ai)
-            file_count: Number of files to process
-
-        Returns:
-            Optimal batch size
-
-        """
-        try:
-            return self.memory_manager.get_optimal_batch_size(file_count, product)
-        except Exception as e:
-            logger.error(f"Failed to calculate batch size: {e}")
-            return 1
-
     def version_info(self) -> dict[str, str]:
         """
         Get version information for all components.
@@ -496,16 +478,7 @@ class topyazWrapper:
 
 def main():
     """Main entry point for the CLI."""
-    try:
-        fire.Fire(topyazWrapper)
-    except KeyboardInterrupt:
-        logger.info("Operation cancelled by user")
-    except TopazError as e:
-        logger.error(f"Topaz error: {e}")
-        sys.exit(1)
-    except Exception as e:
-        logger.error(f"Unexpected error: {e}")
-        sys.exit(1)
+    fire.Fire(TopyazCLI)
 
 
 if __name__ == "__main__":

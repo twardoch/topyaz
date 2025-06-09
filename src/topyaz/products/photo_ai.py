@@ -13,12 +13,12 @@ import platform
 import shutil
 import tempfile
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any
 
 from loguru import logger
 
 from topyaz.core.errors import ProcessingError, ValidationError
-from topyaz.core.types import CommandList, PhotoAIParams, ProcessingOptions, Product
+from topyaz.core.types import CommandList, PhotoAIParams, ProcessingOptions, ProcessingResult, Product
 from topyaz.execution.base import CommandExecutor
 from topyaz.products.base import MacOSTopazProduct
 
@@ -95,7 +95,7 @@ class PhotoAI(MacOSTopazProduct):
 
     def validate_params(self, **kwargs) -> None:
         """
-        Validate Photo AI parameters.
+        Validate Photo AI parameters including enhanced autopilot settings.
 
         Args:
             **kwargs: Parameters to validate
@@ -104,7 +104,7 @@ class PhotoAI(MacOSTopazProduct):
             ValidationError: If parameters are invalid
 
         """
-        # Extract Photo AI-specific parameters
+        # Extract Photo AI-specific parameters (standard CLI)
         format_param = kwargs.get("format", "preserve")
         quality = kwargs.get("quality", 95)
         compression = kwargs.get("compression", 6)
@@ -140,6 +140,61 @@ class PhotoAI(MacOSTopazProduct):
                 f"Valid options: {', '.join(sorted(valid_tiff_compression))}"
             )
             raise ValidationError(msg)
+
+        # Validate enhanced autopilot parameters if present
+        autopilot_params = {k: v for k, v in kwargs.items() if self._is_autopilot_param(k)}
+        if autopilot_params:
+            try:
+                from topyaz.system.photo_ai_prefs import PhotoAIPreferences
+
+                prefs_handler = PhotoAIPreferences()
+                prefs_handler.validate_setting_values(**autopilot_params)
+            except ImportError:
+                logger.warning("Preferences system not available - skipping autopilot parameter validation")
+            except Exception as e:
+                msg = f"Invalid autopilot parameter: {e}"
+                raise ValidationError(msg)
+
+    def _is_autopilot_param(self, param_name: str) -> bool:
+        """
+        Check if parameter is an autopilot setting.
+
+        Args:
+            param_name: Parameter name to check
+
+        Returns:
+            True if parameter controls autopilot settings
+        """
+        autopilot_params = {
+            "face_strength",
+            "face_detection",
+            "face_parts",
+            "denoise_model",
+            "denoise_levels",
+            "denoise_strength",
+            "denoise_raw_model",
+            "denoise_raw_levels",
+            "denoise_raw_strength",
+            "sharpen_model",
+            "sharpen_levels",
+            "sharpen_strength",
+            "upscaling_model",
+            "upscaling_factor",
+            "upscaling_type",
+            "deblur_strength",
+            "denoise_upscale_strength",
+            "lighting_strength",
+            "raw_exposure_strength",
+            "adjust_color",
+            "temperature_value",
+            "opacity_value",
+            "resolution_unit",
+            "default_resolution",
+            "overwrite_files",
+            "recurse_directories",
+            "append_filters",
+        }
+        return param_name in autopilot_params
 
     def build_command(self, input_path: Path, output_path: Path, **kwargs) -> CommandList:
         """
@@ -177,9 +232,11 @@ class PhotoAI(MacOSTopazProduct):
         # Build base command
         cmd = [str(executable), "--cli"]
 
-        # Add input and output paths
-        cmd.extend(["-i", str(input_path)])
-        cmd.extend(["-o", str(output_path)])
+        # Add input path as positional argument (no -i flag) - use absolute path
+        cmd.append(str(input_path.resolve()))
+
+        # Add output path - use absolute path
+        cmd.extend(["-o", str(output_path.resolve())])
 
         # Add autopilot preset
         if autopilot_preset and autopilot_preset != "auto":
@@ -487,3 +544,172 @@ class PhotoAI(MacOSTopazProduct):
     def _get_output_suffix(self) -> str:
         """Get suffix to add to output filenames."""
         return "_photo_ai"
+
+    def _find_output_file(self, temp_dir: Path, input_path: Path) -> Path:
+        """Find Photo AI output file in temporary directory."""
+        stem = input_path.stem
+        ext = input_path.suffix
+
+        # Look for exact filename first
+        exact_file = temp_dir / input_path.name
+        if exact_file.exists():
+            return exact_file
+
+        # Look for files with suffix pattern (stem-1.ext, stem-2.ext, etc)
+        pattern = f"{stem}*{ext}"
+        matching_files = list(temp_dir.glob(pattern))
+
+        if matching_files:
+            # Get the most recently modified file
+            return max(matching_files, key=lambda f: f.stat().st_mtime)
+
+        error_msg = f"No output files found in temporary directory {temp_dir}"
+        logger.error(error_msg)
+        raise ProcessingError(error_msg)
+
+    def prepare_output_path(self, input_path: Path, output_path: Path | None = None) -> Path:
+        """
+        Prepare output path for Photo AI.
+
+        Photo AI expects an output directory, not a file path.
+        We'll return the parent directory and let Photo AI handle the filename.
+
+        Args:
+            input_path: Input file path
+            output_path: Optional output path
+
+        Returns:
+            Prepared output directory path
+        """
+        if output_path:
+            # If output_path is provided and is a file, use its parent directory
+            if output_path.suffix:
+                return self.path_validator.validate_output_path(output_path.parent)
+            # It's already a directory
+            return self.path_validator.validate_output_path(output_path)
+
+        # Auto-generate output directory
+        if self.options.output_dir:
+            return self.path_validator.validate_output_path(self.options.output_dir)
+        # Use input file's directory
+        return self.path_validator.validate_output_path(input_path.parent)
+
+    def process(self, input_path: Path | str, output_path: Path | str | None = None, **kwargs) -> ProcessingResult:
+        """
+        Process file with Photo AI using enhanced preferences manipulation.
+
+        This overrides the base template method to add preferences handling.
+
+        Args:
+            input_path: Input file path
+            output_path: Output file path (optional)
+            **kwargs: Photo AI-specific parameters including enhanced autopilot settings
+
+        Returns:
+            Processing result
+        """
+        # Extract autopilot parameters for preferences manipulation
+        autopilot_params = {k: v for k, v in kwargs.items() if self._is_autopilot_param(k)}
+
+        # Use preferences manipulation if autopilot parameters are provided
+        if autopilot_params:
+            return self._process_with_preferences(input_path, output_path, **kwargs)
+
+        # Use base template method for standard processing
+        return super().process(input_path, output_path, **kwargs)
+
+    def _process_with_preferences(
+        self, input_path: Path | str, output_path: Path | str | None, **kwargs
+    ) -> ProcessingResult:
+        """
+        Process with preferences manipulation for enhanced autopilot control.
+
+        Args:
+            input_path: Input file path
+            output_path: Output file path
+            **kwargs: All parameters including autopilot settings
+
+        Returns:
+            Processing result
+        """
+        try:
+            from topyaz.system.photo_ai_prefs import PhotoAIAutopilotSettings, PhotoAIPreferences
+
+            # Build autopilot settings from parameters
+            autopilot_settings = self._build_autopilot_settings(**kwargs)
+
+            # Create preferences handler and backup current settings
+            with PhotoAIPreferences() as prefs:
+                backup_id = prefs.backup()
+
+                try:
+                    # Apply enhanced autopilot settings
+                    prefs.update_autopilot_settings(autopilot_settings)
+                    logger.info("Applied enhanced autopilot settings to Photo AI preferences")
+
+                    # Process with enhanced settings using base template method
+                    return super().process(input_path, output_path, **kwargs)
+
+                finally:
+                    # Always restore original preferences
+                    prefs.restore(backup_id)
+                    logger.info("Restored original Photo AI preferences")
+
+        except ImportError:
+            logger.warning("Preferences system not available - falling back to standard processing")
+            return super().process(input_path, output_path, **kwargs)
+        except Exception as e:
+            logger.error(f"Error in preferences manipulation: {e}")
+            # Fall back to standard processing
+            return super().process(input_path, output_path, **kwargs)
+
+    def _build_autopilot_settings(self, **kwargs):
+        """
+        Build autopilot settings from keyword arguments.
+
+        Args:
+            **kwargs: Keyword arguments containing autopilot parameters
+
+        Returns:
+            PhotoAIAutopilotSettings object
+        """
+        from topyaz.system.photo_ai_prefs import PhotoAIAutopilotSettings
+
+        # Create settings with provided parameters, falling back to defaults
+        return PhotoAIAutopilotSettings(
+            # Face Recovery
+            face_strength=kwargs.get("face_strength", 80),
+            face_detection=kwargs.get("face_detection", "subject"),
+            face_parts=kwargs.get("face_parts", ["hair", "necks"]),
+            # Denoise
+            denoise_model=kwargs.get("denoise_model", "Auto"),
+            denoise_levels=kwargs.get("denoise_levels", ["medium", "high", "severe"]),
+            denoise_strength=kwargs.get("denoise_strength", 3),
+            denoise_raw_model=kwargs.get("denoise_raw_model", "Auto"),
+            denoise_raw_levels=kwargs.get("denoise_raw_levels", ["low", "medium", "high", "severe"]),
+            denoise_raw_strength=kwargs.get("denoise_raw_strength", 3),
+            # Sharpen
+            sharpen_model=kwargs.get("sharpen_model", "Auto"),
+            sharpen_levels=kwargs.get("sharpen_levels", ["medium", "high"]),
+            sharpen_strength=kwargs.get("sharpen_strength", 3),
+            # Upscaling
+            upscaling_model=kwargs.get("upscaling_model", "High Fidelity V2"),
+            upscaling_factor=kwargs.get("upscaling_factor", 2.0),
+            upscaling_type=kwargs.get("upscaling_type", "auto"),
+            deblur_strength=kwargs.get("deblur_strength", 3),
+            denoise_upscale_strength=kwargs.get("denoise_upscale_strength", 3),
+            # Exposure & Color
+            lighting_strength=kwargs.get("lighting_strength", 25),
+            raw_exposure_strength=kwargs.get("raw_exposure_strength", 8),
+            adjust_color=kwargs.get("adjust_color", False),
+            # White Balance
+            temperature_value=kwargs.get("temperature_value", 50),
+            opacity_value=kwargs.get("opacity_value", 100),
+            # Output
+            resolution_unit=kwargs.get("resolution_unit", 1),
+            default_resolution=kwargs.get("default_resolution", -1.0),
+            # Processing
+            overwrite_files=kwargs.get("overwrite_files", False),
+            recurse_directories=kwargs.get("recurse_directories", False),
+            append_filters=kwargs.get("append_filters", False),
+        )

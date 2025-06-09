@@ -40,7 +40,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 #### ✅ **Phase 1e: Integration** (2/2 COMPLETED)
 
-- `cli.py`: Simplified topyazWrapper class with dependency injection and component delegation
+- `cli.py`: Simplified TopyazCLI class with dependency injection and component delegation
 - Entry points: Updated `__main__.py` and `__init__.py` with backward compatibility and proper exports
 
 #### ✅ **Phase 1f: Testing & Validation** (2/2 COMPLETED)
@@ -118,7 +118,7 @@ All three critical issues identified in the TODO list have been resolved. The CL
 
 ### Architecture
 
-- Unified `topyazWrapper` class design
+- Unified `TopyazCLI` class design
 - Modular approach for different Topaz products
 - Environment validation and setup
 - GPU monitoring and resource management

@@ -11,7 +11,7 @@ available memory, disk space, and other system prerequisites.
 import platform
 import shutil
 from pathlib import Path
-from typing import Optional
+from typing import Any
 
 import psutil
 from loguru import logger

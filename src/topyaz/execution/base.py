@@ -9,7 +9,6 @@ implemented for local and remote execution environments.
 """
 
 from abc import ABC, abstractmethod
-from typing import Optional, Tuple
 
 from topyaz.core.types import CommandList
 
@@ -33,7 +32,10 @@ class CommandExecutor(ABC):
 
     @abstractmethod
     def execute(
-        self, command: CommandList, input_data: str | None = None, timeout: int | None = None
+        self,
+        command: CommandList,
+        input_data: str | None = None,
+        timeout: int | None = None,
     ) -> tuple[int, str, str]:
         """
         Execute a command and return the result.
@@ -61,16 +63,6 @@ class CommandExecutor(ABC):
         """
         pass
 
-    def supports_progress(self) -> bool:
-        """
-        Check if this executor supports progress monitoring.
-
-        Returns:
-            True if progress monitoring is supported
-
-        """
-        return False
-
     def get_info(self) -> dict[str, str]:
         """
         Get information about this executor.
@@ -85,97 +77,7 @@ class CommandExecutor(ABC):
         return {
             "type": self.__class__.__name__,
             "available": str(self.is_available()),
-            "supports_progress": str(self.supports_progress()),
         }
-
-
-class ProgressCallback(ABC):
-    """
-    Abstract base class for progress callbacks.
-
-    Used to monitor command execution progress.
-
-    Used in:
-    - topyaz/execution/__init__.py
-    - topyaz/execution/local.py
-    - topyaz/execution/remote.py
-    """
-
-    @abstractmethod
-    def on_output(self, line: str, is_stderr: bool = False) -> None:
-        """
-        Called when command produces output.
-
-        Args:
-            line: Output line
-            is_stderr: True if from stderr, False if from stdout
-        """
-        pass
-
-    @abstractmethod
-    def on_progress(self, current: int, total: int | None = None) -> None:
-        """
-        Called when progress can be determined.
-
-        Args:
-            current: Current progress value
-            total: Total value (None if unknown)
-        """
-        pass
-
-    @abstractmethod
-    def on_complete(self, success: bool, message: str = "") -> None:
-        """
-        Called when command completes.
-
-        Args:
-            success: Whether command succeeded
-            message: Optional completion message
-        """
-        pass
-
-
-class ProgressAwareExecutor(CommandExecutor):
-    """
-    Extended executor interface that supports progress monitoring.
-
-    This is a specialized interface for executors that can provide
-    real-time progress feedback during command execution.
-
-    Used in:
-    - topyaz/execution/__init__.py
-    - topyaz/execution/local.py
-    - topyaz/execution/remote.py
-    """
-
-    @abstractmethod
-    def execute_with_progress(
-        self,
-        command: CommandList,
-        callback: ProgressCallback,
-        input_data: str | None = None,
-        timeout: int | None = None,
-    ) -> tuple[int, str, str]:
-        """
-        Execute command with progress monitoring.
-
-        Args:
-            command: Command and arguments to execute
-            callback: Progress callback handler
-            input_data: Optional input data
-            timeout: Optional timeout in seconds
-
-        Returns:
-            Tuple of (return_code, stdout, stderr)
-
-        Raises:
-            ProcessingError: If command execution fails
-        """
-        pass
-
-    def supports_progress(self) -> bool:
-        """Progress monitoring is supported by default."""
-        return True
 
 
 class ExecutorContext:

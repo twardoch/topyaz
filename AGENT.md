@@ -15,7 +15,7 @@
 **🚧 Current Status:**
 - **Planning Stage**: Extensive specification (SPEC.md) and documentation written
 - **Implementation**: Minimal skeleton code - most features in TODO.md are unimplemented
-- **Architecture**: Designed around unified `topyazWrapper` class using Python Fire for CLI generation
+- **Architecture**: Designed around unified `TopyazCLI` class using Python Fire for CLI generation
 
 **💡 Key Value:**
 - ~2x faster than GUI for batch operations
@@ -89,3 +89,56 @@ When you’re finished, print "Wait, but" to go back, think & reflect, revise & 
 ```
 
 Be creative, diligent, critical, relentless & funny!
+
+
+
+
+# main-overview
+
+## Development Guidelines
+
+- Only modify code directly relevant to the specific request. Avoid changing unrelated functionality.
+- Never replace code with placeholders like `# ... rest of the processing ...`. Always include complete code.
+- Break problems into smaller steps. Think through each step separately before implementing.
+- Always provide a complete PLAN with REASONING based on evidence from code and logs before making changes.
+- Explain your OBSERVATIONS clearly, then provide REASONING to identify the exact issue. Add console logs when needed to gather more information.
+
+
+The topyaz project implements a unified command-line interface for Topaz Labs' AI products, focusing on three key business domains:
+
+### Product Integration (Importance: 95)
+Core business logic integrating Topaz Labs' AI products:
+- Video AI processing capabilities in `topyaz/products/video_ai.py`
+- Gigapixel AI upscaling features in `topyaz/products/gigapixel_ai.py`  
+- Photo AI enhancement tools in `topyaz/products/photo_ai.py`
+
+### Remote Processing Architecture (Importance: 85)
+Remote execution system enabling distributed processing:
+- SSH-based remote task execution in `topyaz/execution/remote.py`
+- Secure file transfer protocols for media processing
+- Hardware optimization detection for Apple Silicon/Intel systems
+
+### Batch Processing Engine (Importance: 80) 
+Intelligent batch operations management:
+- Progress monitoring with ETA calculations
+- Error handling and recovery mechanisms
+- Model-specific processing parameter management
+
+### License and Security (Importance: 75)
+Business policy enforcement:
+- Pro license verification for Gigapixel AI features
+- SSH key-based authentication
+- Command injection prevention
+- System requirement validation
+
+### Configuration Management (Importance: 70)
+Domain-specific settings control:
+- YAML-based configuration system
+- Remote host configurations
+- Product-specific default parameters
+- Community tool integration settings
+
+The project focuses on abstracting complex AI processing workflows into a unified interface while maintaining security and performance optimization across distributed systems.
+
+$END$
+

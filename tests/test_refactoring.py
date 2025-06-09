@@ -12,7 +12,7 @@ from unittest.mock import Mock, patch
 
 import pytest
 
-from topyaz.cli import topyazWrapper
+from topyaz.cli import TopyazCLI
 from topyaz.core.errors import ValidationError
 from topyaz.core.types import ProcessingOptions
 from topyaz.execution.local import LocalExecutor
@@ -25,8 +25,8 @@ class TestRefactoringBasics:
     """Test basic functionality of the refactored components."""
 
     def test_topyaz_wrapper_initialization(self):
-        """Test that topyazWrapper initializes correctly."""
-        wrapper = topyazWrapper(verbose=False, dry_run=True)
+        """Test that TopyazCLI initializes correctly."""
+        wrapper = TopyazCLI(verbose=False, dry_run=True)
 
         assert wrapper.options.verbose is False
         assert wrapper.options.dry_run is True
@@ -35,7 +35,7 @@ class TestRefactoringBasics:
 
     def test_lazy_loading_products(self):
         """Test that products are lazy-loaded correctly."""
-        wrapper = topyazWrapper(verbose=False, dry_run=True)
+        wrapper = TopyazCLI(verbose=False, dry_run=True)
 
         # Products should be None initially
         assert wrapper._gigapixel is None
@@ -143,7 +143,7 @@ class TestRefactoringBasics:
         mock_executable.return_value = Path("/fake/gigapixel")
         mock_execute.return_value = (0, "dry-run-output", "")
 
-        wrapper = topyazWrapper(verbose=False, dry_run=True)
+        wrapper = TopyazCLI(verbose=False, dry_run=True)
 
         # Should succeed without actually executing
         result = wrapper.gp("test_input.jpg", output="test_output.jpg")
@@ -204,7 +204,7 @@ class TestRefactoringBasics:
 
     def test_backward_compatibility(self):
         """Test that the new CLI maintains backward compatibility."""
-        wrapper = topyazWrapper(verbose=False, dry_run=True)
+        wrapper = TopyazCLI(verbose=False, dry_run=True)
 
         # These method signatures should match the original
         assert hasattr(wrapper, "gp")

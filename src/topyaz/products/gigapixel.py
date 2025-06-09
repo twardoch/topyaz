@@ -11,11 +11,11 @@ for upscaling, denoising, and enhancement of images.
 import contextlib
 import platform
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any
 
 from loguru import logger
 
-from topyaz.core.errors import ValidationError
+from topyaz.core.errors import ProcessingError, ValidationError
 from topyaz.core.types import CommandList, GigapixelParams, ProcessingOptions, Product
 from topyaz.execution.base import CommandExecutor
 from topyaz.products.base import MacOSTopazProduct
@@ -195,13 +195,13 @@ class GigapixelAI(MacOSTopazProduct):
             msg = f"Parallel read must be between 1 and 10, got {parallel_read}"
             raise ValidationError(msg)
 
-    def build_command(self, input_path: Path, output_path: Path, **kwargs) -> CommandList:
+    def build_command(self, input_path: Path, temp_output_dir: Path, **kwargs) -> CommandList:
         """
-        Build Gigapixel AI command line.
+        Build Gigapixel AI command line using temporary output directory.
 
         Args:
             input_path: Input file path
-            output_path: Output file path
+            temp_output_dir: Temporary output directory path
             **kwargs: Gigapixel-specific parameters
 
         Returns:
@@ -213,12 +213,15 @@ class GigapixelAI(MacOSTopazProduct):
         # Build base command
         cmd = [str(executable), "--cli"]
 
-        # Add input and output paths
-        cmd.extend(["-i", str(input_path)])
-        cmd.extend(["-o", str(output_path)])
+        # Add input and temp output directory
+        cmd.extend(["-i", str(input_path.resolve())])
+        cmd.extend(["-o", str(temp_output_dir.resolve())])
 
         # Create output folder if needed
         cmd.append("--create-folder")
+
+        # Add append model flag to include model name in filename
+        cmd.append("--am")
 
         # Add model
         model = kwargs.get("model", "std")
@@ -400,3 +403,17 @@ class GigapixelAI(MacOSTopazProduct):
     def _get_output_suffix(self) -> str:
         """Get suffix to add to output filenames."""
         return "_gigapixel"
+
+    def _find_output_file(self, temp_dir: Path, input_path: Path) -> Path:
+        """Find Gigapixel AI output file in temporary directory."""
+        # Look for image files in temp directory
+        image_files = list(temp_dir.glob("*"))
+        image_files = [f for f in image_files if f.suffix.lower() in [".jpg", ".jpeg", ".png", ".tiff", ".tif"]]
+
+        if not image_files:
+            error_msg = f"No output files found in temporary directory {temp_dir}"
+            logger.error(error_msg)
+            raise ProcessingError(error_msg)
+
+        # Use the first (and likely only) generated image file
+        return image_files[0]

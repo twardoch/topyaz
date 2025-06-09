@@ -12,7 +12,7 @@ try:
 except ImportError:
     __version__ = "0.1.0-dev"
 
-from topyaz.cli import topyazWrapper
+from topyaz.cli import TopyazCLI
 from topyaz.core.errors import (
     AuthenticationError,
     EnvironmentError,
@@ -30,7 +30,7 @@ __all__ = [
     "ProcessingError",
     "RemoteExecutionError",
     "TopazError",
+    "TopyazCLI",
     "ValidationError",
     "__version__",
-    "topyazWrapper",
 ]

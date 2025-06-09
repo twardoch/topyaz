@@ -416,7 +416,7 @@ topyazadam@Hamlet topyaz % ./cleanup.sh
 -    pass
  
  
- class topyazWrapper:
+ class TopyazCLI:
 @@ -480,7 +475,6 @@
      def _monitor_gpu_during_processing(self, duration_seconds: int = 60) -> dic
 t[str, Any]:
@@ -475,7 +475,7 @@ yaz/src/topyaz/topyaz.py,line=53,col=7,endLine=53,endColumn=23::src/topyaz/topya
 z.py:53:7: A001 Variable `EnvironmentError` is shadowing a Python builtin
 ::error title=Ruff (N801),file=/Users/adam/Developer/vcs/github.twardoch/pub/top
 yaz/src/topyaz/topyaz.py,line=73,col=7,endLine=73,endColumn=20::src/topyaz/topya
-z.py:73:7: N801 Class name `topyazWrapper` should use CapWords convention
+z.py:73:7: N801 Class name `TopyazCLI` should use CapWords convention
 ::error title=Ruff (FBT001),file=/Users/adam/Developer/vcs/github.twardoch/pub/t
 opyaz/src/topyaz/topyaz.py,line=93,col=9,endLine=93,endColumn=16::src/topyaz/top
 yaz.py:93:9: FBT001 Boolean-typed positional argument in function definition

@@ -12,6 +12,12 @@ from enum import Enum
 from pathlib import Path
 from typing import Any, Optional
 
+# Type aliases for clarity
+FilePath = Path | str
+CommandList = list[str]
+ConfigDict = dict[str, Any]
+ParamDict = dict[str, Any]
+
 
 class Product(Enum):
     """Enumeration of supported Topaz products.
@@ -298,6 +304,11 @@ class ProcessingResult:
     returncode: int = 0
     stdout: str = ""
     stderr: str = ""
+    command: CommandList | None = None
+    execution_time: float = 0.0
+    file_size_before: int = 0
+    file_size_after: int = 0
+    additional_info: dict[str, Any] = field(default_factory=dict)
 
 
 @dataclass
@@ -314,10 +325,3 @@ class SystemRequirements:
     min_macos_version: tuple[int, int] = (11, 0)
     required_gpu: bool = True
     gpu_memory_mb: int = 4096  # Minimum GPU memory
-
-
-# Type aliases for clarity
-FilePath = Path | str
-CommandList = list[str]
-ConfigDict = dict[str, Any]
-ParamDict = dict[str, Any]
