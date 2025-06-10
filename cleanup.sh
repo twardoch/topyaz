@@ -7,3 +7,6 @@ fd -e py -x ruff check --output-format=github --fix --unsafe-fixes {}
 fd -e py -x ruff format --respect-gitignore --target-version py311 {}
 repomix -i varia,.specstory,AGENT.md,CLAUDE.md,PLAN.md,SPEC.md,llms.txt,.cursorrules -o llms.txt .
 python -m pytest
+
+rm -rf dist/topyaz*.*
+uv build
