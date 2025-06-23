@@ -31,8 +31,7 @@ def processing_options() -> ProcessingOptions:
 @pytest.fixture
 def gigapixel_api(mock_executor: Mock, processing_options: ProcessingOptions) -> GigapixelAI:
     with patch.object(GigapixelAI, "find_executable", return_value=Path("/fake/gigapixel_cli")):
-        api = GigapixelAI(mock_executor, processing_options)
-        yield api
+        yield GigapixelAI(mock_executor, processing_options)
 
 
 class TestGigapixelAPI:
