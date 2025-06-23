@@ -15,22 +15,22 @@ except ImportError:
 from topyaz.cli import TopyazCLI
 from topyaz.core.errors import (
     AuthenticationError,
-    EnvironmentError,
     ExecutableNotFoundError,
     ProcessingError,
     RemoteExecutionError,
     TopazError,
+    TopyazEnvironmentError,  # Renamed
     ValidationError,
 )
 
 __all__ = [
     "AuthenticationError",
-    "EnvironmentError",
     "ExecutableNotFoundError",
     "ProcessingError",
     "RemoteExecutionError",
     "TopazError",
     "TopyazCLI",
+    "TopyazEnvironmentError",  # Renamed
     "ValidationError",
     "__version__",
 ]

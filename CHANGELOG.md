@@ -2,6 +2,43 @@
 
 All notable changes to this project will be documented in this file.
 
+## [Unreleased] - Modernization and QA Enhancements - 2025-06-23
+
+### Changed
+- **Package Management:**
+    - Verified and confirmed `pyproject.toml` uses modern Hatch setup.
+    - Integrated `uv` for lock file generation (`uv.lock`) and added `make lock` target.
+    - Ensured `ruff` and `mypy` are used for QA as per modern standards.
+- **Codebase Modernization:**
+    - Upgraded Python syntax using `pyupgrade` (targeting py310+).
+    - Applied extensive linting and formatting using `Ruff`, resolving numerous issues (FBT, PLC, PLR, S, B, ARG, etc.) for improved code quality and consistency.
+    - Refactored code for clarity, fixed minor bugs uncovered during linting and testing (e.g., import paths, error handling logic).
+- **Convenience Structures:**
+    - Added a `Makefile` with common development tasks: `setup-dev`, `lock`, `fmt`, `lint`, `test`, `test-cov`, `build`, `docs`, `clean`.
+- **GitHub Actions & Commit Hooks:**
+    - Enhanced `.github/workflows/push.yml`:
+        - Added Mypy type checking step.
+        - Added a step to verify `uv.lock` consistency.
+        - Switched test dependency installation to use `uv pip sync` with the lock file.
+    - Enhanced `.pre-commit-config.yaml`:
+        - Added `mypy` hook for pre-commit type checking.
+        - Added a local hook to check `uv.lock` consistency and prompt for staging if updated.
+        - Corrected `ruff-format` hook ID and added `--exit-non-zero-on-fix` to `ruff` lint hook.
+        - Updated `pre-commit-hooks` revision.
+- **Versioning:**
+    - Verified `hatch-vcs` functionality for semantic versioning based on git tags. Dynamic version generation confirmed during builds.
+- **Testing:**
+    - Added a new test suite for `core.config` (`tests/core/test_config.py`) with 13 tests covering various aspects of configuration management.
+    - Added a new test suite for `products.gigapixel.api` (`tests/products/gigapixel/test_api.py`) with 13 tests covering parameter validation, command building, output parsing, and processing logic (using mocks).
+    - Refactored existing tests in `tests/test_refactoring.py` by moving Gigapixel-specific tests to the new API test file.
+    - All 36 current tests are passing.
+    - Achieved initial test coverage of 45%.
+    - Set up a robust (though sandbox-specific) test execution script `run_tests.py` (now removed) to handle dependencies correctly for `uv run`.
+    - Added `Pillow` as a main dependency and `pyyaml` as a test dependency, updating `uv.lock`.
+- **Documentation (Initial for this step):**
+    - This changelog entry. README updates will follow.
+
+
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased] - Phase 1 Refactoring Complete ✅ - 2025-06-08

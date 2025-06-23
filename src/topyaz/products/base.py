@@ -14,7 +14,11 @@ Used in:
 """
 
 import platform
+import re  # Moved from _parse_version
 import shutil
+import subprocess  # Moved from validate_macos_version
+import tempfile  # Moved from process
+import time  # Moved from process
 from abc import ABC, abstractmethod
 from pathlib import Path
 from typing import Any
@@ -248,7 +252,7 @@ class TopazProduct(ABC):
         lines = version_output.strip().split("\n")
         if lines:
             # Look for version numbers in first few lines
-            import re
+            # import re # Moved to top
 
             version_pattern = re.compile(r"(\d+\.\d+(?:\.\d+)*)")
             for line in lines[:3]:
@@ -348,7 +352,7 @@ class TopazProduct(ABC):
         self.get_executable_path()
 
         # Create temporary directory for processing
-        import tempfile
+        # import tempfile # Moved to top
 
         with tempfile.TemporaryDirectory(prefix=f"topyaz_{self.product_type.value}_") as temp_dir:
             temp_output_dir = Path(temp_dir)
@@ -373,8 +377,7 @@ class TopazProduct(ABC):
                         file_size_after=0,
                     )
 
-                import time
-
+                # import time # Moved to top
                 start_time = time.time()
                 file_size_before = input_path.stat().st_size if input_path.is_file() else 0
 
@@ -533,9 +536,9 @@ class MacOSTopazProduct(TopazProduct):
 
         # Check minimum macOS version (most Topaz products require 10.15+)
         try:
-            import subprocess
-
-            result = subprocess.run(["sw_vers", "-productVersion"], capture_output=True, text=True, check=True)
+            # import subprocess # Moved to top
+            # S607: Use full path for sw_vers
+            result = subprocess.run(["/usr/bin/sw_vers", "-productVersion"], capture_output=True, text=True, check=True)
             version_str = result.stdout.strip()
 
             # Parse version
@@ -572,15 +575,15 @@ def create_product(product_type: Product, executor: CommandExecutor, options: Pr
     """
     # Import here to avoid circular imports
     if product_type == Product.GIGAPIXEL:
-        from topyaz.products.gigapixel.api import GigapixelAI
+        from topyaz.products.gigapixel.api import GigapixelAI  # noqa: PLC0415
 
         return GigapixelAI(executor, options)
     if product_type == Product.VIDEO_AI:
-        from topyaz.products.video_ai.api import VideoAI
+        from topyaz.products.video_ai.api import VideoAI  # noqa: PLC0415
 
         return VideoAI(executor, options)
     if product_type == Product.PHOTO_AI:
-        from topyaz.products.photo_ai.api import PhotoAI
+        from topyaz.products.photo_ai.api import PhotoAI  # noqa: PLC0415
 
         return PhotoAI(executor, options)
     msg = f"Unsupported product type: {product_type}"

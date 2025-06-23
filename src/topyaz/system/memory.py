@@ -8,12 +8,23 @@ for different Topaz products based on available system resources.
 
 """
 
-from typing import Optional
+# from typing import Optional # F401: Unused import
+from typing import ClassVar  # Added ClassVar
 
 import psutil
 from loguru import logger
 
 from topyaz.core.types import MemoryConstraints, Product
+
+# Constants for memory thresholds and recommendations
+HIGH_MEMORY_PERCENT_CRITICAL = 90
+HIGH_MEMORY_PERCENT_WARNING = 85
+LOW_MEMORY_GB_THRESHOLD_GENERIC = 4
+VIDEO_AI_MIN_AVAILABLE_GB_WARN = 16
+VIDEO_AI_TOTAL_GB_RECOMMEND_UPGRADE = 32
+GIGAPIXEL_AVAILABLE_GB_LOW_WARN = 4
+GIGAPIXEL_AVAILABLE_GB_CONSTRAINED_WARN = 8
+PHOTO_AI_AVAILABLE_GB_VERY_LOW_WARN = 2
 
 
 class MemoryManager:
@@ -32,7 +43,7 @@ class MemoryManager:
     """
 
     # Memory requirements per operation type (in MB per item)
-    MEMORY_PER_ITEM = {
+    MEMORY_PER_ITEM: ClassVar[dict[Product, int]] = {
         Product.VIDEO_AI: 4096,  # ~4GB per video
         Product.GIGAPIXEL: 512,  # ~512MB per image
         Product.PHOTO_AI: 256,  # ~256MB per image
@@ -81,30 +92,48 @@ class MemoryManager:
                 product = Product.PHOTO_AI
 
         # General memory constraint checks
-        if memory.percent > 90:
-            constraints.recommendations.append("Critical: Memory usage above 90% - close other applications")
-        elif memory.percent > 85:
-            constraints.recommendations.append("High memory usage detected - consider reducing batch size")
+        if memory.percent > HIGH_MEMORY_PERCENT_CRITICAL:
+            constraints.recommendations.append(
+                f"Critical: Memory usage above {HIGH_MEMORY_PERCENT_CRITICAL}% - close other applications"
+            )
+        elif memory.percent > HIGH_MEMORY_PERCENT_WARNING:
+            constraints.recommendations.append(
+                f"High memory usage (>{HIGH_MEMORY_PERCENT_WARNING}%) detected - consider reducing batch size"
+            )
 
-        if constraints.available_gb < 4:
-            constraints.recommendations.append("Low available memory - process files in smaller batches")
+        if constraints.available_gb < LOW_MEMORY_GB_THRESHOLD_GENERIC:
+            constraints.recommendations.append(
+                f"Low available memory (<{LOW_MEMORY_GB_THRESHOLD_GENERIC}GB) - process files in smaller batches"
+            )
 
         # Product-specific recommendations
         if product == Product.VIDEO_AI:
-            if constraints.available_gb < 16:
-                constraints.recommendations.append("Video AI: Less than 16GB available - process one video at a time")
-            if constraints.total_gb < 32:
-                constraints.recommendations.append("Video AI: Consider upgrading to 32GB+ RAM for better performance")
+            if constraints.available_gb < VIDEO_AI_MIN_AVAILABLE_GB_WARN:
+                constraints.recommendations.append(
+                    f"Video AI: Less than {VIDEO_AI_MIN_AVAILABLE_GB_WARN}GB available - process one video at a time"
+                )
+            if constraints.total_gb < VIDEO_AI_TOTAL_GB_RECOMMEND_UPGRADE:
+                constraints.recommendations.append(
+                    f"Video AI: Consider upgrading to {VIDEO_AI_TOTAL_GB_RECOMMEND_UPGRADE}GB+ RAM "
+                    f"for better performance"
+                )
 
         elif product == Product.GIGAPIXEL:
-            if constraints.available_gb < 4:
-                constraints.recommendations.append("Gigapixel: Low memory may cause processing failures")
-            if constraints.available_gb < 8:
-                constraints.recommendations.append("Gigapixel: Reduce batch size to 5-10 images")
+            if constraints.available_gb < GIGAPIXEL_AVAILABLE_GB_LOW_WARN:
+                constraints.recommendations.append(
+                    f"Gigapixel: Low memory (<{GIGAPIXEL_AVAILABLE_GB_LOW_WARN}GB) may cause processing failures"
+                )
+            if constraints.available_gb < GIGAPIXEL_AVAILABLE_GB_CONSTRAINED_WARN:
+                constraints.recommendations.append(
+                    f"Gigapixel: Available memory <{GIGAPIXEL_AVAILABLE_GB_CONSTRAINED_WARN}GB - "
+                    f"Reduce batch size to 5-10 images"
+                )
 
         elif product == Product.PHOTO_AI:
-            if constraints.available_gb < 2:
-                constraints.recommendations.append("Photo AI: Very low memory - process in small batches")
+            if constraints.available_gb < PHOTO_AI_AVAILABLE_GB_VERY_LOW_WARN:
+                constraints.recommendations.append(
+                    f"Photo AI: Very low memory (<{PHOTO_AI_AVAILABLE_GB_VERY_LOW_WARN}GB) - process in small batches"
+                )
 
         logger.debug(
             f"Memory check for {operation_type}: "
@@ -169,10 +198,7 @@ class MemoryManager:
             memory_per_item = max(memory_per_item, file_size_mb * 2)
 
         # Calculate batch size
-        if usable_memory_mb <= 0:
-            batch_size = 1  # Minimum batch size
-        else:
-            batch_size = int(usable_memory_mb / memory_per_item)
+        batch_size = 1 if usable_memory_mb <= 0 else int(usable_memory_mb / memory_per_item)
 
         # Apply product-specific limits
         if isinstance(operation_type, Product):
@@ -321,7 +347,7 @@ class MemoryManager:
             return False, (f"Insufficient memory: {total_required:.0f}MB required, {available_mb:.0f}MB available")
 
         # Check if memory usage is already high
-        if memory.percent > 90:
-            return False, f"Memory usage too high: {memory.percent:.1f}%"
+        if memory.percent > HIGH_MEMORY_PERCENT_CRITICAL:  # Used critical threshold here
+            return False, f"Memory usage too high: {memory.percent:.1f}% (>{HIGH_MEMORY_PERCENT_CRITICAL}%)"
 
         return True, "OK"

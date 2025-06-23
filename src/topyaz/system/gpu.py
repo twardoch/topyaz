@@ -10,14 +10,17 @@ and vendors (NVIDIA, AMD, Intel, Apple Metal).
 
 import json
 import platform
+import re  # Moved from MetalGPUDetector.detect
 import shutil
 import subprocess
 from abc import ABC, abstractmethod
-from typing import Optional
 
+# from typing import Optional # F401: Unused import
 from loguru import logger
 
 from topyaz.core.types import GPUInfo, GPUStatus
+
+NVIDIA_SMI_MIN_EXPECTED_PARTS = 7
 
 
 class GPUDetector(ABC):
@@ -54,7 +57,9 @@ class GPUDetector(ABC):
 
         """
         try:
-            result = subprocess.run(cmd, capture_output=True, text=True, timeout=timeout, check=False)
+            # S603: `cmd` is constructed internally from trusted components (executable path + fixed args).
+            # shell=False is the default.
+            result = subprocess.run(cmd, capture_output=True, text=True, timeout=timeout, check=False)  # noqa: S603
             return result.returncode == 0, result.stdout, result.stderr
         except subprocess.TimeoutExpired:
             return False, "", "Command timed out"
@@ -92,7 +97,7 @@ class NvidiaGPUDetector(GPUDetector):
                 continue
 
             parts = [p.strip() for p in line.split(",")]
-            if len(parts) >= 7:
+            if len(parts) >= NVIDIA_SMI_MIN_EXPECTED_PARTS:
                 try:
                     device = GPUInfo(
                         name=parts[0],
@@ -219,7 +224,7 @@ class MetalGPUDetector(GPUDetector):
                     # Parse VRAM if possible
                     if vram and isinstance(vram, str):
                         # Extract memory size from strings like "8 GB" or "8192 MB"
-                        import re
+                        # import re # Moved to top
 
                         match = re.search(r"(\d+)\s*(GB|MB)", vram, re.IGNORECASE)
                         if match:
@@ -296,7 +301,7 @@ class GPUManager:
 
         return DummyDetector()
 
-    def get_status(self, use_cache: bool = True) -> GPUStatus:
+    def get_status(self, *, use_cache: bool = True) -> GPUStatus:  # Added *
         """
         Get current GPU status.
 

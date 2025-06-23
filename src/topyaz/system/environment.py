@@ -16,8 +16,12 @@ from typing import Any
 import psutil
 from loguru import logger
 
-from topyaz.core.errors import EnvironmentError
+from topyaz.core.errors import TopyazEnvironmentError
 from topyaz.core.types import SystemRequirements
+
+# Constants for environment validation
+WINDOWS_MIN_MAJOR_VERSION = 10
+LOW_MEMORY_WARNING_GB = 2
 
 
 class EnvironmentValidator:
@@ -48,7 +52,7 @@ class EnvironmentValidator:
         self.requirements = requirements or SystemRequirements()
         self._validation_results = {}
 
-    def validate_all(self, raise_on_error: bool = True) -> dict[str, bool]:
+    def validate_all(self, *, raise_on_error: bool = True) -> dict[str, bool]:
         """
         Perform all environment validations.
 
@@ -76,11 +80,11 @@ class EnvironmentValidator:
         if not all_valid and raise_on_error:
             failed = [k for k, v in self._validation_results.items() if not v]
             msg = f"Environment validation failed: {', '.join(failed)}"
-            raise OSError(msg)
+            raise TopyazEnvironmentError(msg)
 
         return self._validation_results
 
-    def validate_os_version(self, raise_on_error: bool = True) -> bool:
+    def validate_os_version(self, *, raise_on_error: bool = True) -> bool:
         """
         Validate operating system version.
 
@@ -97,16 +101,16 @@ class EnvironmentValidator:
         system = platform.system()
 
         if system == "Darwin":  # macOS
-            return self._validate_macos_version(raise_on_error)
+            return self._validate_macos_version(raise_on_error=raise_on_error)
         if system == "Windows":
-            return self._validate_windows_version(raise_on_error)
+            return self._validate_windows_version(raise_on_error=raise_on_error)
         if raise_on_error:
             msg = f"Unsupported operating system: {system}"
-            raise OSError(msg)
+            raise TopyazEnvironmentError(msg)
         logger.warning(f"Unsupported operating system: {system}")
         return False
 
-    def _validate_macos_version(self, raise_on_error: bool) -> bool:
+    def _validate_macos_version(self, *, raise_on_error: bool) -> bool:
         """Validate macOS version."""
         try:
             version_str = platform.mac_ver()[0]
@@ -124,7 +128,7 @@ class EnvironmentValidator:
             if major < min_major or (major == min_major and minor < min_minor):
                 msg = f"macOS {min_major}.{min_minor}+ required, found {major}.{minor}"
                 if raise_on_error:
-                    raise OSError(msg)
+                    raise TopyazEnvironmentError(msg)
                 logger.warning(msg)
                 return False
 
@@ -135,7 +139,7 @@ class EnvironmentValidator:
             logger.warning(f"Failed to parse macOS version: {e}")
             return True  # Assume compatible if can't parse
 
-    def _validate_windows_version(self, raise_on_error: bool) -> bool:
+    def _validate_windows_version(self, *, raise_on_error: bool) -> bool:
         """Validate Windows version."""
         # Windows 10+ is generally compatible
         version = platform.version()
@@ -145,10 +149,10 @@ class EnvironmentValidator:
         try:
             # Windows version format_output: "10.0.19041"
             major = int(version.split(".")[0])
-            if major < 10:
-                msg = "Windows 10 or later required"
+            if major < WINDOWS_MIN_MAJOR_VERSION:
+                msg = f"Windows {WINDOWS_MIN_MAJOR_VERSION} or later required"
                 if raise_on_error:
-                    raise OSError(msg)
+                    raise TopyazEnvironmentError(msg)
                 logger.warning(msg)
                 return False
         except (ValueError, IndexError):
@@ -156,7 +160,7 @@ class EnvironmentValidator:
 
         return True
 
-    def validate_memory(self, required_gb: int | None = None, raise_on_error: bool = True) -> bool:
+    def validate_memory(self, required_gb: int | None = None, *, raise_on_error: bool = True) -> bool:
         """
         Validate available system memory.
 
@@ -181,17 +185,17 @@ class EnvironmentValidator:
         if total_gb < required_gb:
             msg = f"Insufficient memory: {required_gb}GB required, {total_gb:.1f}GB total"
             if raise_on_error:
-                raise OSError(msg)
+                raise TopyazEnvironmentError(msg)
             logger.warning(msg)
             return False
 
-        if available_gb < 2:  # Warn if less than 2GB available
+        if available_gb < LOW_MEMORY_WARNING_GB:  # Warn if less than LOW_MEMORY_WARNING_GB available
             logger.warning(f"Low available memory: {available_gb:.1f}GB. Consider closing other applications.")
 
         return True
 
     def validate_disk_space(
-        self, required_gb: int | None = None, path: Path | None = None, raise_on_error: bool = True
+        self, required_gb: int | None = None, path: Path | None = None, *, raise_on_error: bool = True
     ) -> bool:
         """
         Validate available disk space.
@@ -224,7 +228,7 @@ class EnvironmentValidator:
             if free_gb < required_gb:
                 msg = f"Insufficient disk space: {required_gb}GB required, {free_gb:.1f}GB available at {check_path}"
                 if raise_on_error:
-                    raise OSError(msg)
+                    raise TopyazEnvironmentError(msg)
                 logger.warning(msg)
                 return False
 
@@ -239,10 +243,10 @@ class EnvironmentValidator:
             logger.error(f"Failed to check disk space: {e}")
             if raise_on_error:
                 msg = f"Disk space check failed: {e}"
-                raise OSError(msg)
+                raise TopyazEnvironmentError(msg) from e
             return False
 
-    def validate_gpu_availability(self, raise_on_error: bool = True) -> bool:
+    def validate_gpu_availability(self, *, raise_on_error: bool = True) -> bool:
         """
         Validate GPU availability (basic check).
 
@@ -277,7 +281,7 @@ class EnvironmentValidator:
         if not gpu_available and self.requirements.required_gpu:
             msg = "No compatible GPU detected. GPU acceleration may not be available."
             if raise_on_error:
-                raise OSError(msg)
+                raise TopyazEnvironmentError(msg)
             logger.warning(msg)
             return False
 

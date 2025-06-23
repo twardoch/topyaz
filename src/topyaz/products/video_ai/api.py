@@ -10,16 +10,18 @@ for video upscaling, frame interpolation, and enhancement.
 
 import os
 import platform
+import time  # Moved from process method
 from pathlib import Path
 from typing import Any
 
 from loguru import logger
 
-from topyaz.core.errors import ValidationError
-from topyaz.core.types import CommandList, ProcessingOptions, Product, VideoAIParams
+# from topyaz.core.errors import ValidationError # F401: Unused import
+# ProcessingResult moved here from process method
+from topyaz.core.types import CommandList, ProcessingOptions, ProcessingResult, Product
 from topyaz.execution.base import CommandExecutor
 from topyaz.products.base import MacOSTopazProduct
-from topyaz.products.video_ai.params import VideoAIParams
+from topyaz.products.video_ai.params import VideoAIParams  # Kept this direct import
 
 
 class VideoAI(MacOSTopazProduct):
@@ -211,7 +213,9 @@ class VideoAI(MacOSTopazProduct):
 
         """
         executable = self.get_executable_path()
-        return self.param_handler.build_command(executable, input_path, output_path, self.options.verbose, **kwargs)
+        return self.param_handler.build_command(
+            executable, input_path, output_path, verbose=self.options.verbose, **kwargs
+        )
 
     def parse_output(self, stdout: str, stderr: str) -> dict[str, Any]:
         """
@@ -230,8 +234,8 @@ class VideoAI(MacOSTopazProduct):
         # Parse FFmpeg progress output
         if stdout:
             lines = stdout.split("\n")
-            for line in lines:
-                line = line.strip()
+            for raw_line in lines:
+                line = raw_line.strip()
 
                 # Parse progress information
                 if "frame=" in line:
@@ -349,7 +353,7 @@ class VideoAI(MacOSTopazProduct):
         Returns:
             Processing result
         """
-        from topyaz.core.types import ProcessingResult
+        # from topyaz.core.types import ProcessingResult # Moved to top
 
         # Convert to Path objects
         input_path = Path(input_path)
@@ -394,8 +398,7 @@ class VideoAI(MacOSTopazProduct):
                     file_size_after=0,
                 )
 
-            import time
-
+                # import time # Moved to top
             start_time = time.time()
             file_size_before = input_path.stat().st_size if input_path.is_file() else 0
 

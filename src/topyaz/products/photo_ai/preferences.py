@@ -10,11 +10,16 @@ settings by manipulating the macOS preferences file before CLI execution.
 import platform
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any
+from typing import Any, ClassVar  # Added ClassVar
 
 from loguru import logger
 
 from topyaz.system.preferences import PreferenceHandler, PreferenceValidationError
+
+# Constants for PhotoAI preference validation
+PREF_STRENGTH_PERCENT_MAX = 100
+PREF_UPSCALE_FACTOR_MAX = 6.0
+PREF_STRENGTH_LOW_MAX = 10
 
 
 @dataclass
@@ -72,13 +77,19 @@ class PhotoAIPreferences(PreferenceHandler):
     Handler for Topaz Photo AI preferences manipulation.
     """
 
-    VALID_FACE_DETECTION = {"auto", "subject", "all"}
-    VALID_FACE_PARTS = {"hair", "necks", "eyes", "mouth"}
-    VALID_DENOISE_MODELS = {"Auto", "Low Light Beta", "Severe Noise Beta"}
-    VALID_DENOISE_LEVELS = {"low", "medium", "high", "severe"}
-    VALID_SHARPEN_MODELS = {"Auto", "Sharpen Standard v2", "Lens Blur v2", "Sharpen Natural", "Sharpen Strong"}
-    VALID_UPSCALING_MODELS = {"High Fidelity V2", "Standard V2", "Graphics V2"}
-    VALID_UPSCALING_TYPES = {"auto", "scale", "width", "height"}
+    VALID_FACE_DETECTION: ClassVar[set[str]] = {"auto", "subject", "all"}
+    VALID_FACE_PARTS: ClassVar[set[str]] = {"hair", "necks", "eyes", "mouth"}
+    VALID_DENOISE_MODELS: ClassVar[set[str]] = {"Auto", "Low Light Beta", "Severe Noise Beta"}
+    VALID_DENOISE_LEVELS: ClassVar[set[str]] = {"low", "medium", "high", "severe"}
+    VALID_SHARPEN_MODELS: ClassVar[set[str]] = {
+        "Auto",
+        "Sharpen Standard v2",
+        "Lens Blur v2",
+        "Sharpen Natural",
+        "Sharpen Strong",
+    }
+    VALID_UPSCALING_MODELS: ClassVar[set[str]] = {"High Fidelity V2", "Standard V2", "Graphics V2"}
+    VALID_UPSCALING_TYPES: ClassVar[set[str]] = {"auto", "scale", "width", "height"}
 
     def __init__(self, preference_file: Path | None = None):
         if preference_file is None:
@@ -114,13 +125,13 @@ class PhotoAIPreferences(PreferenceHandler):
                 raise PreferenceValidationError(msg)
 
             face_strength = preferences.get("autopilotFaceStrength", 0)
-            if not (0 <= face_strength <= 100):
-                msg = f"Face strength must be 0-100: {face_strength}"
+            if not (0 <= face_strength <= PREF_STRENGTH_PERCENT_MAX):
+                msg = f"Face strength must be 0-{PREF_STRENGTH_PERCENT_MAX}: {face_strength}"
                 raise PreferenceValidationError(msg)
 
             upscaling_factor = preferences.get("autopilotUpscalingFactor", 0)
-            if not (1.0 <= upscaling_factor <= 6.0):
-                msg = f"Upscaling factor must be 1.0-6.0: {upscaling_factor}"
+            if not (1.0 <= upscaling_factor <= PREF_UPSCALE_FACTOR_MAX):
+                msg = f"Upscaling factor must be 1.0-{PREF_UPSCALE_FACTOR_MAX}: {upscaling_factor}"
                 raise PreferenceValidationError(msg)
 
             logger.debug("Preferences validation passed")
@@ -241,8 +252,8 @@ class PhotoAIPreferences(PreferenceHandler):
             "temperature_value",
             "opacity_value",
         ]:
-            if param in kwargs and not (0 <= kwargs[param] <= 100):
-                msg = f"{param} must be 0-100: {kwargs[param]}"
+            if param in kwargs and not (0 <= kwargs[param] <= PREF_STRENGTH_PERCENT_MAX):
+                msg = f"{param} must be 0-{PREF_STRENGTH_PERCENT_MAX}: {kwargs[param]}"
                 raise PreferenceValidationError(msg)
         for param in [
             "denoise_strength",
@@ -251,11 +262,11 @@ class PhotoAIPreferences(PreferenceHandler):
             "deblur_strength",
             "denoise_upscale_strength",
         ]:
-            if param in kwargs and not (0 <= kwargs[param] <= 10):
-                msg = f"{param} must be 0-10: {kwargs[param]}"
+            if param in kwargs and not (0 <= kwargs[param] <= PREF_STRENGTH_LOW_MAX):
+                msg = f"{param} must be 0-{PREF_STRENGTH_LOW_MAX}: {kwargs[param]}"
                 raise PreferenceValidationError(msg)
-        if "upscaling_factor" in kwargs and not (1.0 <= kwargs["upscaling_factor"] <= 6.0):
-            msg = f"upscaling_factor must be 1.0-6.0: {kwargs['upscaling_factor']}"
+        if "upscaling_factor" in kwargs and not (1.0 <= kwargs["upscaling_factor"] <= PREF_UPSCALE_FACTOR_MAX):
+            msg = f"upscaling_factor must be 1.0-{PREF_UPSCALE_FACTOR_MAX}: {kwargs['upscaling_factor']}"
             raise PreferenceValidationError(msg)
         if "denoise_model" in kwargs and kwargs["denoise_model"] not in self.VALID_DENOISE_MODELS:
             msg = f"Invalid denoise_model: {kwargs['denoise_model']}"

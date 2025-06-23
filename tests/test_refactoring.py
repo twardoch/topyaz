@@ -74,26 +74,26 @@ class TestRefactoringBasics:
         assert video.executable_name == "ffmpeg"
         assert photo.executable_name == "tpai"
 
-    def test_gigapixel_parameter_validation(self):
-        """Test Gigapixel AI parameter validation."""
-        executor = Mock()
-        options = ProcessingOptions()
-        gp = GigapixelAI(executor, options)
-
-        # Valid parameters should pass
-        gp.validate_params(model="std", scale=2, denoise=50)
-
-        # Invalid model should raise error
-        with pytest.raises(ValidationError, match="Invalid model"):
-            gp.validate_params(model="invalid_model")
-
-        # Invalid scale should raise error
-        with pytest.raises(ValidationError, match="Scale must be between 1 and 6"):
-            gp.validate_params(scale=10)
-
-        # Invalid denoise should raise error
-        with pytest.raises(ValidationError, match="denoise must be between 1 and 100"):
-            gp.validate_params(denoise=150)
+    # def test_gigapixel_parameter_validation(self): # Moved to tests/products/gigapixel/test_api.py
+    #     """Test Gigapixel AI parameter validation."""
+    #     executor = Mock()
+    #     options = ProcessingOptions()
+    #     gp = GigapixelAI(executor, options)
+    #
+    #     # Valid parameters should pass
+    #     gp.validate_params(model="std", scale=2, denoise=50)
+    #
+    #     # Invalid model should raise error
+    #     with pytest.raises(ValidationError, match="Invalid model"):
+    #         gp.validate_params(model="invalid_model")
+    #
+    #     # Invalid scale should raise error
+    #     with pytest.raises(ValidationError, match="Scale must be between 1 and 6"):
+    #         gp.validate_params(scale=10)
+    #
+    #     # Invalid denoise should raise error
+    #     with pytest.raises(ValidationError, match="denoise must be between 1 and 100"):
+    #         gp.validate_params(denoise=150)
 
     def test_video_ai_parameter_validation(self):
         """Test Video AI parameter validation."""
@@ -175,31 +175,31 @@ class TestRefactoringBasics:
         assert "png" in photo.supported_formats
         assert "dng" in photo.supported_formats
 
-    def test_command_building(self):
-        """Test that command building works correctly."""
-        executor = Mock()
-        options = ProcessingOptions(verbose=True)
-
-        with patch("topyaz.products.gigapixel.api.GigapixelAI.get_executable_path") as mock_path:
-            mock_path.return_value = Path("/fake/gigapixel")
-
-            gp = GigapixelAI(executor, options)
-            cmd = gp.build_command(Path("input.jpg"), Path("output.jpg"), model="std", scale=2, denoise=50)
-
-            # Check that command contains expected elements
-            cmd_str = " ".join(cmd)
-            assert "/fake/gigapixel" in cmd_str
-            assert "--cli" in cmd_str
-            assert "-i" in cmd_str
-            assert "input.jpg" in cmd_str
-            assert "-o" in cmd_str
-            assert "output.jpg" in cmd_str
-            assert "-m" in cmd_str
-            assert "std" in cmd_str
-            assert "--scale" in cmd_str
-            assert "2" in cmd_str
-            assert "--denoise" in cmd_str
-            assert "50" in cmd_str
+    # def test_command_building(self): # Specific Gigapixel command building moved
+    #     """Test that command building works correctly."""
+    #     executor = Mock()
+    #     options = ProcessingOptions(verbose=True)
+    #
+    #     with patch("topyaz.products.gigapixel.api.GigapixelAI.get_executable_path") as mock_path:
+    #         mock_path.return_value = Path("/fake/gigapixel")
+    #
+    #         gp = GigapixelAI(executor, options)
+    #         cmd = gp.build_command(Path("input.jpg"), Path("output.jpg"), model="std", scale=2, denoise=50)
+    #
+    #         # Check that command contains expected elements
+    #         cmd_str = " ".join(cmd)
+    #         assert "/fake/gigapixel" in cmd_str
+    #         assert "--cli" in cmd_str
+    #         assert "-i" in cmd_str
+    #         assert "input.jpg" in cmd_str
+    #         assert "-o" in cmd_str
+    #         assert "output.jpg" in cmd_str
+    #         assert "-m" in cmd_str # This was an error in the old test, Gigapixel CLI uses --model
+    #         assert "std" in cmd_str
+    #         assert "--scale" in cmd_str
+    #         assert "2" in cmd_str
+    #         assert "--denoise" in cmd_str
+    #         assert "50" in cmd_str
 
     def test_backward_compatibility(self):
         """Test that the new CLI maintains backward compatibility."""

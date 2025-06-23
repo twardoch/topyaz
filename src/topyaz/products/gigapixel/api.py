@@ -13,12 +13,18 @@ import platform
 from pathlib import Path
 from typing import Any
 
-from loguru import logger
-
+# from loguru import logger # F401: Unused import
 from topyaz.core.errors import ProcessingError, ValidationError
 from topyaz.core.types import CommandList, GigapixelParams, ProcessingOptions, Product
 from topyaz.execution.base import CommandExecutor
 from topyaz.products.base import MacOSTopazProduct
+
+# Constants for Gigapixel AI parameter validation
+GIGA_MAX_SCALE = 6
+GIGA_MAX_EFFECT_STRENGTH = 100  # For denoise, sharpen, etc.
+GIGA_MAX_CREATIVITY_TEXTURE = 6
+GIGA_MAX_QUALITY = 100
+GIGA_MAX_PARALLEL_READ = 10
 
 
 class GigapixelAI(MacOSTopazProduct):
@@ -145,8 +151,8 @@ class GigapixelAI(MacOSTopazProduct):
             raise ValidationError(msg)
 
         # Validate scale
-        if not (1 <= scale <= 6):
-            msg = f"Scale must be between 1 and 6, got {scale}"
+        if not (1 <= scale <= GIGA_MAX_SCALE):
+            msg = f"Scale must be between 1 and {GIGA_MAX_SCALE}, got {scale}"
             raise ValidationError(msg)
 
         # Validate optional numeric parameters
@@ -159,14 +165,14 @@ class GigapixelAI(MacOSTopazProduct):
         }
 
         for param_name, value in numeric_params.items():
-            if value is not None and not (1 <= value <= 100):
-                msg = f"{param_name} must be between 1 and 100, got {value}"
+            if value is not None and not (1 <= value <= GIGA_MAX_EFFECT_STRENGTH):
+                msg = f"{param_name} must be between 1 and {GIGA_MAX_EFFECT_STRENGTH}, got {value}"
                 raise ValidationError(msg)
 
         # Validate creativity and texture (special range)
         for param_name, value in [("creativity", creativity), ("texture", texture)]:
-            if value is not None and not (1 <= value <= 6):
-                msg = f"{param_name} must be between 1 and 6, got {value}"
+            if value is not None and not (1 <= value <= GIGA_MAX_CREATIVITY_TEXTURE):
+                msg = f"{param_name} must be between 1 and {GIGA_MAX_CREATIVITY_TEXTURE}, got {value}"
                 raise ValidationError(msg)
 
         # Validate face recovery version
@@ -181,8 +187,8 @@ class GigapixelAI(MacOSTopazProduct):
             raise ValidationError(msg)
 
         # Validate quality_output
-        if not (1 <= quality <= 100):
-            msg = f"Quality must be between 1 and 100, got {quality}"
+        if not (1 <= quality <= GIGA_MAX_QUALITY):
+            msg = f"Quality must be between 1 and {GIGA_MAX_QUALITY}, got {quality}"
             raise ValidationError(msg)
 
         # Validate bit depth
@@ -191,8 +197,8 @@ class GigapixelAI(MacOSTopazProduct):
             raise ValidationError(msg)
 
         # Validate parallel read
-        if not (1 <= parallel_read <= 10):
-            msg = f"Parallel read must be between 1 and 10, got {parallel_read}"
+        if not (1 <= parallel_read <= GIGA_MAX_PARALLEL_READ):
+            msg = f"Parallel read must be between 1 and {GIGA_MAX_PARALLEL_READ}, got {parallel_read}"
             raise ValidationError(msg)
 
     def build_command(self, input_path: Path, output_path: Path, **kwargs) -> CommandList:
@@ -234,8 +240,8 @@ class GigapixelAI(MacOSTopazProduct):
         # Parse processing information from output
         lines = stdout.split("\n") if stdout else []
 
-        for line in lines:
-            line = line.strip()
+        for raw_line in lines:
+            line = raw_line.strip()
 
             # Look for model information
             if "Model:" in line:
