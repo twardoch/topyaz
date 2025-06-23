@@ -363,7 +363,7 @@ class Config:
         Can be overridden by the 'platform_override' argument.
         """
         system_key: str
-        actual_system_for_check = platform_override if platform_override else plat_global.system()
+        actual_system_for_check = platform_override or plat_global.system()
 
         if actual_system_for_check == "Darwin":
             system_key = "macos"
