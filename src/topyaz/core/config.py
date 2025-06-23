@@ -234,9 +234,7 @@ class Config:
             if isinstance(value_base, dict) and isinstance(value_update, dict):
                 # Recursive merge for nested dicts
                 result[key] = self._merge_configs(value_base, value_update)
-            # Only update if types are compatible or key is new, or if base is not a dict.
-            # This prevents a list from overwriting a dict for the same key.
-            elif not (isinstance(value_base, dict) and not isinstance(value_update, dict)):
+            elif not isinstance(value_base, dict):
                 result[key] = value_update
             else:
                 logger.warning(
