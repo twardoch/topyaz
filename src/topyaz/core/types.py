@@ -18,6 +18,12 @@ CommandList = list[str]
 ConfigDict = dict[str, Any]
 ParamDict = dict[str, Any]
 
+# Constants for memory thresholds
+MEMORY_GB_LOW_THRESHOLD = 4
+MEMORY_PERCENT_HIGH_THRESHOLD = 90
+MEMORY_GB_CONSTRAINED_THRESHOLD = 8
+MEMORY_PERCENT_CONSTRAINED_THRESHOLD = 85
+
 
 class Product(Enum):
     """Enumeration of supported Topaz products.
@@ -243,12 +249,15 @@ class MemoryConstraints:
     @property
     def is_low(self) -> bool:
         """Check if available memory is critically low."""
-        return self.available_gb < 4 or self.percent_used > 90
+        return self.available_gb < MEMORY_GB_LOW_THRESHOLD or self.percent_used > MEMORY_PERCENT_HIGH_THRESHOLD
 
     @property
     def is_constrained(self) -> bool:
         """Check if memory is constrained for heavy operations."""
-        return self.available_gb < 8 or self.percent_used > 85
+        return (
+            self.available_gb < MEMORY_GB_CONSTRAINED_THRESHOLD
+            or self.percent_used > MEMORY_PERCENT_CONSTRAINED_THRESHOLD
+        )
 
 
 @dataclass

@@ -10,8 +10,9 @@ with support for nested keys and default values.
 """
 
 import os
+import platform as plat_global
 from pathlib import Path
-from typing import Any
+from typing import Any, ClassVar  # Added ClassVar
 
 import yaml
 from loguru import logger
@@ -38,7 +39,7 @@ class Config:
     - topyaz/core/__init__.py
     """
 
-    DEFAULT_CONFIG: ConfigDict = {
+    DEFAULT_CONFIG: ClassVar[ConfigDict] = {
         "defaults": {
             "output_dir": "~/processed",
             "preserve_structure": True,
@@ -124,16 +125,30 @@ class Config:
         if self.config_file.exists():
             try:
                 with open(self.config_file) as f:
-                    user_config = yaml.safe_load(f) or {}
+                    user_config_loaded = yaml.safe_load(f)
 
-                # Merge user _config into defaults
-                config = self._merge_configs(config, user_config)
-                logger.debug(f"Loaded configuration from {self.config_file}")
+                if not isinstance(user_config_loaded, dict):
+                    logger.warning(
+                        f"Config file {self.config_file} did not parse into a dictionary "
+                        f"(got {type(user_config_loaded)}). Using default configuration."
+                    )
+                    user_config = {}
+                else:
+                    user_config = user_config_loaded
+
+                if user_config:  # Only merge if user_config is a non-empty dict
+                    config = self._merge_configs(config, user_config)
+                    logger.debug(f"Loaded configuration from {self.config_file}")
+                elif user_config_loaded is None:  # Empty file, parsed as None
+                    logger.debug(f"Config file {self.config_file} is empty. Using defaults.")
+                # If user_config_loaded was not a dict and not None, warning already logged.
 
             except yaml.YAMLError as e:
-                logger.warning(f"Failed to parse _config file {self.config_file}: {e}")
+                logger.warning(f"Failed to parse YAML from _config file {self.config_file}: {e}. Using defaults.")
+                # config remains default here
             except Exception as e:
-                logger.warning(f"Failed to load _config from {self.config_file}: {e}")
+                logger.warning(f"Failed to load _config from {self.config_file}: {e}. Using defaults.")
+                # config remains default here
         else:
             logger.debug(f"Config file not found: {self.config_file}")
 
@@ -214,14 +229,21 @@ class Config:
         """
         result = base.copy()
 
-        for key, value in update.items():
-            if key in result and isinstance(result[key], dict) and isinstance(value, dict):
+        for key, value_update in update.items():
+            value_base = result.get(key)
+            if isinstance(value_base, dict) and isinstance(value_update, dict):
                 # Recursive merge for nested dicts
-                result[key] = self._merge_configs(result[key], value)
+                result[key] = self._merge_configs(value_base, value_update)
+            # Only update if types are compatible or key is new, or if base is not a dict.
+            # This prevents a list from overwriting a dict for the same key.
+            elif not (isinstance(value_base, dict) and not isinstance(value_update, dict)):
+                result[key] = value_update
             else:
-                # Direct assignment for other types
-                result[key] = value
-
+                logger.warning(
+                    f"Config merge conflict for key '{key}': "
+                    f"trying to merge type {type(value_update)} into {type(value_base)}. "
+                    f"Skipping update for this key."
+                )
         return result
 
     def _deep_copy_dict(self, d: ConfigDict) -> ConfigDict:
@@ -320,26 +342,50 @@ class Config:
             logger.error(f"Failed to save configuration: {e}")
             raise
 
-    def get_product_paths(self, product: str, platform: str | None = None) -> list[str]:
+    def get_product_paths(self, product: str, platform_override: str | None = None) -> list[str]:  # param renamed
         """
         Get executable paths for a specific product.
 
         Args:
             product: Product name (_gigapixel, _video_ai, _photo_ai)
-            platform: Platform name (macos, windows). Auto-detected if None.
+            platform_override: Platform name (macos, windows, linux). Auto-detected if None.
 
         Returns:
             List of possible executable paths
 
         """
-        if platform is None:
-            import platform as plat
+        current_platform = self._get_os(platform_override=platform_override)
 
-            system = plat.system()
-            platform = "macos" if system == "Darwin" else "windows"
-
-        paths = self.get(f"paths.{product}.{platform}", [])
+        paths = self.get(f"paths.{product}.{current_platform}", [])
         return paths if isinstance(paths, list) else []
+
+    def _get_os(self, platform_override: str | None = None) -> str:
+        """
+        Get the current operating system, falling back to Linux for unknown.
+        Can be overridden by the 'platform_override' argument.
+        """
+        system_key: str
+        actual_system_for_check = platform_override if platform_override else plat_global.system()
+
+        if actual_system_for_check == "Darwin":
+            system_key = "macos"
+        elif actual_system_for_check == "Windows":
+            system_key = "windows"
+        elif actual_system_for_check == "Linux":
+            system_key = "linux"
+        else:
+            logger.warning(
+                f"Unsupported OS specified/detected: '{actual_system_for_check}'. "
+                f"Falling back to 'linux' for path lookups."
+            )
+            system_key = "linux"
+
+        # If platform_override was one of the known keys, it's already system_key
+        # This ensures if platform_override was "macos", it's used directly.
+        if platform_override and platform_override.lower() in ["macos", "windows", "linux"]:
+            system_key = platform_override.lower()
+
+        return system_key
 
     def to_dict(self) -> ConfigDict:
         """

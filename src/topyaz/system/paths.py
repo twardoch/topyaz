@@ -11,12 +11,14 @@ including support for recursive operations and output path generation.
 import os
 import shutil
 from pathlib import Path
-from typing import Optional, Union
+from typing import ClassVar  # Corrected: Only ClassVar is needed from typing for these specific annotations
 
 from loguru import logger
 
 from topyaz.core.errors import ValidationError
 from topyaz.core.types import Product
+
+BYTES_PER_KB = 1024.0  # Moved to top
 
 
 class PathValidator:
@@ -35,7 +37,7 @@ class PathValidator:
     """
 
     # Supported image extensions for each product
-    IMAGE_EXTENSIONS = {
+    IMAGE_EXTENSIONS: ClassVar[dict[Product, set[str]]] = {  # Changed Dict to dict, Set to set
         Product.GIGAPIXEL: {
             ".jpg",
             ".jpeg",
@@ -69,7 +71,7 @@ class PathValidator:
     }
 
     # Supported video extensions
-    VIDEO_EXTENSIONS = {
+    VIDEO_EXTENSIONS: ClassVar[set[str]] = {  # Changed Set to set
         ".mp4",
         ".mov",
         ".avi",
@@ -84,7 +86,7 @@ class PathValidator:
         ".3gp",
     }
 
-    def __init__(self, preserve_structure: bool = True):
+    def __init__(self, *, preserve_structure: bool = True):  # Added *
         """
         Initialize path validator.
 
@@ -94,7 +96,9 @@ class PathValidator:
         """
         self.preserve_structure = preserve_structure
 
-    def validate_input_path(self, path: str | Path, must_exist: bool = True, file_type: Product | None = None) -> Path:
+    def validate_input_path(
+        self, path: str | Path, *, must_exist: bool = True, file_type: Product | None = None
+    ) -> Path:  # Added *
         """
         Validate and normalize input path.
 
@@ -117,7 +121,7 @@ class PathValidator:
             path_obj = Path(path).expanduser().resolve()
         except Exception as e:
             msg = f"Invalid path '{path}': {e}"
-            raise ValidationError(msg)
+            raise ValidationError(msg) from e
 
         # Check existence
         if must_exist and not path_obj.exists():
@@ -136,7 +140,9 @@ class PathValidator:
         logger.debug(f"Validated input path: {path_obj}")
         return path_obj
 
-    def validate_output_path(self, path: str | Path, create_dirs: bool = True, check_writable: bool = True) -> Path:
+    def validate_output_path(
+        self, path: str | Path, *, create_dirs: bool = True, check_writable: bool = True
+    ) -> Path:  # Added *
         """
         Validate and prepare output path.
 
@@ -159,7 +165,7 @@ class PathValidator:
             path_obj = Path(path).expanduser().resolve()
         except Exception as e:
             msg = f"Invalid output path '{path}': {e}"
-            raise ValidationError(msg)
+            raise ValidationError(msg) from e
 
         # Create parent directory if needed
         parent_dir = path_obj.parent
@@ -169,7 +175,7 @@ class PathValidator:
                 logger.debug(f"Created output directory: {parent_dir}")
             except Exception as e:
                 msg = f"Failed to create directory: {e}"
-                raise ValidationError(msg)
+                raise ValidationError(msg) from e
 
         # Check writability
         if check_writable:
@@ -186,8 +192,9 @@ class PathValidator:
         input_path: Path,
         output_base: Path | None = None,
         suffix: str = "_processed",
+        *,  # preserve_structure is keyword-only
         preserve_structure: bool | None = None,
-        product: Product | None = None,
+        # product: Product | None = None, # ARG002: Unused argument
     ) -> Path:
         """
         Generate output path based on input path.
@@ -197,7 +204,7 @@ class PathValidator:
             output_base: Base output directory
             suffix: Suffix to add to filenames
             preserve_structure: Override instance setting
-            product: Product type for naming
+            # product: Product type for naming # ARG002: Unused argument
 
         Returns:
             Generated output path
@@ -236,6 +243,7 @@ class PathValidator:
         self,
         root_path: Path,
         product: Product | None = None,
+        *,  # recursive is keyword-only
         recursive: bool = True,
         extensions: set[str] | None = None,
     ) -> list[Path]:
@@ -406,11 +414,14 @@ class PathValidator:
 
         """
         for unit in ["B", "KB", "MB", "GB", "TB"]:
-            if size_bytes < 1024.0:
+            if size_bytes < BYTES_PER_KB:
                 return f"{size_bytes:.1f} {unit}"
-            size_bytes /= 1024.0
+            size_bytes /= BYTES_PER_KB
 
         return f"{size_bytes:.1f} PB"
+
+
+BYTES_PER_KB = 1024.0
 
 
 class PathManager:
@@ -424,7 +435,9 @@ class PathManager:
     - topyaz/system/__init__.py
     """
 
-    def __init__(self, output_dir: Path | None = None, preserve_structure: bool = True, backup_originals: bool = False):
+    def __init__(
+        self, output_dir: Path | None = None, *, preserve_structure: bool = True, backup_originals: bool = False
+    ):  # Added *
         """
         Initialize path manager.
 
@@ -437,7 +450,7 @@ class PathManager:
         self.output_dir = output_dir
         self.preserve_structure = preserve_structure
         self.backup_originals = backup_originals
-        self.validator = PathValidator(preserve_structure)
+        self.validator = PathValidator(preserve_structure=preserve_structure)
 
     def prepare_paths(
         self, input_path: str | Path, output_path: str | Path | None = None, product: Product | None = None
@@ -464,7 +477,8 @@ class PathManager:
         if output_path:
             output_obj = self.validator.validate_output_path(output_path)
         else:
-            output_obj = self.validator.generate_output_path(input_obj, self.output_dir, product=product)
+            # product argument removed from generate_output_path call
+            output_obj = self.validator.generate_output_path(input_obj, self.output_dir)
 
         # Create backup if requested
         if self.backup_originals and input_obj.is_file():

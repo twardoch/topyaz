@@ -10,11 +10,11 @@ error definitions, and type declarations.
 from topyaz.core.config import Config
 from topyaz.core.errors import (
     AuthenticationError,
-    EnvironmentError,
     ExecutableNotFoundError,
     ProcessingError,
     RemoteExecutionError,
     TopazError,
+    TopyazEnvironmentError,  # Renamed
     ValidationError,
 )
 from topyaz.core.types import (
@@ -37,10 +37,8 @@ from topyaz.core.types import (
 __all__ = [
     "AuthenticationError",
     "BatchInfo",
-    # Config
-    "Config",
+    "Config",  # Config
     "ConfigDict",
-    "EnvironmentError",
     "ExecutableNotFoundError",
     "GPUInfo",
     "GPUStatus",
@@ -51,13 +49,12 @@ __all__ = [
     "ProcessingError",
     "ProcessingOptions",
     "ProcessingResult",
-    # Types
-    "Product",
+    "Product",  # Types
     "RemoteExecutionError",
     "RemoteOptions",
     "SystemRequirements",
-    # Errors
-    "TopazError",
+    "TopazError",  # Errors
+    "TopyazEnvironmentError",  # Renamed
     "ValidationError",
     "VideoAIParams",
 ]

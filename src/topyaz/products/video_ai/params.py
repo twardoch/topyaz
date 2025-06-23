@@ -4,6 +4,14 @@ from pathlib import Path
 from topyaz.core.errors import ValidationError
 from topyaz.core.types import CommandList
 
+# Constants for VideoAI parameter validation
+VIDEOAI_MAX_SCALE = 4
+VIDEOAI_MAX_FPS = 240
+VIDEOAI_MAX_QUALITY = 51  # CRF-like, but this is the max valid value in range
+VIDEOAI_MAX_EFFECT_STRENGTH = 100
+VIDEOAI_MIN_DETAILS_STRENGTH = -100
+VIDEOAI_MAX_DEVICE_INDEX = 10
+
 
 class VideoAIParams:
     def validate_params(self, **kwargs) -> None:
@@ -78,24 +86,27 @@ class VideoAIParams:
         if model.lower() not in valid_models:
             msg = f"Invalid model '{model}'. Valid models: {', '.join(sorted(valid_models))}"
             raise ValidationError(msg)
-        if not (1 <= scale <= 4):
-            msg = f"Scale must be between 1 and 4, got {scale}"
+        if not (1 <= scale <= VIDEOAI_MAX_SCALE):
+            msg = f"Scale must be between 1 and {VIDEOAI_MAX_SCALE}, got {scale}"
             raise ValidationError(msg)
-        if fps is not None and not (1 <= fps <= 240):
-            msg = f"FPS must be between 1 and 240, got {fps}"
+        if fps is not None and not (1 <= fps <= VIDEOAI_MAX_FPS):
+            msg = f"FPS must be between 1 and {VIDEOAI_MAX_FPS}, got {fps}"
             raise ValidationError(msg)
-        if not (1 <= quality <= 51):
-            msg = f"Quality must be between 1 and 51, got {quality}"
+        if not (1 <= quality <= VIDEOAI_MAX_QUALITY):
+            msg = f"Quality must be between 1 and {VIDEOAI_MAX_QUALITY}, got {quality}"
             raise ValidationError(msg)
         for param_name, value in [("denoise", denoise), ("halo", halo), ("blur", blur), ("compression", compression)]:
-            if value is not None and not (0 <= value <= 100):
-                msg = f"{param_name} must be between 0 and 100, got {value}"
+            if value is not None and not (0 <= value <= VIDEOAI_MAX_EFFECT_STRENGTH):
+                msg = f"{param_name} must be between 0 and {VIDEOAI_MAX_EFFECT_STRENGTH}, got {value}"
                 raise ValidationError(msg)
-        if details is not None and not (-100 <= details <= 100):
-            msg = f"Details must be between -100 and 100, got {details}"
+        if details is not None and not (VIDEOAI_MIN_DETAILS_STRENGTH <= details <= VIDEOAI_MAX_EFFECT_STRENGTH):
+            msg = (
+                f"Details must be between {VIDEOAI_MIN_DETAILS_STRENGTH} "
+                f"and {VIDEOAI_MAX_EFFECT_STRENGTH}, got {details}"
+            )
             raise ValidationError(msg)
-        if not (-1 <= device <= 10):
-            msg = f"Device must be between -1 and 10, got {device}"
+        if not (-1 <= device <= VIDEOAI_MAX_DEVICE_INDEX):
+            msg = f"Device must be between -1 and {VIDEOAI_MAX_DEVICE_INDEX}, got {device}"
             raise ValidationError(msg)
         valid_codecs = {
             "hevc_videotoolbox",
@@ -115,7 +126,7 @@ class VideoAIParams:
             raise ValidationError(msg)
 
     def build_command(
-        self, executable: Path, input_path: Path, output_path: Path, verbose: bool, **kwargs
+        self, executable: Path, input_path: Path, output_path: Path, *, verbose: bool, **kwargs
     ) -> CommandList:
         cmd = [str(executable), "-hide_banner", "-nostdin", "-y"]
         if platform.system() == "Darwin":

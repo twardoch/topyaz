@@ -8,6 +8,7 @@ implemented for local and remote execution environments.
 
 """
 
+import os  # Moved from ExecutorContext.get_env
 from abc import ABC, abstractmethod
 
 from topyaz.core.types import CommandList
@@ -98,6 +99,7 @@ class ExecutorContext:
         working_dir: str | None = None,
         env_vars: dict[str, str] | None = None,
         timeout: int = 3600,
+        *,  # Make dry_run keyword-only
         dry_run: bool = False,
     ):
         """
@@ -125,8 +127,7 @@ class ExecutorContext:
         Used in:
         - topyaz/execution/local.py
         """
-        import os
-
+        # import os # Moved to top
         env = os.environ.copy()
         env.update(self.env_vars)
         return env

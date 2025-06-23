@@ -17,6 +17,8 @@ from topyaz.core.errors import ProcessingError
 from topyaz.core.types import CommandList
 from topyaz.execution.base import CommandExecutor, ExecutorContext
 
+OUTPUT_PREVIEW_LENGTH = 500
+
 
 class LocalExecutor(CommandExecutor):
     """
@@ -87,38 +89,40 @@ class LocalExecutor(CommandExecutor):
 
             # Execute command
             start_time = time.time()
-            result = subprocess.run(command, **kwargs, check=False)
+            # S603: `command` is a list of arguments. `shell=False` is implicitly used via `kwargs` not setting it.
+            # Inputs to `command` are expected to be validated by upstream callers (e.g., parameter handlers).
+            result = subprocess.run(command, **kwargs, check=False)  # noqa: S603
             execution_time = time.time() - start_time
 
             logger.debug(f"Command completed in {execution_time:.2f}s with return code: {result.returncode}")
 
             if result.stdout:
-                stdout_preview = result.stdout[:500]
-                if len(result.stdout) > 500:
+                stdout_preview = result.stdout[:OUTPUT_PREVIEW_LENGTH]
+                if len(result.stdout) > OUTPUT_PREVIEW_LENGTH:
                     stdout_preview += "..."
                 logger.debug(f"STDOUT: {stdout_preview}")
             if result.stderr:
-                stderr_preview = result.stderr[:500]
-                if len(result.stderr) > 500:
+                stderr_preview = result.stderr[:OUTPUT_PREVIEW_LENGTH]
+                if len(result.stderr) > OUTPUT_PREVIEW_LENGTH:
                     stderr_preview += "..."
                 logger.debug(f"STDERR: {stderr_preview}")
 
             return result.returncode, result.stdout, result.stderr
 
-        except subprocess.TimeoutExpired:
+        except subprocess.TimeoutExpired as e:
             msg = f"Command timed out after {actual_timeout} seconds"
             logger.error(msg)
-            raise ProcessingError(msg)
+            raise ProcessingError(msg) from e
 
-        except FileNotFoundError:
+        except FileNotFoundError as e:
             msg = f"Command not found: {command[0]}"
             logger.error(msg)
-            raise ProcessingError(msg)
+            raise ProcessingError(msg) from e
 
         except Exception as e:
             msg = f"Command execution failed: {e}"
             logger.error(msg)
-            raise ProcessingError(msg)
+            raise ProcessingError(msg) from e
 
     def get_info(self) -> dict[str, str]:
         """Get information about this _executor.

@@ -36,7 +36,30 @@ jobs:
         uses: astral-sh/ruff-action@v3
         with:
           version: "latest"
-          args: "format_output --check --respect-gitignore"
+          args: "format --check --respect-gitignore" # format_output was a typo, should be format
+
+      - name: Set up Python for quality checks (if needed for mypy/lock check)
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12" # Or a representative version
+
+      - name: Install UV for quality checks
+        uses: astral-sh/setup-uv@v5
+        with:
+          version: "latest"
+          python-version: "3.12" # Match above
+
+      - name: Install dev dependencies for Mypy
+        run: uv pip sync --all-extras uv.lock # Assumes uv.lock has all dev deps
+
+      - name: Run Mypy type checking
+        run: uv run mypy src tests --config-file pyproject.toml
+
+      - name: Check uv.lock consistency
+        run: |
+          uv pip compile pyproject.toml --all-extras -o uv.lock.ci
+          diff uv.lock uv.lock.ci || (echo "uv.lock is out of date! Run 'make lock' and commit changes." && exit 1)
+          rm uv.lock.ci
 
   test:
     name: Run Tests
@@ -64,13 +87,12 @@ jobs:
           enable-cache: true
           cache-suffix: ${{ matrix.os }}-${{ matrix.python-version }}
 
-      - name: Install test dependencies
-        run: |
-          uv pip install --system --upgrade pip
-          uv pip install --system ".[test]"
+      - name: Install dependencies from lock file
+        run: uv pip sync --all-extras uv.lock # Installs all deps, including test
 
       - name: Run tests with Pytest
-        run: uv run pytest -n auto --maxfail=1 --disable-warnings --cov-report=xml --cov-_config=pyproject.toml --cov=src/topyaz --cov=tests tests/
+        # No need for `uv run` if pytest is installed from uv.lock into the venv
+        run: pytest -n auto --maxfail=1 --disable-warnings --cov-report=xml --cov-config=pyproject.toml --cov=src/topyaz --cov=tests tests/
 
       - name: Upload coverage report
         uses: actions/upload-artifact@v4

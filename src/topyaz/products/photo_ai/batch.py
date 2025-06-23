@@ -6,6 +6,11 @@ from loguru import logger
 
 from topyaz.core.errors import ProcessingError
 
+# Exit codes for Photo AI CLI
+PHOTOAI_EXIT_CODE_NO_VALID_FILES = 255
+PHOTOAI_EXIT_CODE_LOGIN_REQUIRED = 254
+PHOTOAI_EXIT_CODE_INVALID_ARG = 253
+
 
 class PhotoAIBatch:
     # Photo AI has a hard limit of ~450 images per batch
@@ -71,7 +76,8 @@ class PhotoAIBatch:
             cmd = self.product.build_command(batch_input_dir, output_dir, **kwargs)
             try:
                 exit_code, stdout, stderr = self.executor.execute(cmd, timeout=self.options.timeout)
-                success = self._handle_photo_ai_result(exit_code, stdout, stderr, batch_num)
+                # stdout removed from call to _handle_photo_ai_result
+                success = self._handle_photo_ai_result(exit_code, stderr, batch_num)
                 return {
                     "batch_num": batch_num,
                     "success": success,
@@ -89,21 +95,22 @@ class PhotoAIBatch:
                     "files_count": len(batch_files),
                 }
 
-    def _handle_photo_ai_result(self, exit_code: int, stdout: str, stderr: str, batch_num: int) -> bool:
+    # stdout parameter removed
+    def _handle_photo_ai_result(self, exit_code: int, stderr: str, batch_num: int) -> bool:
         if exit_code == 0:
             logger.info(f"Batch {batch_num} completed successfully")
             return True
-        if exit_code == 1:
+        if exit_code == 1:  # Partial success
             logger.warning(f"Batch {batch_num} completed with some failures (partial success)")
             return True
-        if exit_code == 255:
+        if exit_code == PHOTOAI_EXIT_CODE_NO_VALID_FILES:
             logger.error(f"Batch {batch_num} failed: No valid files found")
             return False
-        if exit_code == 254:
+        if exit_code == PHOTOAI_EXIT_CODE_LOGIN_REQUIRED:
             logger.error(f"Batch {batch_num} failed: Invalid log token - login required")
             msg = "Photo AI authentication required. Please log in via the Photo AI GUI."
             raise ProcessingError(msg)
-        if exit_code == 253:
+        if exit_code == PHOTOAI_EXIT_CODE_INVALID_ARG:
             logger.error(f"Batch {batch_num} failed: Invalid argument")
             if stderr:
                 logger.error(f"Error details: {stderr}")
