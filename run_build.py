@@ -29,7 +29,9 @@ def main():
         sys.exit(1)
     except FileNotFoundError:
         # This case should ideally not happen if dependencies are correctly installed by uv run -s
-        print(f"Failed to run 'python -m build': The 'build' module or Python itself not found in expected path.")
+        print(
+            "Failed to run 'python -m build': The 'build' module or Python itself not found in expected path."
+        )
         sys.exit(1)
     except Exception as e:
         print(f"An unexpected error occurred during build: {e}")
