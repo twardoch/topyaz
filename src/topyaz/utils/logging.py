@@ -9,7 +9,7 @@ import sys
 from loguru import logger
 
 
-def setup_logging(verbose: bool = True) -> None:
+def setup_logging(*, verbose: bool = True) -> None:  # Added *
     """
     Configure logging for topyaz.
 

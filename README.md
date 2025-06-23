@@ -208,7 +208,7 @@ The `photo` command accepts numerous parameters. Standard parameters are passed 
 
 **Standard CLI Parameters:**
 - `--preset PRESET`, `-p PRESET`: (`str`, default: `auto`) - Autopilot preset to use.
-- `--format FORMAT`: (`str`, default: `preserve`) - Output format (`preserve`, `jpg`, `png`, `tiff`, `dng`).
+- `--format_output FORMAT`: (`str`, default: `preserve`) - Output format (`preserve`, `jpg`, `png`, `tiff`, `dng`).
 - `--quality QUALITY`, `-q QUALITY`: (`int`, default: `95`) - JPEG quality (0-100).
 - `--compression COMPRESSION`: (`int`, default: `6`) - PNG compression (0-10).
 - `--bit_depth BIT_DEPTH`, `-b BIT_DEPTH`: (`int`, default: `8`) - TIFF bit depth (8 or 16).
@@ -256,6 +256,55 @@ These parameters provide fine-grained control over the Autopilot settings.
 
 - **`topyaz info`**: Displays a comprehensive report on your system environment, including OS, hardware, detected GPUs, and located Topaz product executables.
 - **`topyaz version`**: Shows the version of `topyaz` and the detected versions of the installed Topaz applications.
+
+## Development
+
+This section outlines how to set up the project for development and contributions.
+
+### Setup
+
+It's recommended to use a modern Python version (3.10+). This project uses [Hatch](https://hatch.pypa.io/) for project management and [uv](https://github.com/astral-sh/uv) for fast dependency management.
+
+1.  **Clone the repository:**
+    ```bash
+    git clone https://github.com/twardoch/topyaz.git
+    cd topyaz
+    ```
+
+2.  **Set up the development environment:**
+    The `Makefile` provides convenience targets. To set up the default Hatch environment with all dependencies:
+    ```bash
+    make setup-dev
+    ```
+    This uses Hatch to create and manage the virtual environment and install dependencies. Alternatively, if you prefer to manage environments with `uv` directly:
+    ```bash
+    uv venv .venv # Create a virtual environment
+    source .venv/bin/activate # Activate it
+    make lock # Ensure uv.lock is up-to-date
+    uv pip sync uv.lock --all-extras # Install all dependencies
+    ```
+
+### Running Quality Assurance Tools
+
+The `Makefile` provides targets for common QA tasks:
+
+*   `make fmt`: Format the code using Ruff.
+*   `make lint`: Run Ruff linter and Mypy type checker.
+*   `make test`: Run the test suite using pytest.
+*   `make test-cov`: Run tests with coverage reporting.
+
+Pre-commit hooks are also configured to run these checks automatically before each commit. You can install them with:
+```bash
+pre-commit install
+```
+
+### Building the Package
+
+To build the wheel and source distribution:
+```bash
+make build
+```
+Artifacts will be in the `dist/` directory.
 
 ## Architecture
 

@@ -5,6 +5,12 @@ from loguru import logger
 from topyaz.core.errors import ValidationError
 from topyaz.core.types import CommandList
 
+# Corrected import path for PhotoAIPreferences
+from topyaz.products.photo_ai.preferences import PhotoAIPreferences
+
+PHOTOAI_MAX_QUALITY = 100
+PHOTOAI_MAX_COMPRESSION = 10
+
 
 class PhotoAIParams:
     def validate_params(self, **kwargs) -> None:
@@ -22,12 +28,12 @@ class PhotoAIParams:
             msg = f"Invalid format '{format_param}'. Valid formats: {', '.join(sorted(valid_formats))}"
             raise ValidationError(msg)
 
-        if not (0 <= quality <= 100):
-            msg = f"Quality must be between 0 and 100, got {quality}"
+        if not (0 <= quality <= PHOTOAI_MAX_QUALITY):
+            msg = f"Quality must be between 0 and {PHOTOAI_MAX_QUALITY}, got {quality}"
             raise ValidationError(msg)
 
-        if not (0 <= compression <= 10):
-            msg = f"Compression must be between 0 and 10, got {compression}"
+        if not (0 <= compression <= PHOTOAI_MAX_COMPRESSION):
+            msg = f"Compression must be between 0 and {PHOTOAI_MAX_COMPRESSION}, got {compression}"
             raise ValidationError(msg)
 
         if bit_depth not in [8, 16]:
@@ -36,21 +42,21 @@ class PhotoAIParams:
 
         valid_tiff_compression = {"none", "lzw", "zip"}
         if tiff_compression.lower() not in valid_tiff_compression:
-            msg = f"Invalid TIFF compression '{tiff_compression}'. Valid _options: {', '.join(sorted(valid_tiff_compression))}"
+            valid_options_str = ", ".join(sorted(valid_tiff_compression))
+            msg = f"Invalid TIFF compression '{tiff_compression}'. Valid options: {valid_options_str}"
             raise ValidationError(msg)
 
         autopilot_params = {k: v for k, v in kwargs.items() if self._is_autopilot_param(k)}
         if autopilot_params:
             try:
-                from topyaz.system.photo_ai_prefs import PhotoAIPreferences
-
+                # from topyaz.system.photo_ai_prefs import PhotoAIPreferences # Moved to top
                 prefs_handler = PhotoAIPreferences()
                 prefs_handler.validate_setting_values(**autopilot_params)
-            except ImportError:
+            except ImportError:  # This might still occur if PhotoAIPreferences itself has import issues
                 logger.warning("Preferences system not available - skipping autopilot parameter validation")
             except Exception as e:
                 msg = f"Invalid autopilot parameter: {e}"
-                raise ValidationError(msg)
+                raise ValidationError(msg) from e
 
     def _is_autopilot_param(self, param_name: str) -> bool:
         autopilot_params = {
@@ -85,7 +91,7 @@ class PhotoAIParams:
         return param_name in autopilot_params
 
     def build_command(
-        self, executable: Path, input_path: Path, output_path: Path, verbose: bool, **kwargs
+        self, executable: Path, input_path: Path, output_path: Path, *, verbose: bool, **kwargs
     ) -> CommandList:
         """
         Build Photo AI command line.
@@ -127,11 +133,11 @@ class PhotoAIParams:
 
         if override_autopilot or any([upscale, noise, sharpen, lighting, color]):
             cmd.append("--override")
-            self._add_boolean_parameter(cmd, "upscale", upscale)
-            self._add_boolean_parameter(cmd, "noise", noise)
-            self._add_boolean_parameter(cmd, "sharpen", sharpen)
-            self._add_boolean_parameter(cmd, "lighting", lighting)
-            self._add_boolean_parameter(cmd, "color", color)
+            self._add_boolean_parameter(cmd, "upscale", value=upscale)
+            self._add_boolean_parameter(cmd, "noise", value=noise)
+            self._add_boolean_parameter(cmd, "sharpen", value=sharpen)
+            self._add_boolean_parameter(cmd, "lighting", value=lighting)
+            self._add_boolean_parameter(cmd, "color", value=color)
 
         if input_path.is_dir():
             cmd.append("--recursive")
@@ -140,7 +146,7 @@ class PhotoAIParams:
 
         return cmd
 
-    def _add_boolean_parameter(self, cmd: CommandList, param_name: str, value: bool | None) -> None:
+    def _add_boolean_parameter(self, cmd: CommandList, param_name: str, *, value: bool | None) -> None:  # Added *
         if value is True:
             cmd.append(f"--{param_name}")
         elif value is False:

@@ -15,8 +15,10 @@ from typing import Any
 import fire
 from loguru import logger
 
+from topyaz import __version__ as topyaz_version
 from topyaz.core.config import Config
 from topyaz.core.types import ProcessingOptions
+from topyaz.execution.base import ExecutorContext  # Moved from __init__
 from topyaz.execution.local import LocalExecutor
 from topyaz.products import GigapixelAI, PhotoAI, VideoAI
 from topyaz.system.environment import EnvironmentValidator
@@ -41,29 +43,27 @@ class TopyazCLI:
     def __init__(
         self,
         output_dir: str | None = None,
-        backup_originals: bool = False,
-        preserve_structure: bool = True,
         config_file: str | None = None,
         parallel_jobs: int = 1,
-        dry_run: bool = False,
         timeout: int = 3600,
+        *,  # Start of keyword-only arguments
+        backup_originals: bool = False,
+        preserve_structure: bool = True,
+        dry_run: bool = False,
         verbose: bool = False,
-        **kwargs,
     ):
         """
         Initialize topyaz wrapper.
 
         Args:
             output_dir: Default output directory
-            backup_originals: Backup original files before processing
-            preserve_structure: Preserve directory structure in output
             config_file: Configuration file path
             parallel_jobs: Number of parallel jobs (not implemented yet)
-            dry_run: Enable dry run mode (don't actually process)
             timeout: Command timeout in seconds
+            backup_originals: Backup original files before processing
+            preserve_structure: Preserve directory structure in output
+            dry_run: Enable dry run mode (don't actually process)
             verbose: Enable verbose logging
-            **kwargs: Additional configuration options
-
         """
         # Set up logging first
         setup_logging(verbose=verbose)
@@ -92,7 +92,7 @@ class TopyazCLI:
 
         # Set up executor
         logger.info("Using local execution")
-        from topyaz.execution.base import ExecutorContext
+        # from topyaz.execution.base import ExecutorContext # Moved to top
 
         context = ExecutorContext(timeout=self._options.timeout, dry_run=self._options.dry_run)
         self._executor = LocalExecutor(context)
@@ -237,11 +237,12 @@ class TopyazCLI:
         halo: int | None = None,
         blur: int | None = None,
         compression: int | None = None,
-        stabilize: bool = False,
-        interpolate: bool = False,
         custom_filters: str | None = None,
         device: int = 0,
         output: str | None = None,
+        *,  # Start of keyword-only arguments
+        stabilize: bool = False,
+        interpolate: bool = False,
         **kwargs,
     ) -> bool:
         """
@@ -304,18 +305,11 @@ class TopyazCLI:
         self,
         input_path: str,
         preset: str = "auto",
-        format: str = "preserve",
+        format_output: str = "preserve",  # Renamed from 'format'
         quality: int = 95,
         compression: int = 6,
         bit_depth: int = 8,
         tiff_compression: str = "lzw",
-        show_settings: bool = False,
-        override_autopilot: bool = False,
-        upscale: bool | None = None,
-        noise: bool | None = None,
-        sharpen: bool | None = None,
-        lighting: bool | None = None,
-        color: bool | None = None,
         face_strength: int | None = None,
         face_detection: str | None = None,
         face_parts: list[str] | None = None,
@@ -335,15 +329,23 @@ class TopyazCLI:
         denoise_upscale_strength: int | None = None,
         lighting_strength: int | None = None,
         raw_exposure_strength: int | None = None,
-        adjust_color: bool | None = None,
         temperature_value: int | None = None,
         opacity_value: int | None = None,
         resolution_unit: int | None = None,
         default_resolution: float | None = None,
+        output: str | None = None,
+        *,  # Start of keyword-only arguments
+        show_settings: bool = False,
+        override_autopilot: bool = False,
+        upscale: bool | None = None,
+        noise: bool | None = None,
+        sharpen: bool | None = None,
+        lighting: bool | None = None,
+        color: bool | None = None,
+        adjust_color: bool | None = None,
         overwrite_files: bool | None = None,
         recurse_directories: bool | None = None,
         append_filters: bool | None = None,
-        output: str | None = None,
         **kwargs,
     ) -> bool:
         """
@@ -352,7 +354,7 @@ class TopyazCLI:
         Args:
             input_path: Input file or directory path
             preset: Autopilot preset to use
-            format: Output format (preserve, jpg, png, tiff, dng)
+            format_output: Output format (preserve, jpg, png, tiff, dng)
             quality: JPEG quality (0-100)
             compression: PNG compression (0-10)
             bit_depth: TIFF bit depth (8 or 16)
@@ -405,7 +407,7 @@ class TopyazCLI:
                 input_path=input_path,
                 output_path=output,
                 autopilot_preset=preset,
-                format_output=format,
+                format_output=format_output,  # Updated from 'format'
                 quality_output=quality,
                 compression=compression,
                 bit_depth=bit_depth,
@@ -511,10 +513,9 @@ class TopyazCLI:
 
         """
         try:
-            from topyaz import __version__
-
+            # from topyaz import __version__ # Moved to top as topyaz_version
             return {
-                "topyaz": __version__,
+                "topyaz": topyaz_version,
                 "_gigapixel": self._gigapixel.get_version() or "unknown",
                 "_video_ai": self._video_ai.get_version() or "unknown",
                 "_photo_ai": self._photo_ai.get_version() or "unknown",

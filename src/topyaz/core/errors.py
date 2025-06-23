@@ -54,7 +54,7 @@ class AuthenticationError(TopazError):
     pass
 
 
-class EnvironmentError(TopazError):
+class TopyazEnvironmentError(TopazError):
     """
     Environment validation errors.
 
@@ -131,7 +131,7 @@ class ValidationError(TopazError):
     pass
 
 
-class ExecutableNotFoundError(EnvironmentError):
+class ExecutableNotFoundError(TopyazEnvironmentError):
     """
     Executable not found error.
 

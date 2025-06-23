@@ -15,11 +15,13 @@ from typing import Any
 from loguru import logger
 
 from topyaz.core.errors import ProcessingError
-from topyaz.core.types import CommandList, PhotoAIParams, ProcessingOptions, ProcessingResult, Product
+
+# PhotoAIParams removed from here
+from topyaz.core.types import CommandList, ProcessingOptions, ProcessingResult, Product
 from topyaz.execution.base import CommandExecutor
 from topyaz.products.base import MacOSTopazProduct
 from topyaz.products.photo_ai.batch import PhotoAIBatch
-from topyaz.products.photo_ai.params import PhotoAIParams
+from topyaz.products.photo_ai.params import PhotoAIParams  # Kept this direct import
 from topyaz.products.photo_ai.preferences import PhotoAIAutopilotSettings, PhotoAIPreferences
 
 
@@ -72,14 +74,16 @@ class PhotoAI(MacOSTopazProduct):
 
     def build_command(self, input_path: Path, output_path: Path, **kwargs) -> CommandList:
         executable = self.get_executable_path()
-        return self.param_handler.build_command(executable, input_path, output_path, self.options.verbose, **kwargs)
+        return self.param_handler.build_command(
+            executable, input_path, output_path, verbose=self.options.verbose, **kwargs
+        )
 
     def parse_output(self, stdout: str, stderr: str) -> dict[str, Any]:
         info = {}
         if stdout:
             lines = stdout.split("\n")
-            for line in lines:
-                line = line.strip()
+            for raw_line in lines:
+                line = raw_line.strip()
                 if "images processed" in line.lower():
                     with contextlib.suppress(ValueError, IndexError):
                         info["images_processed"] = int(line.split()[0])

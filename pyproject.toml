@@ -42,6 +42,7 @@ dependencies = [
     "loguru>=0.6.0", # Logging system
     "rich>=13.0.0", # CLI output formatting
     "typing-extensions>=3.7.0", # Type hints
+    "Pillow>=9.0.0", # For image validation in utils.validation
 ]
 
 # Author information
@@ -83,6 +84,7 @@ test = [
     'pytest-benchmark[histogram]>=5.1.0', # Benchmarking plugin - Keep pytest-benchmark as is, update if newer pytest-benchmark version is required
     'pytest-asyncio>=0.25.3', # Async test support - Keep pytest-asyncio as is, update if newer pytest-asyncio version is required
     'coverage[toml]>=7.6.12',
+    "pyyaml>=5.4.0", # Added for tests/core/test_config.py
 ]
 
 docs = [
