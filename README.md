@@ -1,333 +1,419 @@
-# topyaz: Unified CLI Wrapper for Topaz Labs Products
+# topyaz: Unified CLI for Topaz Labs AI Products
 
-This document provides technical documentation for `topyaz`, a Python-based command-line interface (CLI) that provides a unified wrapper for Topaz Labs' AI-powered media enhancement products: Video AI, Gigapixel AI, and Photo AI. It is designed for professionals and developers who require efficient batch processing, automation, and integration into larger workflows.
+**topyaz** is a powerful Python-based command-line interface (CLI) wrapper that brings Topaz Labs' acclaimed AI-powered image and video enhancement tools—Gigapixel AI, Photo AI, and Video AI—into a single, streamlined interface. It's designed for professionals, content creators, and developers who need to incorporate Topaz AI capabilities into batch processing workflows, automated scripts, or remote processing setups.
 
-The tool addresses the limitations of using separate graphical user interfaces for each product by offering a single, scriptable interface. It is particularly beneficial for processing large collections of media files and ensuring reproducible results through configuration.
+**Current Status:** This project is under active development. While core functionality for local processing is implemented, some advanced features like remote execution are planned for future releases.
 
 ## Table of Contents
 
-- [Core Features](#core-features)
-- [Requirements](#requirements)
-  - [System Requirements](#system-requirements)
-  - [Topaz Products & Licenses](#topaz-products--licenses)
-- [Installation](#installation)
-- [Configuration](#configuration)
-- [Usage](#usage)
-  - [Video AI](#video-ai)
-  - [Gigapixel AI](#gigapixel-ai)
-  - [Photo AI](#photo-ai)
-  - [System Commands](#system-commands)
-- [Architecture](#architecture)
-- [Troubleshooting](#troubleshooting)
-- [License](#license)
-- [Support](#support)
+*   [Why topyaz?](#why-topyaz)
+*   [Who is it for?](#who-is-it-for)
+*   [Key Features](#key-features)
+*   [Requirements](#requirements)
+*   [Installation](#installation)
+*   [Usage](#usage)
+    *   [Command-Line Interface (CLI)](#command-line-interface-cli)
+        *   [Global Options](#global-options)
+        *   [Gigapixel AI (`giga`)](#gigapixel-ai-giga)
+        *   [Photo AI (`photo`)](#photo-ai-photo)
+        *   [Video AI (`video`)](#video-ai-video)
+        *   [Utility Commands (`info`, `version`)](#utility-commands-info-version)
+    *   [Programmatic Usage (Python API)](#programmatic-usage-python-api)
+*   [Technical Deep Dive](#technical-deep-dive)
+    *   [Project Structure](#project-structure)
+    *   [Core Components](#core-components)
+    *   [Configuration](#configuration)
+    *   [Execution Flow](#execution-flow)
+*   [Coding and Contributing](#coding-and-contributing)
+    *   [Development Philosophy](#development-philosophy)
+    *   [Python Coding Standards](#python-coding-standards)
+    *   [Commit and Workflow Practices](#commit-and-workflow-practices)
+*   [License](#license)
 
-## Core Features
+## Why topyaz?
 
-- **Unified Interface**: Control Video AI, Gigapixel AI, and Photo AI from a single, consistent CLI.
-- **Batch Processing**: Process entire directories of files with support for recursive searching.
-- **Advanced Configuration**: Utilize YAML files for presets and consistent workflow settings.
-- **Hardware Optimization**: Automatic detection and utilization of available hardware resources, including GPUs (Metal, CUDA, ROCm).
-- **Failsafe Design**: Robust error handling, progress monitoring, and clear feedback.
-- **Enhanced Photo AI Control**: Programmatically manipulates application preferences to expose over 20 additional autopilot settings not available in the standard Photo AI CLI.
+Topaz Labs' AI products offer exceptional quality but are primarily GUI-driven. `topyaz` unlocks their power for automated and high-volume tasks by:
+
+*   **Unifying Access:** Control Gigapixel AI, Photo AI, and Video AI from a single, consistent CLI.
+*   **Enabling Automation:** Easily integrate Topaz AI processing into scripts and larger workflows.
+*   **Facilitating Batch Processing:** Process large numbers of files efficiently.
+*   **Preparing for Remote Execution:** Designed with future support for processing on powerful remote servers (planned feature).
+*   **Potentially Faster Operations:** For batch tasks, CLI interaction can be significantly faster than manual GUI operations.
+
+## Who is it for?
+
+*   **Photo and Video Professionals:** Streamline editing and enhancement pipelines.
+*   **Content Creators:** Batch-enhance images and videos for various platforms.
+*   **Developers & System Integrators:** Add Topaz AI capabilities to custom applications or automated systems.
+*   **Power Users:** Gain finer control and scripting capabilities over Topaz AI tools.
+
+## Key Features
+
+*   **Unified Interface:** Single CLI for Gigapixel AI, Photo AI, and Video AI.
+*   **Comprehensive Parameter Control:** Access a wide range of processing parameters for each Topaz product.
+*   **Local Execution:** Leverages your existing Topaz Labs application installations.
+*   **Configuration Management:** Customize default settings and executable paths via a YAML configuration file or environment variables.
+*   **Cross-Platform (Primarily macOS):** While Topaz products are Mac-focused, `topyaz` aims for broader compatibility where possible. Current executable path configurations are primarily for macOS and Windows.
+*   **Informative Output:** Verbose logging and system information commands.
 
 ## Requirements
 
-### System Requirements
-
-- **Operating System**: macOS 11.0 (Big Sur) or higher.
-  - macOS 13 (Ventura) or newer is recommended for advanced Video AI models.
-  - macOS 14 (Sonoma) or newer is recommended for Gigapixel AI generative models.
-- **Python**: Version 3.10 or higher.
-- **Memory (RAM)**: A minimum of 16GB. 32GB or more is highly recommended for 4K video processing.
-- **Storage**: At least 80GB of free disk space is required for Video AI models.
-- **GPU**: A dedicated GPU with at least 2GB of VRAM is recommended for hardware acceleration.
-
-### Topaz Products & Licenses
-
-- **Topaz Video AI**: A valid license is required.
-- **Topaz Photo AI**: A valid license is required.
-- **Topaz Gigapixel AI**: A **Pro license** is mandatory for CLI access.
-
-Ensure that the Topaz Labs applications are installed in their default locations (e.g., `/Applications/`).
+*   **Operating System:**
+    *   macOS 11+ (Recommended, as Topaz products are primarily optimized for Mac)
+    *   Windows (Supported, executable paths are configured)
+    *   Linux (Potentially, with manual path configuration)
+*   **Topaz Labs Applications:** You **must** have the respective Topaz Labs applications installed:
+    *   Topaz Gigapixel AI
+    *   Topaz Photo AI
+    *   Topaz Video AI
+*   **Topaz Labs Licenses:**
+    *   **Gigapixel AI CLI usage requires a Gigapixel AI Pro license.** Standard licenses may not permit CLI operation.
+    *   Ensure your Photo AI and Video AI licenses are active for full functionality.
+*   **Python:** Python 3.9 or newer.
+*   **System Resources:**
+    *   RAM: 16GB+ recommended (32GB+ for heavy video processing).
+    *   Storage: 80GB+ free space for applications, models, and temporary files.
+    *   GPU: A dedicated GPU (NVIDIA, AMD, or Apple Silicon) is highly recommended for acceptable performance.
 
 ## Installation
 
-Install `topyaz` using a modern Python package manager like `uv` or `pip`.
+1.  **Install Topaz Labs Applications:** Download and install Gigapixel AI, Photo AI, and Video AI from the [Topaz Labs website](https://www.topazlabs.com/). Ensure they are licensed and functioning correctly.
 
-```bash
-uv pip install topyaz
-```
+2.  **Install Python:** If you don't have Python 3.9+ and `uv` (a fast Python package installer), install them.
+    *   Python: [python.org](https://www.python.org/downloads/)
+    *   uv: `pip install uv` or see [uv installation guide](https://github.com/astral-sh/uv#installation).
 
-## Configuration
+3.  **Install `topyaz`:**
+    Clone the repository and install using `uv`:
+    ```bash
+    git clone https://github.com/your-username/topyaz.git # Replace with actual repo URL
+    cd topyaz
+    uv pip install .
+    ```
+    Alternatively, if/when available on PyPI:
+    ```bash
+    uv pip install topyaz
+    ```
 
-`topyaz` can be configured via a YAML file located at `~/.topyaz/config.yaml`. This allows you to set default parameters for different products and workflows, streamlining command-line usage.
-
-**Example `config.yaml`:**
-
-```yaml
-defaults:
-  output_dir: '~/processed_media'
-  preserve_structure: true
-  backup_originals: false
-  log_level: 'INFO'
-  timeout: 3600
-
-video:
-  default_model: 'amq-13'
-  default_codec: 'hevc_videotoolbox'
-  default_quality: 18
-  device: 0
-
-gigapixel:
-  default_model: 'std'
-  default_format: 'preserve'
-  parallel_read: 4
-  quality_output: 95
-
-photo:
-  default_format: 'jpg'
-  default_quality: 95
-  autopilot_preset: 'default'
-  bit_depth: 16
-```
-
-Configuration values can also be overridden by environment variables prefixed with `TOPYAZ_`. Use a double underscore (`__`) to denote nested keys (e.g., `TOPYAZ_VIDEO__DEFAULT_MODEL=prob-3`).
+4.  **Verify Installation:**
+    ```bash
+    topyaz version
+    topyaz info
+    ```
+    These commands should report version information and details about your system and detected Topaz products. If executables are not found, you might need to configure their paths (see [Configuration](#configuration)).
 
 ## Usage
 
-The general command structure is `topyaz [product] [input_path] [options]`.
+### Command-Line Interface (CLI)
 
-For a complete and up-to-date list of all available parameters for any command, run `topyaz [product] --help`.
+The basic structure of a `topyaz` command is:
+`topyaz [global_options] <product_command> [product_options] <input_path>`
 
-### Video AI
+#### Global Options
 
-The `video` command interfaces with Topaz Video AI's `ffmpeg`-based engine.
+These options can be used before the product command (e.g., `topyaz --verbose giga ...`):
 
-**Basic Example:**
+*   `--output_dir <path>`: Default directory for output files.
+*   `--config_file <path>`: Path to a custom `topyaz` configuration YAML file.
+*   `--parallel_jobs <int>`: Number of parallel jobs (Note: current implementation might be limited for actual parallelism across Topaz CLIs).
+*   `--timeout <seconds>`: Command timeout in seconds (default: 3600).
+*   `--backup_originals`: Backup original files before processing.
+*   `--preserve_structure`: Preserve directory structure in the output directory.
+*   `--dry_run`: Show what commands would be run without actually processing files.
+*   `--verbose`: Enable verbose logging.
 
-```bash
-# Upscale a video to 2x its original resolution
-topyaz video input.mp4 --scale 2 --model amq-13
-```
+#### Gigapixel AI (`giga`)
 
-**Parameters:**
-
-- `input_path` (`str`, required): Path to the input video file or directory.
-- `--output OUTPUT`, `-o OUTPUT` (`str`, optional): Path for the output file or directory.
-- `--model MODEL`, `-m MODEL` (`str`, default: `amq-13`): AI model to use.
-- `--scale SCALE` (`int`, default: `2`): Upscale factor (1-4).
-- `--fps FPS`, `-f FPS` (`int`, optional): Target frame rate for interpolation.
-- `--codec CODEC` (`str`, default: `hevc_videotoolbox`): Video codec (e.g., `hevc_videotoolbox`, `hevc_nvenc`).
-- `--quality QUALITY`, `-q QUALITY` (`int`, default: `18`): Video quality/CRF value (1-51). Lower is better.
-- `--denoise DENOISE` (`int`, optional): Denoise strength (0-100).
-- `--details DETAILS` (`int`, optional): Detail enhancement (-100 to 100).
-- `--halo HALO`, `-h HALO` (`int`, optional): Halo reduction (0-100).
-- `--blur BLUR`, `-b BLUR` (`int`, optional): Blur reduction (0-100).
-- `--compression COMPRESSION` (`int`, optional): Compression artifact reduction (0-100).
-- `--stabilize` (`bool`, default: `False`): Enable stabilization.
-- `--interpolate`, `-i` (`bool`, default: `False`): Enable frame interpolation.
-- `--custom_filters FILTERS` (`str`, optional): Custom FFmpeg filter string.
-- `--device DEVICE` (`int`, default: `0`): GPU device index (-1 for CPU).
-
-### Gigapixel AI
-
-The `giga` command interfaces with Topaz Gigapixel AI. A **Pro license** is required.
-
-**Basic Example:**
+Processes images using Topaz Gigapixel AI.
 
 ```bash
-# Upscale an image to 4x its resolution using the standard model.
-topyaz giga input.jpg --scale 4 --model std
+topyaz giga <input_path> [options...]
 ```
 
-**Parameters:**
+**Common Gigapixel Options:**
 
-- `input_path` (`str`, required): Path to the input image or directory.
-- `--output OUTPUT`, `-o OUTPUT` (`str`, optional): Path for the output file or directory.
-- `--model MODEL`, `-m MODEL` (`str`, default: `std`): AI model to use (`std`, `hf`, `art`, `lowres`, `recovery`, `redefine`).
-- `--scale SCALE` (`int`, default: `2`): Upscale factor (1-6).
-- `--denoise DENOISE` (`int`, optional): Denoise strength (1-100).
-- `--sharpen SHARPEN` (`int`, optional): Sharpening strength (1-100).
-- `--compression COMPRESSION` (`int`, optional): Compression reduction (1-100).
-- `--detail DETAIL` (`int`, optional): Detail enhancement (1-100).
-- `--face_recovery STRENGTH` (`int`, optional): Face recovery strength (1-100).
-- `--face_recovery_version VERSION` (`int`, default: `2`): Face recovery model version (1 or 2).
-- `--format_output FORMAT` (`str`, default: `preserve`): Output format (`preserve`, `jpg`, `png`, `tiff`).
-- `--quality_output QUALITY`, `-q QUALITY` (`int`, default: `95`): JPEG quality (1-100).
-- `--bit_depth BIT_DEPTH`, `-b BIT_DEPTH` (`int`, default: `0`): Output bit depth (0=preserve, 8, 16).
-- `--parallel_read COUNT` (`int`, default: `1`): Number of files to read in parallel (1-10).
+*   `--model <name>`: AI model (e.g., `std`, `hf`, `art`, `lowres`). Default: `std`.
+*   `--scale <int>`: Upscale factor (1-6). Default: 2.
+*   `--denoise <1-100>`: Denoise strength.
+*   `--sharpen <1-100>`: Sharpen strength.
+*   `--face_recovery <1-100>`: Face recovery strength.
+*   `--format_output <format>`: Output format (e.g., `preserve`, `jpg`, `png`, `tiff`). Default: `preserve`.
+*   `--quality_output <1-100>`: JPEG quality. Default: 95.
+*   `--output <output_path>`: Specific output file path.
 
-**Generative Model Parameters (`--model redefine`):**
+**Example:**
+```bash
+topyaz giga ./input/image.jpg --scale 4 --model hf --output ./output/image_upscaled.jpg
+```
 
-- `--creativity LEVEL` (`int`, optional): Creativity level (1-6).
-- `--texture LEVEL`, `-t LEVEL` (`int`, optional): Texture level (1-6).
-- `--prompt PROMPT` (`str`, optional): Text prompt for image generation.
+#### Photo AI (`photo`)
 
-**Generative AI Example:**
+Processes images using Topaz Photo AI.
 
 ```bash
-# Use the 'redefine' model with a text prompt.
-topyaz giga portrait.png --model redefine --scale 2 \
-    --creativity 4 --texture 3 \
-    --prompt "ultra-realistic portrait, detailed skin texture, 8k"
+topyaz photo <input_path> [options...]
 ```
 
-### Photo AI
+**Common Photo AI Options:**
 
-The `photo` command provides two modes of operation:
-1.  A standard CLI interface with basic parameters.
-2.  An enhanced mode that temporarily modifies the Photo AI preferences file to control over 20 additional autopilot settings, providing fine-grained control over the enhancement process.
+*   `--preset <name>`: Autopilot preset (e.g., `auto`, `standard`, `strong`). Default: `auto`.
+*   `--override_autopilot`: Allow manual overrides of autopilot settings.
+*   `--upscale <bool>`: Enable/disable upscaling.
+*   `--noise <bool>`: Enable/disable noise reduction.
+*   `--sharpen <bool>`: Enable/disable sharpening.
+*   `--format_output <format>`: Output format (e.g., `preserve`, `jpg`, `png`, `dng`). Default: `preserve`.
+*   `--output <output_path>`: Specific output file path.
+*   Many more fine-grained controls are available (e.g., `--denoise_strength`, `--sharpen_model`, `--upscaling_factor`). Use `topyaz photo -- --help` for a full list.
 
-**Basic Example (Autopilot):**
+**Example:**
+```bash
+topyaz photo ./input/raw_image.cr2 --override_autopilot --upscale True --sharpen True --noise False --format_output dng
+```
+
+#### Video AI (`video`)
+
+Processes videos using Topaz Video AI.
 
 ```bash
-# Process a directory of RAW files, letting Autopilot decide settings,
-# and output as high-quality JPEGs.
-topyaz photo ./raw_images/ --format jpg --quality 95
+topyaz video <input_path> [options...]
 ```
 
-**Enhanced Control Example:** The following command uses parameters that are not part of the standard `tpai` CLI. `topyaz` applies them by modifying the preferences before execution and restoring them afterward.
+**Common Video AI Options:**
 
+*   `--model <name>`: AI model (e.g., `amq-13`, `prob-3`). Default: `amq-13`.
+*   `--scale <int>`: Upscale factor (1-4). Default: 2.
+*   `--fps <int>`: Target frame rate for interpolation.
+*   `--codec <name>`: Video codec (e.g., `hevc_videotoolbox`, `av1_nvenc`). Default: `hevc_videotoolbox`.
+*   `--quality <value>`: Video quality/CRF value (e.g., 18 for H.265). Default: 18.
+*   `--stabilize`: Enable stabilization.
+*   `--interpolate`: Enable frame interpolation.
+*   `--output <output_path>`: Specific output file path.
+
+**Example:**
 ```bash
-# Process a photo with specific autopilot settings.
-topyaz photo portrait.cr3 --output enhanced_portrait.dng \
-    --face_strength 80 \
-    --denoise_model "Low Light Beta" \
-    --sharpen_model "Lens Blur v2" \
-    --upscaling_model "High Fidelity V2" \
-    --upscaling_factor 2.0
+topyaz video ./input/clip.mp4 --model prob-3 --scale 2 --interpolate --fps 60 --codec hevc_nvenc --output ./output/clip_enhanced.mp4
 ```
 
-**Parameters:**
+#### Utility Commands (`info`, `version`)
 
-The `photo` command accepts numerous parameters. Standard parameters are passed directly to the `tpai` CLI. Enhanced parameters are applied by modifying Photo AI's preferences file before execution.
+*   `topyaz info`: Displays system information, detected Topaz products, GPU status, and memory.
+*   `topyaz version`: Shows the version of `topyaz` and detected Topaz product versions.
 
-- `input_path` (`str`, required): Path to the input image or directory.
-- `--output OUTPUT` (`str`, optional): Path for the output file or directory.
+### Programmatic Usage (Python API)
 
-**Standard CLI Parameters:**
-- `--preset PRESET`, `-p PRESET`: (`str`, default: `auto`) - Autopilot preset to use.
-- `--format_output FORMAT`: (`str`, default: `preserve`) - Output format (`preserve`, `jpg`, `png`, `tiff`, `dng`).
-- `--quality QUALITY`, `-q QUALITY`: (`int`, default: `95`) - JPEG quality (0-100).
-- `--compression COMPRESSION`: (`int`, default: `6`) - PNG compression (0-10).
-- `--bit_depth BIT_DEPTH`, `-b BIT_DEPTH`: (`int`, default: `8`) - TIFF bit depth (8 or 16).
-- `--tiff_compression COMPRESSION`: (`str`, default: `lzw`) - TIFF compression (`none`, `lzw`, `zip`).
-- `--override_autopilot`: (`bool`, default: `False`) - Override Autopilot with manual settings.
-- `--upscale [enabled=false]`: (`bool`, optional) - Enable/disable upscaling.
-- `--noise [enabled=false]`, `-n`: (`bool`, optional) - Enable/disable noise reduction.
-- `--sharpen [enabled=false]`: (`bool`, optional) - Enable/disable sharpening.
-- `--lighting [enabled=false]`: (`bool`, optional) - Enable/disable lighting enhancement.
-- `--color [enabled=false]`: (`bool`, optional) - Enable/disable color enhancement.
+You can use `topyaz` functionalities within your Python scripts.
 
-**Enhanced Parameters (via Preferences):**
+**1. Using `TopyazCLI` (recommended for simplicity):**
 
-These parameters provide fine-grained control over the Autopilot settings.
+```python
+from topyaz.cli import TopyazCLI
+from topyaz.core.types import ProcessingOptions
 
-*Face Recovery:*
-- `--face_strength STRENGTH`: (`int`, 0-100) - Strength of Face Recovery.
-- `--face_detection MODE`: (`str`, `auto`|`subject`|`all`) - Face detection mode.
-- `--face_parts PARTS`: (`list[str]`) - Parts to enhance (e.g., `hair,necks`).
+# Configure global options if needed
+cli_options = {
+    "output_dir": "./processed_media",
+    "verbose": True,
+    "dry_run": False
+}
 
-*Denoising:*
-- `--denoise_model MODEL`: (`str`) - Denoise model (e.g., `Low Light Beta`).
-- `--denoise_strength STRENGTH`: (`int`, 0-10) - Denoising strength.
-- `--denoise_raw_model MODEL`: (`str`) - Denoise model for RAW files.
-- `--denoise_raw_strength STRENGTH`: (`int`, 0-10) - Denoise strength for RAW files.
+# Instantiate TopyazCLI. Global options are passed to the constructor.
+# Product-specific options are passed to the respective methods.
+cli = TopyazCLI(**cli_options)
 
-*Sharpening:*
-- `--sharpen_model MODEL`: (`str`) - Sharpen model (e.g., `Lens Blur v2`).
-- `--sharpen_strength STRENGTH`: (`int`, 0-10) - Sharpening strength.
+# Process an image with Gigapixel AI
+giga_success = cli.giga(
+    input_path="./my_images/photo.jpg",
+    model="hf",
+    scale=2,
+    denoise=50
+)
+if giga_success:
+    print("Gigapixel AI processing successful!")
 
-*Upscaling:*
-- `--upscaling_model MODEL`: (`str`) - Upscaling model (e.g., `High Fidelity V2`).
-- `--upscaling_factor FACTOR`: (`float`, 1.0-6.0) - Upscaling factor.
-- `--deblur_strength STRENGTH`: (`int`, 0-10) - Deblur strength.
+# Process a video with Video AI
+video_success = cli.video(
+    input_path="./my_videos/short.mov",
+    model="amq-13",
+    scale=2,
+    interpolate=True,
+    fps=60
+)
+if video_success:
+    print("Video AI processing successful!")
 
-*Color & Tone:*
-- `--lighting_strength STRENGTH`: (`int`, 0-100) - Lighting adjustment strength.
-- `--raw_exposure_strength STRENGTH`: (`int`, 0-100) - Exposure adjustment for RAW files.
-- `--adjust_color`: (`bool`, optional) - Enable color adjustment.
-- `--temperature_value VALUE`: (`int`, 0-100) - White balance temperature.
+# Process a photo with Photo AI
+photo_success = cli.photo(
+    input_path="./my_images/portrait.nef",
+    preset="auto",
+    override_autopilot=True,
+    sharpen=True
+)
+if photo_success:
+    print("Photo AI processing successful!")
+```
 
-### System Commands
+**2. Using individual product classes (for more direct control):**
 
-`topyaz` provides commands for system inspection.
+```python
+from topyaz.execution.local import LocalExecutor
+from topyaz.execution.base import ExecutorContext
+from topyaz.core.types import ProcessingOptions
+from topyaz.products.gigapixel.api import GigapixelAI
+from pathlib import Path
 
-- **`topyaz info`**: Displays a comprehensive report on your system environment, including OS, hardware, detected GPUs, and located Topaz product executables.
-- **`topyaz version`**: Shows the version of `topyaz` and the detected versions of the installed Topaz applications.
+# Common processing options
+options = ProcessingOptions(
+    output_dir=Path("./api_output"),
+    verbose=True,
+    timeout=7200 # 2 hours
+)
 
-## Development
+# Setup executor
+executor_context = ExecutorContext(timeout=options.timeout, dry_run=options.dry_run)
+executor = LocalExecutor(context=executor_context)
 
-This section outlines how to set up the project for development and contributions.
+# Gigapixel AI example
+gigapixel_processor = GigapixelAI(executor=executor, options=options)
+result = gigapixel_processor.process(
+    input_path="./my_images/landscape.tiff",
+    output_path="./api_output/landscape_giga.tiff", # Optional, can be auto-generated
+    model="standard",
+    scale=2,
+    sharpen=30
+)
 
-### Setup
+if result.success:
+    print(f"Gigapixel processed: {result.output_path}")
+    print(f"Execution time: {result.execution_time:.2f}s")
+else:
+    print(f"Gigapixel processing failed: {result.error_message}")
 
-It's recommended to use a modern Python version (3.10+). This project uses [Hatch](https://hatch.pypa.io/) for project management and [uv](https://github.com/astral-sh/uv) for fast dependency management.
+# Similar instantiation and usage for PhotoAI and VideoAI classes
+# from topyaz.products.photo_ai.api import PhotoAI
+# from topyaz.products.video_ai.api import VideoAI
+```
 
-1.  **Clone the repository:**
-    ```bash
-    git clone https://github.com/twardoch/topyaz.git
-    cd topyaz
+## Technical Deep Dive
+
+### Project Structure
+
+The `topyaz` codebase is organized into several key directories under `src/topyaz/`:
+
+*   `core/`: Contains core data types (`types.py`), configuration management (`config.py`), and error definitions (`errors.py`).
+*   `cli.py`: Defines the main `TopyazCLI` class, which `python-fire` uses to generate the command-line interface.
+*   `execution/`: Handles command execution.
+    *   `base.py`: Abstract base class for executors.
+    *   `local.py`: Implements local command execution using `subprocess`.
+*   `products/`: Contains implementations for each Topaz Labs product.
+    *   `base.py`: Abstract base class `TopazProduct` for all product integrations.
+    *   `gigapixel/`, `photo_ai/`, `video_ai/`: Subdirectories for each product, typically containing:
+        *   `api.py`: The main class for interacting with the product (e.g., `GigapixelAI`).
+        *   `params.py`: Parameter handling and validation logic.
+        *   Other product-specific modules (e.g., `preferences.py` for Photo AI).
+*   `system/`: Modules for interacting with the system (environment validation, GPU info, memory status, path handling).
+*   `utils/`: Utility modules like logging.
+
+### Core Components
+
+*   **`TopyazCLI` (`cli.py`):** The main entry point for CLI operations. It instantiates product handlers and delegates commands.
+*   **`TopazProduct` (`products/base.py`):** An abstract base class defining the interface for all product integrations (finding executables, building commands, parsing output, etc.). `MacOSTopazProduct` extends this with macOS-specific helpers.
+*   **Product API Classes (e.g., `GigapixelAI` in `products/gigapixel/api.py`):** Implement the `TopazProduct` interface for a specific Topaz tool. They manage parameter validation, command construction using the tool's CLI syntax, and parsing its output.
+*   **`CommandExecutor` (`execution/base.py` & `local.py`):** Responsible for actually running the generated commands. `LocalExecutor` uses Python's `subprocess` module.
+*   **`Config` (`core/config.py`):** Loads and manages configuration settings from YAML files (default: `~/.topyaz/config.yaml`) and environment variables (e.g., `TOPYAZ_DEFAULTS__OUTPUT_DIR`). This includes paths to Topaz product executables.
+*   **Data Classes (`core/types.py`):** Define structured data for options, parameters, results, and system information, promoting type safety and clarity.
+
+### Configuration
+
+`topyaz` uses a hierarchical configuration system:
+
+1.  **Default Values:** Hardcoded in `core/config.py`.
+2.  **System Config File:** `~/.topyaz/config.yaml` (on Linux/macOS) or user profile equivalent on Windows.
+3.  **User-Specified Config File:** Passed via the `--config_file` global option.
+4.  **Environment Variables:** Prefixed with `TOPYAZ_` (e.g., `TOPYAZ_VIDEO__DEFAULT_MODEL=amq-13`). Double underscores (`__`) denote nesting.
+
+The most important configuration items are the paths to the Topaz product executables. `topyaz` attempts to find these automatically, but they can be explicitly set in the `config.yaml` under the `paths` key if needed:
+
+```yaml
+# Example ~/.topyaz/config.yaml
+defaults:
+  output_dir: "~/topyaz_output"
+  verbose: true
+
+paths:
+  gigapixel:
+    macos: ["/Applications/Topaz Gigapixel AI.app/Contents/Resources/bin/gigapixel"]
+    # windows: ["C:/Program Files/Topaz Labs LLC/Topaz Gigapixel AI/gigapixel.exe"]
+  photo_ai:
+    macos: ["/Applications/Topaz Photo AI.app/Contents/Resources/bin/tpai"]
+  video_ai:
+    macos: ["/Applications/Topaz Video AI.app/Contents/MacOS/ffmpeg"]
+```
+
+### Execution Flow (Local Processing)
+
+1.  User runs a `topyaz` command (e.g., `topyaz giga input.jpg --scale 2`).
+2.  `python-fire` routes this to the appropriate method in `TopyazCLI` (e.g., `TopyazCLI.giga()`).
+3.  `TopyazCLI` initializes common `ProcessingOptions` and the relevant product handler (e.g., `GigapixelAI`).
+4.  The product handler (`GigapixelAI`):
+    *   Finds the Gigapixel AI executable using configured/default paths.
+    *   Validates the provided parameters (e.g., scale is within range).
+    *   Builds the command-line string specific to Gigapixel AI's CLI syntax (e.g., `gigapixel --cli -i input.jpg -o output_temp.jpg --scale 2 ...`).
+    *   For Gigapixel/Photo AI, output is typically directed to a temporary directory. Video AI often writes directly.
+5.  The `LocalExecutor` runs this command using `subprocess.run()`.
+6.  After execution:
+    *   The product handler parses the `stdout` and `stderr` from the Topaz tool for information or errors.
+    *   If a temporary directory was used, the output file is moved to its final destination.
+7.  A `ProcessingResult` object is returned, indicating success/failure and other details.
+8.  `TopyazCLI` logs the result and exits.
+
+## Coding and Contributing
+
+Contributions are welcome! Please adhere to the following guidelines.
+
+### Development Philosophy
+
+(Summarized from `CLAUDE.md`)
+
+*   **Iterate Gradually:** Make small, incremental changes.
+*   **Preserve Existing Code:** Avoid unnecessary refactoring or removal of existing structure unless essential.
+*   **Focus on MVP:** Prioritize minimal viable increments and ship early.
+*   **Clarity and Simplicity:** Write clear, descriptive names and comments. Explain the "what" and "why."
+*   **Robustness:** Handle failures gracefully, validate inputs, and address edge cases.
+*   **Modularity:** Encapsulate repeated logic into concise, single-purpose functions.
+*   **Maintain Overview:** Keep a holistic understanding of the codebase and how components interact.
+
+### Python Coding Standards
+
+(Summarized from `CLAUDE.md`)
+
+*   **Package Management:** Use `uv pip` for managing dependencies.
+*   **Running Code:** Use `python -m` when applicable.
+*   **Formatting:** Adhere to PEP 8 for consistent formatting and naming.
+*   **Simplicity & Readability (PEP 20):** Prioritize clean, explicit code over overly complex solutions.
+*   **Type Hints:** Use simple type hints (e.g., `list`, `dict`, `|` for unions).
+*   **Docstrings (PEP 257):** Write clear, imperative docstrings for modules, classes, and functions.
+*   **F-strings:** Preferred for string formatting.
+*   **Logging:** Implement `loguru`-based logging, including verbose/debug modes.
+*   **CLI Scripts:** If adding new top-level scripts, consider using `python-fire` and `rich` for output. Start scripts with:
+    ```python
+    #!/usr/bin/env -S uv run -s
+    # /// script
+    # dependencies = ["PKG1", "PKG2"]
+    # ///
+    # this_file: path/to/current_file.py
     ```
+*   **File Path Records:** Maintain an up-to-date `this_file` comment near the top of each source file, indicating its path relative to the project root.
 
-2.  **Set up the development environment:**
-    The `Makefile` provides convenience targets. To set up the default Hatch environment with all dependencies:
-    ```bash
-    make setup-dev
-    ```
-    This uses Hatch to create and manage the virtual environment and install dependencies. Alternatively, if you prefer to manage environments with `uv` directly:
-    ```bash
-    uv venv .venv # Create a virtual environment
-    source .venv/bin/activate # Activate it
-    make lock # Ensure uv.lock is up-to-date
-    uv pip sync uv.lock --all-extras # Install all dependencies
-    ```
+### Commit and Workflow Practices
 
-### Running Quality Assurance Tools
+(Summarized from `CLAUDE.md`)
 
-The `Makefile` provides targets for common QA tasks:
-
-*   `make fmt`: Format the code using Ruff.
-*   `make lint`: Run Ruff linter and Mypy type checker.
-*   `make test`: Run the test suite using pytest.
-*   `make test-cov`: Run tests with coverage reporting.
-
-Pre-commit hooks are also configured to run these checks automatically before each commit. You can install them with:
-```bash
-pre-commit install
-```
-
-### Building the Package
-
-To build the wheel and source distribution:
-```bash
-make build
-```
-Artifacts will be in the `dist/` directory.
-
-## Architecture
-
-`topyaz` is built on a modular architecture to ensure maintainability and extensibility.
-
-- **`src/topyaz/core`**: Contains fundamental components like configuration management (`config.py`), custom error types (`errors.py`), and data type definitions (`types.py`).
-- **`src/topyaz/system`**: Handles system-level interactions, including environment validation (`environment.py`), GPU detection (`gpu.py`), memory management (`memory.py`), and path handling (`paths.py`).
-- **`src/topyaz/execution`**: Provides the logic for running commands. It includes a base abstraction (`base.py`) and a concrete implementation for local command execution (`local.py`).
-- **`src/topyaz/products`**: Contains the specific implementations for each Topaz product. A base class (`base.py`) defines the common interface, and each product (`gigapixel/`, `photo_ai/`, `video_ai/`) has its own module for parameter validation, command construction, and output parsing.
-- **`src/topyaz/cli.py`**: The main entry point that integrates all components and exposes the command-line interface using the `fire` library.
-
-This design promotes separation of concerns, simplifies testing, and makes it easier to add support for new products or features in the future.
-
-## Troubleshooting
-
-- **"Executable not found"**: Ensure the Topaz Labs applications are installed in the default `/Applications` directory. `topyaz` automatically searches standard installation paths. Use `topyaz info` to check which executables were found.
-- **Video AI "No such filter: tvai_up"**: This error typically means the environment variables required by Video AI are not set correctly. `topyaz` attempts to set these automatically, but a manual launch of the Video AI GUI once can resolve this by letting it create necessary files.
-- **Gigapixel AI "Pro license required"**: The Gigapixel AI CLI requires a Pro license. There is no workaround for this; you must have an active Pro license to use the `topyaz giga` command.
+*   **Planning:** Use `PLAN.md` for detailed flat plans and `TODO.md` for tracking items.
+*   **Changelog:** Update `CHANGELOG.md` after each significant round of changes.
+*   **README Updates:** Keep `README.md` synchronized with codebase changes.
+*   **Cleanup:** After Python changes, run `./cleanup.sh` if it performs necessary actions like formatting or linting.
+*   **Testing:** Write tests for new features and bug fixes. Ensure tests pass before submitting changes.
 
 ## License
 
-This project is licensed under the MIT License. See the `LICENSE` file for details.
-
-## Support
-
-This is a community-driven tool and is not officially affiliated with or supported by Topaz Labs. For issues, questions, or feature requests, please use the [GitHub Issues](https://github.com/twardoch/topyaz/issues) page for this project.
+This project is licensed under the [MIT License](./LICENSE). Please note that the underlying Topaz Labs products have their own commercial licenses and terms of service.
