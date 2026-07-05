@@ -1,5 +1,6 @@
 import platform
 from pathlib import Path
+from typing import Any
 
 from topyaz.core.errors import ValidationError
 from topyaz.core.types import CommandList
@@ -14,7 +15,7 @@ VIDEOAI_MAX_DEVICE_INDEX = 10
 
 
 class VideoAIParams:
-    def validate_params(self, **kwargs) -> None:
+    def validate_params(self, **kwargs: Any) -> None:
         model = kwargs.get("model", "amq-13")
         scale = kwargs.get("scale", 2)
         fps = kwargs.get("fps")
@@ -126,7 +127,7 @@ class VideoAIParams:
             raise ValidationError(msg)
 
     def build_command(
-        self, executable: Path, input_path: Path, output_path: Path, *, verbose: bool, **kwargs
+        self, executable: Path, input_path: Path, output_path: Path, *, verbose: bool, **kwargs: Any
     ) -> CommandList:
         cmd = [str(executable), "-hide_banner", "-nostdin", "-y"]
         if platform.system() == "Darwin":

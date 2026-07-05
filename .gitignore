@@ -316,3 +316,13 @@ Thumbs.db
 __version__.py
 _private
 VERSION.txt
+
+# Generated snapshots, scratch, and tool history
+llms.txt
+uv.lock.temp*
+.specstory/
+.giga/
+WORKFLOW_UPDATES.md
+run_build.py
+run_tests.py
+package.toml

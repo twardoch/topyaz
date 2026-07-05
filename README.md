@@ -2,7 +2,9 @@
 
 **topyaz** is a powerful Python-based command-line interface (CLI) wrapper that brings Topaz Labs' acclaimed AI-powered image and video enhancement tools—Gigapixel AI, Photo AI, and Video AI—into a single, streamlined interface. It's designed for professionals, content creators, and developers who need to incorporate Topaz AI capabilities into batch processing workflows, automated scripts, or remote processing setups.
 
-**Current Status:** This project is under active development. While core functionality for local processing is implemented, some advanced features like remote execution are planned for future releases.
+**Current Status:** Local processing works across all three products; remote SSH execution is designed but not yet shipped. See the [documentation site](https://twardoch.github.io/topyaz) for the full command reference.
+
+![topyaz](docs/assets/icon.png)
 
 ## Table of Contents
 

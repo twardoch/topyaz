@@ -69,17 +69,17 @@ class PhotoAI(MacOSTopazProduct):
             ]
         return [Path("/usr/local/bin/tpai"), Path("/opt/photo-ai/bin/tpai")]
 
-    def validate_params(self, **kwargs) -> None:
+    def validate_params(self, **kwargs: Any) -> None:
         self.param_handler.validate_params(**kwargs)
 
-    def build_command(self, input_path: Path, output_path: Path, **kwargs) -> CommandList:
+    def build_command(self, input_path: Path, output_path: Path, **kwargs: Any) -> CommandList:
         executable = self.get_executable_path()
         return self.param_handler.build_command(
             executable, input_path, output_path, verbose=self.options.verbose, **kwargs
         )
 
     def parse_output(self, stdout: str, stderr: str) -> dict[str, Any]:
-        info = {}
+        info: dict[str, Any] = {}
         if stdout:
             lines = stdout.split("\n")
             for raw_line in lines:
@@ -97,7 +97,7 @@ class PhotoAI(MacOSTopazProduct):
                 info["errors"] = error_lines
         return info
 
-    def process_batch_directory(self, input_dir: Path, output_dir: Path, **kwargs) -> list[dict[str, Any]]:
+    def process_batch_directory(self, input_dir: Path, output_dir: Path, **kwargs: Any) -> list[dict[str, Any]]:
         return self.batch_handler.process_batch_directory(input_dir, output_dir, **kwargs)
 
     def _find_output_file(self, temp_dir: Path, input_path: Path) -> Path:
@@ -116,14 +116,16 @@ class PhotoAI(MacOSTopazProduct):
     def get_default_params(self) -> PhotoAIParams:
         return PhotoAIParams()
 
-    def process(self, input_path: Path | str, output_path: Path | str | None = None, **kwargs) -> ProcessingResult:
-        autopilot_params = {k: v for k, v in kwargs.items() if self.param_handler._is_autopilot_param(k)}
+    def process(self, input_path: Path | str, output_path: Path | str | None = None, **kwargs: Any) -> ProcessingResult:
+        autopilot_params = {
+            k: v for k, v in kwargs.items() if self.param_handler._is_autopilot_param(k) and v is not None
+        }
         if autopilot_params:
             return self._process_with_preferences(input_path, output_path, **kwargs)
         return super().process(input_path, output_path, **kwargs)
 
     def _process_with_preferences(
-        self, input_path: Path | str, output_path: Path | str | None, **kwargs
+        self, input_path: Path | str, output_path: Path | str | None, **kwargs: Any
     ) -> ProcessingResult:
         try:
             autopilot_settings = self._build_autopilot_settings(**kwargs)
@@ -143,7 +145,7 @@ class PhotoAI(MacOSTopazProduct):
             logger.error(f"Error in preferences manipulation: {e}")
             return super().process(input_path, output_path, **kwargs)
 
-    def _build_autopilot_settings(self, **kwargs):
+    def _build_autopilot_settings(self, **kwargs: Any) -> PhotoAIAutopilotSettings:
         return PhotoAIAutopilotSettings(
             face_strength=kwargs.get("face_strength", 80),
             face_detection=kwargs.get("face_detection", "subject"),

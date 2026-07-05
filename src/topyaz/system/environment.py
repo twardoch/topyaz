@@ -50,7 +50,7 @@ class EnvironmentValidator:
 
         """
         self.requirements = requirements or SystemRequirements()
-        self._validation_results = {}
+        self._validation_results: dict[str, bool] = {}
 
     def validate_all(self, *, raise_on_error: bool = True) -> dict[str, bool]:
         """
@@ -321,7 +321,7 @@ class EnvironmentValidator:
         memory = psutil.virtual_memory()
         disk = psutil.disk_usage(Path.home())
 
-        info = {
+        info: dict[str, Any] = {
             "platform": {
                 "system": platform.system(),
                 "release": platform.release(),

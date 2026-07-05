@@ -15,7 +15,7 @@ from typing import Any
 import fire
 from loguru import logger
 
-from topyaz import __version__ as topyaz_version
+from topyaz.__version__ import __version__ as topyaz_version
 from topyaz.core.config import Config
 from topyaz.core.types import ProcessingOptions
 from topyaz.execution.base import ExecutorContext  # Moved from __init__
@@ -144,7 +144,7 @@ class TopyazCLI:
         bit_depth: int = 0,
         parallel_read: int = 1,
         output: str | None = None,
-        **kwargs,
+        **kwargs: Any,
     ) -> bool:
         """
         Process images with Gigapixel AI.
@@ -243,7 +243,7 @@ class TopyazCLI:
         *,  # Start of keyword-only arguments
         stabilize: bool = False,
         interpolate: bool = False,
-        **kwargs,
+        **kwargs: Any,
     ) -> bool:
         """
         Process videos with Video AI.
@@ -346,7 +346,7 @@ class TopyazCLI:
         overwrite_files: bool | None = None,
         recurse_directories: bool | None = None,
         append_filters: bool | None = None,
-        **kwargs,
+        **kwargs: Any,
     ) -> bool:
         """
         Process a photo with Photo AI.
@@ -468,7 +468,7 @@ class TopyazCLI:
             return {
                 "environment": self._env_validator.get_system_info(),
                 "gpu": asdict(self._gpu_manager.get_status()),
-                "memory": self._memory_manager.get_status(),
+                "memory": asdict(self._memory_manager.check_constraints()),
                 "products": {
                     "_gigapixel": self._gigapixel.get_info(),
                     "_video_ai": self._video_ai.get_info(),
@@ -525,7 +525,7 @@ class TopyazCLI:
             return {"error": str(e)}
 
 
-def main():
+def main() -> None:
     """Main entry point for the CLI."""
     # Pass instance to avoid "command command" duplication
     cli_instance = TopyazCLI

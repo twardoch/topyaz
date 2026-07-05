@@ -2,6 +2,43 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.0.0] - 2026-07-05 — First tagged release
+
+The project earns a version number. The test suite is green, types check clean, and
+the docs describe what actually ships.
+
+### Fixed
+- **Photo AI ran its default path into a wall.** Every plain `topyaz photo` call was
+  routed into the preferences-manipulation branch and failed with
+  `Invalid autopilot parameter: Invalid face_detection: None`. Autopilot detection now
+  ignores `None` values, so the standard path runs unless you actually pass a setting.
+  (`products/photo_ai/api.py`, `products/photo_ai/params.py`)
+- **`topyaz info` crashed on memory status.** It called a nonexistent
+  `MemoryManager.get_status()`; now uses `check_constraints()` like the GPU path. (`cli.py`)
+- **Version string was a module, not text.** `cli.py` imported the `__version__`
+  submodule instead of the version value. (`cli.py`)
+- Dead and mistyped code removed: `dict[str, any]` (the builtin) corrected to
+  `typing.Any` in `photo_ai/batch.py`; an unreachable guard dropped from
+  `core/config.py`; a subprocess env dict correctly typed in `execution/local.py`.
+
+### Changed
+- **Tests pass.** Rewrote the stale suite against the real API and mocked Topaz
+  binaries so it runs with none installed. 176 tests, all green; benchmarks collect.
+- **Types are clean.** `mypy --strict`-level config now reports zero errors across
+  `src/topyaz` (added `ignore_missing_imports` only for the un-stubbed `fire` and `psutil`).
+- **Lint is clean.** `ruff check` and `ruff format --check` pass on source and tests.
+- **CI rebuilt.** `push.yml` became `ci.yml` (lint + type-check + test matrix on
+  3.10–3.12 + build), fixing the broken `needs: quality_output` job reference and the
+  `--output-format_output` flag typo, and dropping the dependency on an uncommitted
+  `uv.lock`. `release.yml` builds with `uv build` and publishes via PyPI Trusted Publishing.
+- **Packaging metadata filled in.** `description` and `keywords` set; pytest now uses
+  `--import-mode=importlib` (fixes the `test_api.py` basename collision across products).
+
+### Added
+- **Documentation site** under `docs/` (Jekyll + remote Just the Docs): home,
+  installation, per-command references for `giga` / `photo` / `video`, and configuration.
+- **Project icon** at `docs/assets/icon.png`.
+
 ## [Unreleased] - Modernization and QA Enhancements - 2025-06-23
 
 ### Changed

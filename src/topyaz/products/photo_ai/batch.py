@@ -1,10 +1,12 @@
 import shutil
 import tempfile
 from pathlib import Path
+from typing import Any
 
 from loguru import logger
 
 from topyaz.core.errors import ProcessingError
+from topyaz.products.base import TopazProduct
 
 # Exit codes for Photo AI CLI
 PHOTOAI_EXIT_CODE_NO_VALID_FILES = 255
@@ -16,12 +18,12 @@ class PhotoAIBatch:
     # Photo AI has a hard limit of ~450 images per batch
     MAX_BATCH_SIZE = 400  # Conservative limit
 
-    def __init__(self, product_instance):
+    def __init__(self, product_instance: TopazProduct) -> None:
         self.product = product_instance
         self.executor = product_instance.executor
         self.options = product_instance.options
 
-    def process_batch_directory(self, input_dir: Path, output_dir: Path, **kwargs) -> list[dict[str, any]]:
+    def process_batch_directory(self, input_dir: Path, output_dir: Path, **kwargs: Any) -> list[dict[str, Any]]:
         """
         Process directory with Photo AI's 450 image batch limit handling.
         """
@@ -34,7 +36,7 @@ class PhotoAIBatch:
         batches = [image_files[i : i + self.MAX_BATCH_SIZE] for i in range(0, len(image_files), self.MAX_BATCH_SIZE)]
         logger.info(f"Processing {len(batches)} batch(es) of up to {self.MAX_BATCH_SIZE} images each")
 
-        results = []
+        results: list[dict[str, Any]] = []
         for batch_num, batch_files in enumerate(batches, 1):
             logger.info(f"Processing batch {batch_num}/{len(batches)} ({len(batch_files)} images)")
             try:
@@ -52,15 +54,15 @@ class PhotoAIBatch:
         return results
 
     def _find_image_files(self, input_dir: Path) -> list[Path]:
-        image_files = []
+        image_files: list[Path] = []
         for ext in self.product.supported_formats:
             image_files.extend(input_dir.rglob(f"*.{ext}"))
             image_files.extend(input_dir.rglob(f"*.{ext.upper()}"))
         return list(set(image_files))
 
     def _process_single_batch(
-        self, batch_files: list[Path], output_dir: Path, batch_num: int, **kwargs
-    ) -> dict[str, any]:
+        self, batch_files: list[Path], output_dir: Path, batch_num: int, **kwargs: Any
+    ) -> dict[str, Any]:
         with tempfile.TemporaryDirectory(prefix=f"topyaz_batch_{batch_num}_") as temp_dir:
             temp_path = Path(temp_dir)
             batch_input_dir = temp_path / "input"

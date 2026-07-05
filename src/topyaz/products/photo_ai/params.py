@@ -1,4 +1,5 @@
 from pathlib import Path
+from typing import Any
 
 from loguru import logger
 
@@ -13,7 +14,7 @@ PHOTOAI_MAX_COMPRESSION = 10
 
 
 class PhotoAIParams:
-    def validate_params(self, **kwargs) -> None:
+    def validate_params(self, **kwargs: Any) -> None:
         """
         Validate Photo AI parameters including enhanced autopilot settings.
         """
@@ -46,7 +47,7 @@ class PhotoAIParams:
             msg = f"Invalid TIFF compression '{tiff_compression}'. Valid options: {valid_options_str}"
             raise ValidationError(msg)
 
-        autopilot_params = {k: v for k, v in kwargs.items() if self._is_autopilot_param(k)}
+        autopilot_params = {k: v for k, v in kwargs.items() if self._is_autopilot_param(k) and v is not None}
         if autopilot_params:
             try:
                 # from topyaz.system.photo_ai_prefs import PhotoAIPreferences # Moved to top
@@ -91,7 +92,7 @@ class PhotoAIParams:
         return param_name in autopilot_params
 
     def build_command(
-        self, executable: Path, input_path: Path, output_path: Path, *, verbose: bool, **kwargs
+        self, executable: Path, input_path: Path, output_path: Path, *, verbose: bool, **kwargs: Any
     ) -> CommandList:
         """
         Build Photo AI command line.

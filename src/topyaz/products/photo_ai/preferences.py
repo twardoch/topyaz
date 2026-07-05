@@ -238,7 +238,7 @@ class PhotoAIPreferences(PreferenceHandler):
         self.write_preferences(prefs)
         logger.info("Updated Photo AI autopilot settings")
 
-    def validate_setting_values(self, **kwargs) -> None:
+    def validate_setting_values(self, **kwargs: Any) -> None:
         if "face_detection" in kwargs and kwargs["face_detection"] not in self.VALID_FACE_DETECTION:
             msg = f"Invalid face_detection: {kwargs['face_detection']}"
             raise PreferenceValidationError(msg)

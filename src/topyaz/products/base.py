@@ -98,7 +98,7 @@ class TopazProduct(ABC):
         pass
 
     @abstractmethod
-    def validate_params(self, **kwargs) -> None:
+    def validate_params(self, **kwargs: Any) -> None:
         """
         Validate product-specific parameters.
 
@@ -111,7 +111,7 @@ class TopazProduct(ABC):
         pass
 
     @abstractmethod
-    def build_command(self, input_path: Path, output_path: Path, **kwargs) -> CommandList:
+    def build_command(self, input_path: Path, output_path: Path, **kwargs: Any) -> CommandList:
         """
         Build command line for processing.
 
@@ -308,7 +308,7 @@ class TopazProduct(ABC):
         """Get suffix to add to output filenames."""
         return f"_{self.product_type.value.lower()}"
 
-    def process(self, input_path: Path | str, output_path: Path | str | None = None, **kwargs) -> ProcessingResult:
+    def process(self, input_path: Path | str, output_path: Path | str | None = None, **kwargs: Any) -> ProcessingResult:
         """
         Template method for processing files. Uses temporary directory workflow.
         Override this method only if you need different behavior (like VideoAI).
@@ -586,5 +586,7 @@ def create_product(product_type: Product, executor: CommandExecutor, options: Pr
         from topyaz.products.photo_ai.api import PhotoAI  # noqa: PLC0415
 
         return PhotoAI(executor, options)
-    msg = f"Unsupported product type: {product_type}"
+    # Defensive fallback: unreachable given the exhaustive Product enum, but kept
+    # to guard against untyped callers passing an unknown product type at runtime.
+    msg = f"Unsupported product type: {product_type}"  # type: ignore[unreachable]
     raise ValueError(msg)

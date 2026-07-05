@@ -19,6 +19,7 @@ from pathlib import Path
 from typing import Any
 
 from loguru import logger
+from typing_extensions import Self
 
 
 class PreferenceError(Exception):
@@ -61,7 +62,7 @@ class PreferenceHandler(ABC):
             preference_file: Path to the preference file to manage
         """
         self.preference_file = Path(preference_file)
-        self._backups: dict[str, Path] = {}
+        self._backups: dict[str, Path | None] = {}
 
     @abstractmethod
     def validate_preferences(self, preferences: dict[str, Any]) -> bool:
@@ -105,7 +106,7 @@ class PreferenceHandler(ABC):
                 return self.get_default_preferences()
 
             with open(self.preference_file, "rb") as f:
-                preferences = plistlib.load(f)
+                preferences: dict[str, Any] = plistlib.load(f)
 
             logger.debug(f"Successfully read preferences from {self.preference_file}")
             return preferences
@@ -255,12 +256,12 @@ class PreferenceHandler(ABC):
         for backup_id in list(self._backups.keys()):
             self._cleanup_backup(backup_id)
 
-    def __enter__(self):
+    def __enter__(self) -> Self:
         """Context manager entry - create backup."""
         self._backup_id_for_context = self.backup()
         return self
 
-    def __exit__(self, exc_type, exc_val, exc_tb):
+    def __exit__(self, exc_type: object, exc_val: object, exc_tb: object) -> None:
         """Context manager exit - restore from backup."""
         if hasattr(self, "_backup_id_for_context"):
             self.restore(self._backup_id_for_context)

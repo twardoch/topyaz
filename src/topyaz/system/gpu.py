@@ -260,7 +260,7 @@ class GPUManager:
     - topyaz/system/__init__.py
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Initialize GPU manager."""
         self._detector = self._get_detector()
         self._cached_status: GPUStatus | None = None

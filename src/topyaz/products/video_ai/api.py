@@ -183,7 +183,7 @@ class VideoAI(MacOSTopazProduct):
 
         return locations
 
-    def validate_params(self, **kwargs) -> None:
+    def validate_params(self, **kwargs: Any) -> None:
         """
         Validate Video AI parameters.
 
@@ -196,7 +196,7 @@ class VideoAI(MacOSTopazProduct):
         """
         self.param_handler.validate_params(**kwargs)
 
-    def build_command(self, input_path: Path, output_path: Path, **kwargs) -> CommandList:
+    def build_command(self, input_path: Path, output_path: Path, **kwargs: Any) -> CommandList:
         """
         Build Video AI command line with Topaz AI filters and high-quality_output encoding.
 
@@ -229,7 +229,7 @@ class VideoAI(MacOSTopazProduct):
             Dictionary of parsed information
 
         """
-        info = {}
+        info: dict[str, Any] = {}
 
         # Parse FFmpeg progress output
         if stdout:
@@ -277,7 +277,7 @@ class VideoAI(MacOSTopazProduct):
         """
         return VideoAIParams()
 
-    def get_memory_requirements(self, **kwargs) -> dict[str, Any]:
+    def get_memory_requirements(self, **kwargs: Any) -> dict[str, Any]:
         """
         Get memory requirements for Video AI processing.
 
@@ -338,7 +338,7 @@ class VideoAI(MacOSTopazProduct):
         msg = "VideoAI uses direct output writing, not temp directories"
         raise NotImplementedError(msg)
 
-    def process(self, input_path: Path | str, output_path: Path | str | None = None, **kwargs):
+    def process(self, input_path: Path | str, output_path: Path | str | None = None, **kwargs: Any) -> ProcessingResult:
         """
         Process video with Video AI using direct output approach.
 

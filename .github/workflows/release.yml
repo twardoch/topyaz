@@ -21,39 +21,30 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: "3.12"
-
-      - name: Install UV
+      - name: Install uv
         uses: astral-sh/setup-uv@v5
         with:
           version: "latest"
           python-version: "3.12"
           enable-cache: true
 
-      - name: Install build tools
-        run: uv pip install build hatchling hatch-vcs
-
       - name: Build distributions
-        run: uv run python -m build --outdir dist
+        run: uv build --out-dir dist
 
       - name: Verify distribution files
         run: |
           ls -la dist/
-          test -n "$(find dist -name '*.whl')" || (echo "Wheel file missing" && exit 1)
-          test -n "$(find dist -name '*.tar.gz')" || (echo "Source distribution missing" && exit 1)
+          test -n "$(find dist -name '*.whl')" || { echo "Wheel file missing"; exit 1; }
+          test -n "$(find dist -name '*.tar.gz')" || { echo "Source distribution missing"; exit 1; }
 
+      # Trusted Publishing (OIDC) — configure the publisher once at
+      # https://pypi.org/manage/project/topyaz/settings/publishing/
+      # The `pypi` environment + id-token:write above authorize it; no API token needed.
       - name: Publish to PyPI
         uses: pypa/gh-action-pypi-publish@release/v1
-        with:
-          password: ${{ secrets.PYPI_TOKEN }}
 
       - name: Create GitHub Release
-        uses: softprops/action-gh-release@v1
+        uses: softprops/action-gh-release@v2
         with:
           files: dist/*
           generate_release_notes: true
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} 

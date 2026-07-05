@@ -2,235 +2,194 @@
 # this_file: tests/test_system.py
 """
 Tests for system-related functionality in topyaz.system.
+
+The system layer is class-based: ``EnvironmentValidator`` gathers OS/hardware
+info, ``GPUManager`` wraps platform-specific GPU detectors, ``MemoryManager``
+reports memory constraints, and ``PathValidator`` handles path validation and
+output-path generation. These tests target that real API.
 """
 
 import platform
+from pathlib import Path
 from unittest.mock import Mock, patch
 
 import pytest
 
-from topyaz.system.environment import get_system_info
-from topyaz.system.gpu import detect_gpu_info
-from topyaz.system.memory import get_memory_info
-from topyaz.system.paths import get_default_paths
+from topyaz.core.errors import ValidationError
+from topyaz.core.types import GPUInfo, GPUStatus, MemoryConstraints, Product
+from topyaz.system.environment import EnvironmentValidator
+from topyaz.system.gpu import GPUManager, MetalGPUDetector
+from topyaz.system.memory import MemoryManager
+from topyaz.system.paths import PathValidator
 
 
-class TestSystemInfo:
-    """Test system information gathering."""
+class TestEnvironmentValidator:
+    """Test system information gathering via EnvironmentValidator."""
 
-    def test_get_system_info(self):
-        """Test basic system information retrieval."""
-        info = get_system_info()
-        
-        # Should return a dictionary with basic system info
+    def test_get_system_info_structure(self):
+        """System info exposes platform, memory, disk, and CPU sections."""
+        info = EnvironmentValidator().get_system_info()
+
         assert isinstance(info, dict)
-        assert "platform" in info
-        assert "python_version" in info
-        assert "architecture" in info
-        
-        # Platform should be a known value
-        assert info["platform"] in ["Darwin", "Linux", "Windows"]
+        for section in ("platform", "memory", "disk", "cpu"):
+            assert section in info
+            assert isinstance(info[section], dict)
 
-    def test_get_system_info_includes_hardware(self):
-        """Test that system info includes hardware information."""
-        info = get_system_info()
-        
-        # Should include hardware details
-        assert "cpu_count" in info
-        assert "memory_total" in info
-        assert isinstance(info["cpu_count"], int)
-        assert info["cpu_count"] > 0
+    def test_get_system_info_platform_matches(self):
+        """The reported platform system matches the host."""
+        info = EnvironmentValidator().get_system_info()
 
-    @patch('platform.system')
-    def test_get_system_info_macos(self, mock_system):
-        """Test system info on macOS."""
-        mock_system.return_value = "Darwin"
-        
-        info = get_system_info()
-        assert info["platform"] == "Darwin"
+        assert info["platform"]["system"] == platform.system()
 
-    @patch('platform.system')
-    def test_get_system_info_linux(self, mock_system):
-        """Test system info on Linux."""
-        mock_system.return_value = "Linux"
-        
-        info = get_system_info()
-        assert info["platform"] == "Linux"
+    def test_get_system_info_hardware_values(self):
+        """CPU count and total memory are positive numbers."""
+        info = EnvironmentValidator().get_system_info()
 
-    @patch('platform.system')
-    def test_get_system_info_windows(self, mock_system):
-        """Test system info on Windows."""
-        mock_system.return_value = "Windows"
-        
-        info = get_system_info()
-        assert info["platform"] == "Windows"
+        assert info["cpu"]["count"] > 0
+        assert info["memory"]["total_gb"] > 0
+
+    def test_validate_memory_sufficient(self):
+        """validate_memory passes when the required amount is trivially small."""
+        validator = EnvironmentValidator()
+
+        assert validator.validate_memory(required_gb=1, raise_on_error=False) is True
+
+    def test_validate_all_returns_bool_map(self):
+        """validate_all returns a mapping of check name to boolean result."""
+        results = EnvironmentValidator().validate_all(raise_on_error=False)
+
+        assert set(results) >= {"os_version", "memory", "disk_space", "gpu"}
+        assert all(isinstance(v, bool) for v in results.values())
 
 
-class TestGPUInfo:
-    """Test GPU information detection."""
+class TestGPUManager:
+    """Test GPU detection via GPUManager."""
 
-    def test_detect_gpu_info_basic(self):
-        """Test basic GPU information detection."""
-        info = detect_gpu_info()
-        
-        # Should return a dictionary
-        assert isinstance(info, dict)
-        
-        # Should have basic GPU info fields
-        assert "gpu_available" in info
-        assert isinstance(info["gpu_available"], bool)
+    def test_get_status_returns_gpu_status(self):
+        """get_status returns a GPUStatus with a boolean availability flag."""
+        status = GPUManager().get_status()
 
-    @patch('subprocess.run')
-    def test_detect_gpu_info_nvidia(self, mock_run):
-        """Test GPU detection with NVIDIA GPU."""
-        # Mock nvidia-smi output
-        mock_run.return_value = Mock(
-            returncode=0,
-            stdout="NVIDIA-SMI 450.80.02\nTesla V100-SXM2-16GB\n",
-            stderr=""
+        assert isinstance(status, GPUStatus)
+        assert isinstance(status.available, bool)
+        assert isinstance(status.devices, list)
+
+    def test_get_status_is_cached(self):
+        """Repeated calls return the same cached GPUStatus instance."""
+        manager = GPUManager()
+
+        first = manager.get_status()
+        second = manager.get_status()
+
+        assert first is second
+
+    def test_get_status_with_mocked_detector(self):
+        """A mocked detector's devices are surfaced through the manager."""
+        manager = GPUManager()
+        fake_status = GPUStatus(
+            available=True,
+            devices=[GPUInfo(name="Test GPU", type="metal", memory_total_mb=8192, device_id=0)],
         )
-        
-        info = detect_gpu_info()
-        
-        # Should detect NVIDIA GPU
-        assert info["gpu_available"] is True
-        if "gpu_type" in info:
-            assert "nvidia" in info["gpu_type"].lower()
+        manager._detector = Mock()
+        manager._detector.detect.return_value = fake_status
+        manager.clear_cache()
 
-    @patch('subprocess.run')
-    def test_detect_gpu_info_amd(self, mock_run):
-        """Test GPU detection with AMD GPU."""
-        # Mock command failure (no nvidia-smi) and success for AMD
-        mock_run.side_effect = [
-            Mock(returncode=1, stdout="", stderr="command not found"),  # nvidia-smi fails
-            Mock(returncode=0, stdout="Radeon RX 6800 XT", stderr="")   # AMD tool succeeds
-        ]
-        
-        info = detect_gpu_info()
-        
-        # Should be callable without errors
-        assert isinstance(info, dict)
-        assert "gpu_available" in info
+        status = manager.get_status()
 
-    @patch('subprocess.run')
-    def test_detect_gpu_info_no_gpu(self, mock_run):
-        """Test GPU detection when no GPU is available."""
-        # Mock all GPU detection commands to fail
-        mock_run.return_value = Mock(
-            returncode=1,
-            stdout="",
-            stderr="No GPU found"
-        )
-        
-        info = detect_gpu_info()
-        
-        # Should handle gracefully
-        assert isinstance(info, dict)
-        # May or may not detect GPU depending on implementation
+        assert status.available is True
+        assert status.count == 1
+        assert status.devices[0].name == "Test GPU"
+
+    def test_metal_detector_off_darwin_reports_unavailable(self):
+        """The Metal detector reports unavailable when not on macOS."""
+        with patch("topyaz.system.gpu.platform.system", return_value="Linux"):
+            status = MetalGPUDetector().detect()
+
+        assert status.available is False
+        assert status.errors
 
 
-class TestMemoryInfo:
-    """Test memory information gathering."""
+class TestMemoryManager:
+    """Test memory reporting via MemoryManager."""
 
-    def test_get_memory_info_basic(self):
-        """Test basic memory information retrieval."""
-        info = get_memory_info()
-        
-        # Should return a dictionary with memory info
-        assert isinstance(info, dict)
-        assert "total" in info
-        assert "available" in info
-        assert "used" in info
-        assert "percent" in info
-        
-        # Values should be reasonable
-        assert info["total"] > 0
-        assert info["available"] >= 0
-        assert info["used"] >= 0
-        assert 0 <= info["percent"] <= 100
+    def test_check_constraints_returns_constraints(self):
+        """check_constraints returns a populated MemoryConstraints object."""
+        constraints = MemoryManager().check_constraints()
 
-    def test_get_memory_info_types(self):
-        """Test that memory info returns correct types."""
-        info = get_memory_info()
-        
-        # Should be numeric values
-        assert isinstance(info["total"], (int, float))
-        assert isinstance(info["available"], (int, float))
-        assert isinstance(info["used"], (int, float))
-        assert isinstance(info["percent"], (int, float))
+        assert isinstance(constraints, MemoryConstraints)
+        assert constraints.total_gb > 0
+        assert constraints.available_gb >= 0
+        assert 0 <= constraints.percent_used <= 100
 
-    @patch('psutil.virtual_memory')
-    def test_get_memory_info_mocked(self, mock_psutil):
-        """Test memory info with mocked psutil."""
-        # Mock psutil.virtual_memory return value
-        mock_memory = Mock()
-        mock_memory.total = 16 * 1024 * 1024 * 1024  # 16GB
-        mock_memory.available = 8 * 1024 * 1024 * 1024  # 8GB
-        mock_memory.used = 8 * 1024 * 1024 * 1024  # 8GB
-        mock_memory.percent = 50.0
-        mock_psutil.return_value = mock_memory
-        
-        info = get_memory_info()
-        
-        assert info["total"] == 16 * 1024 * 1024 * 1024
-        assert info["available"] == 8 * 1024 * 1024 * 1024
-        assert info["used"] == 8 * 1024 * 1024 * 1024
-        assert info["percent"] == 50.0
+    def test_check_constraints_low_memory_recommendation(self):
+        """Critically low memory yields recommendations."""
+        fake_memory = Mock()
+        fake_memory.total = 4 * 1024**3
+        fake_memory.available = 1 * 1024**3  # 1 GB available -> low
+        fake_memory.percent = 95.0
+
+        with patch("topyaz.system.memory.psutil.virtual_memory", return_value=fake_memory):
+            constraints = MemoryManager().check_constraints(Product.PHOTO_AI)
+
+        assert constraints.available_gb == pytest.approx(1.0)
+        assert constraints.recommendations
+
+    def test_optimal_batch_size_never_exceeds_file_count(self):
+        """The optimal batch size is clamped to the file count."""
+        batch = MemoryManager().get_optimal_batch_size(3, Product.GIGAPIXEL)
+
+        assert 1 <= batch <= 3
+
+    def test_optimal_batch_size_zero_files(self):
+        """Zero files yields a zero batch size."""
+        assert MemoryManager().get_optimal_batch_size(0) == 0
 
 
-class TestPathInfo:
-    """Test path utilities."""
+class TestPathValidator:
+    """Test path validation and output-path generation."""
 
-    def test_get_default_paths_basic(self):
-        """Test basic default paths functionality."""
-        paths = get_default_paths()
-        
-        # Should return a dictionary
-        assert isinstance(paths, dict)
-        
-        # Should have paths for different products
-        expected_products = ["gigapixel", "video_ai", "photo_ai"]
-        for product in expected_products:
-            if product in paths:
-                assert isinstance(paths[product], (str, list))
+    def test_validate_input_path_valid(self, tmp_path: Path):
+        """A real image file validates and resolves for its product."""
+        image = tmp_path / "photo.jpg"
+        image.touch()
 
-    @patch('platform.system')
-    def test_get_default_paths_macos(self, mock_system):
-        """Test default paths on macOS."""
-        mock_system.return_value = "Darwin"
-        
-        paths = get_default_paths()
-        
-        # Should include typical macOS paths
-        assert isinstance(paths, dict)
-        # Implementation-specific assertions would go here
+        result = PathValidator().validate_input_path(image, file_type=Product.GIGAPIXEL)
 
-    @patch('platform.system')
-    def test_get_default_paths_linux(self, mock_system):
-        """Test default paths on Linux."""
-        mock_system.return_value = "Linux"
-        
-        paths = get_default_paths()
-        
-        # Should include typical Linux paths
-        assert isinstance(paths, dict)
-        # Implementation-specific assertions would go here
+        assert result == image.resolve()
 
-    @patch('platform.system')
-    def test_get_default_paths_windows(self, mock_system):
-        """Test default paths on Windows."""
-        mock_system.return_value = "Windows"
-        
-        paths = get_default_paths()
-        
-        # Should include typical Windows paths
-        assert isinstance(paths, dict)
-        # Implementation-specific assertions would go here
+    def test_validate_input_path_missing_raises(self, tmp_path: Path):
+        """A missing input path raises ValidationError."""
+        with pytest.raises(ValidationError, match="does not exist"):
+            PathValidator().validate_input_path(tmp_path / "missing.jpg")
 
-    def test_get_default_paths_consistency(self):
-        """Test that default paths are consistent across calls."""
-        paths1 = get_default_paths()
-        paths2 = get_default_paths()
-        
-        # Should return the same results
-        assert paths1 == paths2
+    def test_validate_input_path_bad_extension_raises(self, tmp_path: Path):
+        """An unsupported extension for a product raises ValidationError."""
+        bad = tmp_path / "notes.txt"
+        bad.touch()
+
+        with pytest.raises(ValidationError, match="Unsupported file type"):
+            PathValidator().validate_input_path(bad, file_type=Product.GIGAPIXEL)
+
+    def test_generate_output_path_adds_suffix(self, tmp_path: Path):
+        """generate_output_path adds a suffix to a file's stem, keeping its extension."""
+        source = tmp_path / "pic.jpg"
+        source.touch()
+
+        out = PathValidator().generate_output_path(source, suffix="_x")
+
+        assert out.name == "pic_x.jpg"
+        assert out.parent == tmp_path
+
+    def test_find_files_filters_by_product(self, tmp_path: Path):
+        """find_files returns only files matching the product's extensions."""
+        (tmp_path / "a.jpg").touch()
+        (tmp_path / "b.png").touch()
+        (tmp_path / "c.mp4").touch()
+
+        found = PathValidator().find_files(tmp_path, product=Product.GIGAPIXEL, recursive=False)
+
+        names = {p.name for p in found}
+        assert names == {"a.jpg", "b.png"}
+
+    def test_format_size_human_readable(self):
+        """format_size renders bytes as a human-readable string."""
+        assert PathValidator().format_size(1536) == "1.5 KB"

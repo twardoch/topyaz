@@ -10,6 +10,7 @@ handling and error recovery.
 
 import subprocess
 import time
+from typing import Any
 
 from loguru import logger
 
@@ -74,7 +75,7 @@ class LocalExecutor(CommandExecutor):
             logger.debug(f"Executing locally: {' '.join(command)}")
 
             # Prepare subprocess arguments
-            kwargs = {
+            kwargs: dict[str, Any] = {
                 "input": input_data,
                 "capture_output": True,
                 "text": True,

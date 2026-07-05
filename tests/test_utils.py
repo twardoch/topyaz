@@ -2,169 +2,162 @@
 # this_file: tests/test_utils.py
 """
 Tests for utility functions in topyaz.utils.
+
+The validation utilities operate on *output* files produced by Topaz products:
+``validate_output_file`` inspects an output path, ``get_media_info`` reads image
+and video metadata, ``compare_media_files`` diffs input vs output, and
+``enhance_processing_result`` augments a ProcessingResult with validation data.
 """
 
-import tempfile
 from pathlib import Path
-from unittest.mock import patch
 
 import pytest
 from PIL import Image
 
+from topyaz.core.types import ProcessingResult
+from topyaz.utils.logging import setup_logging
 from topyaz.utils.validation import (
-    validate_file_exists,
-    validate_file_format,
-    validate_image_file,
-    validate_output_path,
-    validate_video_file,
+    compare_media_files,
+    enhance_processing_result,
+    get_media_info,
+    validate_output_file,
 )
 
 
-class TestValidationUtils:
-    """Test validation utility functions."""
+@pytest.fixture
+def image_file(tmp_path: Path) -> Path:
+    """Create a small real JPEG on disk."""
+    path = tmp_path / "image.jpg"
+    Image.new("RGB", (64, 48), color="red").save(path)
+    return path
 
-    def test_validate_file_exists_valid(self):
-        """Test file existence validation with valid file."""
-        with tempfile.NamedTemporaryFile() as temp_file:
-            # Should not raise an exception
-            validate_file_exists(temp_file.name)
-            validate_file_exists(Path(temp_file.name))
 
-    def test_validate_file_exists_invalid(self):
-        """Test file existence validation with invalid file."""
-        with pytest.raises(FileNotFoundError):
-            validate_file_exists("/nonexistent/file.jpg")
-        
-        with pytest.raises(FileNotFoundError):
-            validate_file_exists(Path("/nonexistent/file.jpg"))
+class TestValidateOutputFile:
+    """Test validate_output_file."""
 
-    def test_validate_file_format_valid(self):
-        """Test file format validation with valid formats."""
-        supported_formats = ["jpg", "jpeg", "png", "tiff", "tif"]
-        
-        # Should not raise exceptions
-        validate_file_format("test.jpg", supported_formats)
-        validate_file_format("test.JPEG", supported_formats)
-        validate_file_format("test.png", supported_formats)
-        validate_file_format(Path("test.tiff"), supported_formats)
+    def test_missing_output_reports_error(self, tmp_path: Path):
+        """A non-existent output file is reported as missing with an error."""
+        result = validate_output_file(tmp_path / "in.jpg", tmp_path / "out.jpg")
 
-    def test_validate_file_format_invalid(self):
-        """Test file format validation with invalid formats."""
-        supported_formats = ["jpg", "jpeg", "png"]
-        
-        with pytest.raises(ValueError, match="Unsupported file format"):
-            validate_file_format("test.gif", supported_formats)
-        
-        with pytest.raises(ValueError, match="Unsupported file format"):
-            validate_file_format("test.bmp", supported_formats)
+        assert result["file_exists"] is False
+        assert result["errors"]
 
-    def test_validate_image_file_valid(self):
-        """Test image file validation with valid images."""
-        with tempfile.NamedTemporaryFile(suffix='.jpg', delete=False) as temp_file:
-            # Create a small test image
-            img = Image.new('RGB', (100, 100), color='red')
-            img.save(temp_file.name)
-            
-            # Should not raise an exception
-            validate_image_file(temp_file.name)
-            validate_image_file(Path(temp_file.name))
+    def test_valid_image_output(self, image_file: Path, tmp_path: Path):
+        """A real image output is recognised as a valid media format."""
+        input_path = tmp_path / "in.jpg"
+        Image.new("RGB", (32, 24), color="blue").save(input_path)
 
-    def test_validate_image_file_invalid(self):
-        """Test image file validation with invalid images."""
-        with tempfile.NamedTemporaryFile(suffix='.jpg', delete=False) as temp_file:
-            # Write non-image data
-            temp_file.write(b"This is not an image file")
-            temp_file.flush()
-            
-            with pytest.raises(ValueError, match="Invalid image file"):
-                validate_image_file(temp_file.name)
+        result = validate_output_file(input_path, image_file)
 
-    def test_validate_video_file_valid(self):
-        """Test video file validation with valid extensions."""
-        # We can't easily create real video files, so we'll just test extension validation
-        with tempfile.NamedTemporaryFile(suffix='.mp4', delete=False) as temp_file:
-            # Just test that it doesn't raise for valid video extensions
-            # The actual implementation might do more validation
-            try:
-                validate_video_file(temp_file.name)
-            except ValueError as e:
-                # If it fails, it should be about content, not extension
-                assert "extension" not in str(e).lower()
+        assert result["file_exists"] is True
+        assert result["is_valid_format"] is True
+        assert result["mime_type"] == "image/jpeg"
+        assert result["file_size"] > 0
+        assert result["media_info"].get("width") == 64
+        assert result["media_info"].get("height") == 48
 
-    def test_validate_video_file_invalid_extension(self):
-        """Test video file validation with invalid extensions."""
-        with tempfile.NamedTemporaryFile(suffix='.txt', delete=False) as temp_file:
-            with pytest.raises(ValueError, match="Unsupported video format"):
-                validate_video_file(temp_file.name)
+    def test_non_media_output_is_invalid(self, tmp_path: Path):
+        """A text output file is flagged as an unexpected media type."""
+        output = tmp_path / "out.txt"
+        output.write_text("not media")
 
-    def test_validate_output_path_valid(self):
-        """Test output path validation with valid paths."""
-        with tempfile.TemporaryDirectory() as temp_dir:
-            output_path = Path(temp_dir) / "output.jpg"
-            
-            # Should not raise an exception
-            validate_output_path(str(output_path))
-            validate_output_path(output_path)
+        result = validate_output_file(tmp_path / "in.jpg", output)
 
-    def test_validate_output_path_invalid_directory(self):
-        """Test output path validation with invalid directory."""
-        invalid_path = "/nonexistent/directory/output.jpg"
-        
-        with pytest.raises(ValueError, match="Output directory does not exist"):
-            validate_output_path(invalid_path)
+        assert result["file_exists"] is True
+        assert result["is_valid_format"] is False
+        assert result["errors"]
 
-    def test_validate_output_path_creates_directory(self):
-        """Test that output path validation can create directories."""
-        with tempfile.TemporaryDirectory() as temp_dir:
-            output_path = Path(temp_dir) / "new_subdir" / "output.jpg"
-            
-            # Directory doesn't exist initially
-            assert not output_path.parent.exists()
-            
-            # Should create the directory
-            validate_output_path(str(output_path), create_dirs=True)
-            assert output_path.parent.exists()
 
-    def test_validate_output_path_file_exists_warning(self):
-        """Test output path validation when file already exists."""
-        with tempfile.NamedTemporaryFile(suffix='.jpg', delete=False) as temp_file:
-            # File exists, should warn but not raise
-            try:
-                validate_output_path(temp_file.name)
-                # If it doesn't raise, that's also acceptable behavior
-            except ValueError:
-                # If it raises, the message should be about file existence
-                pass
+class TestGetMediaInfo:
+    """Test get_media_info."""
+
+    def test_image_dimensions(self, image_file: Path):
+        """Image media info includes width, height, and format."""
+        info = get_media_info(image_file)
+
+        assert info["width"] == 64
+        assert info["height"] == 48
+        assert info["mode"] == "RGB"
+
+    def test_unknown_extension_returns_empty(self, tmp_path: Path):
+        """A non-media extension yields an empty info dict."""
+        other = tmp_path / "data.bin"
+        other.write_bytes(b"\x00\x01")
+
+        assert get_media_info(other) == {}
+
+
+class TestCompareMediaFiles:
+    """Test compare_media_files."""
+
+    def test_compare_two_images(self, tmp_path: Path):
+        """Comparing two valid images reports both as valid and a size ratio."""
+        input_path = tmp_path / "in.jpg"
+        output_path = tmp_path / "out.jpg"
+        Image.new("RGB", (32, 24), color="blue").save(input_path)
+        Image.new("RGB", (64, 48), color="blue").save(output_path)
+
+        comparison = compare_media_files(input_path, output_path)
+
+        assert comparison["input_valid"] is True
+        assert comparison["output_valid"] is True
+        assert comparison["resolution_changed"] is True
+        assert comparison["size_ratio"] > 0
+
+    def test_compare_missing_input(self, image_file: Path, tmp_path: Path):
+        """A missing input file is recorded as an issue."""
+        comparison = compare_media_files(tmp_path / "missing.jpg", image_file)
+
+        assert comparison["input_valid"] is False
+        assert comparison["issues"]
+
+
+class TestEnhanceProcessingResult:
+    """Test enhance_processing_result."""
+
+    def test_enhances_successful_result(self, image_file: Path, tmp_path: Path):
+        """A successful result gains validation metadata in additional_info."""
+        input_path = tmp_path / "in.jpg"
+        Image.new("RGB", (32, 24), color="green").save(input_path)
+
+        result = ProcessingResult(success=True, input_path=input_path, output_path=image_file)
+        enhanced = enhance_processing_result(result)
+
+        assert enhanced.success is True
+        assert "output_validation" in enhanced.additional_info
+        assert "file_comparison" in enhanced.additional_info
+
+    def test_failed_result_passes_through(self, tmp_path: Path):
+        """A failed result without output is returned unchanged."""
+        result = ProcessingResult(success=False, input_path=tmp_path / "in.jpg", output_path=None)
+
+        enhanced = enhance_processing_result(result)
+
+        assert enhanced.success is False
+        assert enhanced.additional_info == {}
+
+    def test_marks_missing_output_as_failure(self, tmp_path: Path):
+        """A 'successful' result pointing at a missing output is flipped to failure."""
+        result = ProcessingResult(
+            success=True,
+            input_path=tmp_path / "in.jpg",
+            output_path=tmp_path / "missing_out.jpg",
+        )
+
+        enhanced = enhance_processing_result(result)
+
+        assert enhanced.success is False
+        assert enhanced.error_message
 
 
 class TestLoggingUtils:
-    """Test logging utility functions."""
+    """Test logging setup helpers."""
 
-    def test_logging_imports(self):
-        """Test that logging utilities can be imported."""
-        from topyaz.utils.logging import setup_logging
-        
-        # Should be callable
+    def test_setup_logging_callable(self):
+        """setup_logging is importable and callable."""
         assert callable(setup_logging)
 
-    @patch('topyaz.utils.logging.logger')
-    def test_setup_logging_basic(self, mock_logger):
-        """Test basic logging setup."""
-        from topyaz.utils.logging import setup_logging
-        
-        # Should not raise an exception
-        setup_logging()
-        
-        # Could verify that logger was configured, but this depends on implementation
-        # For now, just ensure it's callable and doesn't crash
-
-    @patch('topyaz.utils.logging.logger')
-    def test_setup_logging_with_level(self, mock_logger):
-        """Test logging setup with specific level."""
-        from topyaz.utils.logging import setup_logging
-        
-        # Should not raise an exception
-        setup_logging(level="DEBUG")
-        setup_logging(level="INFO")
-        setup_logging(level="WARNING")
-        setup_logging(level="ERROR")
+    def test_setup_logging_runs(self):
+        """setup_logging runs in both verbose and quiet modes without error."""
+        setup_logging(verbose=True)
+        setup_logging(verbose=False)

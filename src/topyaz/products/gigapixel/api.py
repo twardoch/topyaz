@@ -94,7 +94,7 @@ class GigapixelAI(MacOSTopazProduct):
         # Linux or other platforms
         return [Path("/usr/local/bin/_gigapixel"), Path("/opt/_gigapixel/bin/_gigapixel")]
 
-    def validate_params(self, **kwargs) -> None:
+    def validate_params(self, **kwargs: Any) -> None:
         """
         Validate Gigapixel AI parameters.
 
@@ -201,7 +201,7 @@ class GigapixelAI(MacOSTopazProduct):
             msg = f"Parallel read must be between 1 and {GIGA_MAX_PARALLEL_READ}, got {parallel_read}"
             raise ValidationError(msg)
 
-    def build_command(self, input_path: Path, output_path: Path, **kwargs) -> CommandList:
+    def build_command(self, input_path: Path, output_path: Path, **kwargs: Any) -> CommandList:
         """
         Build Gigapixel AI command line using temporary output directory.
 
@@ -235,7 +235,7 @@ class GigapixelAI(MacOSTopazProduct):
             Dictionary of parsed information
 
         """
-        info = {}
+        info: dict[str, Any] = {}
 
         # Parse processing information from output
         lines = stdout.split("\n") if stdout else []
@@ -288,7 +288,7 @@ class GigapixelAI(MacOSTopazProduct):
         """
         return GigapixelParams()
 
-    def get_memory_requirements(self, **kwargs) -> dict[str, Any]:
+    def get_memory_requirements(self, **kwargs: Any) -> dict[str, Any]:
         """
         Get memory requirements for processing.
 

@@ -9,7 +9,7 @@ for different Topaz products based on available system resources.
 """
 
 # from typing import Optional # F401: Unused import
-from typing import ClassVar  # Added ClassVar
+from typing import Any, ClassVar  # Added ClassVar
 
 import psutil
 from loguru import logger
@@ -52,9 +52,9 @@ class MemoryManager:
     # Minimum free memory to maintain (in MB)
     MIN_FREE_MEMORY_MB = 2048  # 2GB
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Initialize memory manager."""
-        self._initial_memory = None
+        self._initial_memory: Any = None
         self._peak_usage = 0
 
     def check_constraints(self, operation_type: str | Product = "processing") -> MemoryConstraints:
@@ -176,7 +176,7 @@ class MemoryManager:
 
         # Determine memory per item
         if isinstance(operation_type, Product):
-            memory_per_item = self.MEMORY_PER_ITEM.get(
+            memory_per_item: float = self.MEMORY_PER_ITEM.get(
                 operation_type,
                 256,  # Default
             )

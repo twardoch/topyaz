@@ -279,7 +279,7 @@ class PathValidator:
             )
 
         # Find files
-        files = []
+        files: list[Path] = []
         pattern = "**/*" if recursive else "*"
 
         for ext in search_extensions:
@@ -413,12 +413,13 @@ class PathValidator:
             Formatted size string
 
         """
+        size = float(size_bytes)
         for unit in ["B", "KB", "MB", "GB", "TB"]:
-            if size_bytes < BYTES_PER_KB:
-                return f"{size_bytes:.1f} {unit}"
-            size_bytes /= BYTES_PER_KB
+            if size < BYTES_PER_KB:
+                return f"{size:.1f} {unit}"
+            size /= BYTES_PER_KB
 
-        return f"{size_bytes:.1f} PB"
+        return f"{size:.1f} PB"
 
 
 BYTES_PER_KB = 1024.0

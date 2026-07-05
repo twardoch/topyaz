@@ -11,10 +11,18 @@
 #------------------------------------------------------------------------------
 [project]
 name = 'topyaz' # Package name on PyPI
-description = '' # Short description
+description = 'Unified command-line wrapper for Topaz Labs AI apps (Gigapixel, Photo AI, Video AI)' # Short description
 readme = 'README.md' # Path to README file
 requires-python = '>=3.10' # Minimum Python version
 keywords = [
+    "topaz",
+    "gigapixel",
+    "photo-ai",
+    "video-ai",
+    "upscaling",
+    "batch-processing",
+    "cli",
+    "automation",
 ] # Keywords for PyPI search
 dynamic = ["version"] # Fields set dynamically at build time
 
@@ -296,13 +304,19 @@ module = ["tests.*"]
 disallow_untyped_defs = false
 disallow_incomplete_defs = false
 
+# Third-party libraries without bundled type stubs / py.typed markers.
+# This does not weaken type checking of topyaz's own code.
+[[tool.mypy.overrides]]
+module = ["fire", "fire.*", "psutil", "psutil.*"]
+ignore_missing_imports = true
+
 #------------------------------------------------------------------------------
 # PYTEST CONFIGURATION
 # Configuration for pytest, including markers, _options, and benchmark settings.
 #------------------------------------------------------------------------------
 
 [tool.pytest.ini_options]
-addopts = "-v --durations=10 -p no:briefcase"
+addopts = "-v --durations=10 -p no:briefcase --import-mode=importlib"
 asyncio_mode = "auto"
 asyncio_default_fixture_loop_scope = "function"
 console_output_style = "progress"
@@ -441,6 +455,8 @@ ban-relative-imports = 'all' # Ban all relative imports for consistency
 'tests/**/*' = [
     'PLR2004', # Allow magic values in tests for readability
     'S101', # Allow assertions in tests
-    'TID252'
-    # Allow relative imports in tests for convenience
+    'TID252', # Allow relative imports in tests for convenience
+    'ARG001', # Pytest fixtures (caplog, monkeypatch) are often present but unused
+    'ARG002', # Mock arguments injected by @patch decorators may go unused
+    'SIM105', # try/except/pass reads fine for optional-feature probes in tests
 ]

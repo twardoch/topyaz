@@ -1,0 +1,28 @@
+# Jekyll configuration for the topyaz documentation site.
+# Served via GitHub Pages using the remote Just the Docs theme.
+title: topyaz
+description: Unified command-line wrapper for Topaz Labs AI apps (Gigapixel, Photo AI, Video AI)
+remote_theme: just-the-docs/just-the-docs
+
+url: https://twardoch.github.io
+baseurl: /topyaz
+
+# Just the Docs settings
+search_enabled: true
+heading_anchors: true
+color_scheme: dark
+
+aux_links:
+  "topyaz on GitHub":
+    - "https://github.com/twardoch/topyaz"
+aux_links_new_tab: true
+
+# Footer
+back_to_top: true
+back_to_top_text: "Back to top"
+
+# Exclude build and tooling files from the published site
+exclude:
+  - Gemfile
+  - Gemfile.lock
+  - vendor

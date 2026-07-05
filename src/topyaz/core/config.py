@@ -255,9 +255,6 @@ class Config:
             Deep copy of the dictionary
 
         """
-        if not isinstance(d, dict):
-            return d
-
         return {key: self._deep_copy_dict(value) if isinstance(value, dict) else value for key, value in d.items()}
 
     def get(self, key: str, default: Any = None) -> Any:

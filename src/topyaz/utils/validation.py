@@ -33,7 +33,7 @@ def validate_output_file(input_path: Path, output_path: Path) -> dict[str, Any]:
     Returns:
         Dictionary with validation results
     """
-    result = {
+    result: dict[str, Any] = {
         "file_exists": False,
         "file_size": 0,
         "size_compared_to_input": 0.0,
@@ -96,7 +96,7 @@ def get_media_info(file_path: Path) -> dict[str, Any]:
     Returns:
         Dictionary with media information
     """
-    info = {}
+    info: dict[str, Any] = {}
 
     # Try to use ffprobe for video files
     if file_path.suffix.lower() in [".mp4", ".mov", ".avi", ".mkv"]:
@@ -111,7 +111,7 @@ def get_media_info(file_path: Path) -> dict[str, Any]:
 
 def _get_video_info(file_path: Path) -> dict[str, Any]:
     """Get video file information using ffprobe."""
-    info = {}
+    info: dict[str, Any] = {}
 
     try:
         # import shutil # Moved to top
@@ -170,7 +170,7 @@ def _get_video_info(file_path: Path) -> dict[str, Any]:
 
 def _get_image_info(file_path: Path) -> dict[str, Any]:
     """Get image file information."""
-    info = {}
+    info: dict[str, Any] = {}
 
     try:
         # Try using PIL/Pillow if available
@@ -215,7 +215,7 @@ def compare_media_files(input_path: Path, output_path: Path) -> dict[str, Any]:
     Returns:
         Dictionary with comparison results
     """
-    comparison = {
+    comparison: dict[str, Any] = {
         "input_valid": False,
         "output_valid": False,
         "size_ratio": 0.0,

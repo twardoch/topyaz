@@ -12,10 +12,11 @@
 - Gigapixel AI Pro license ($499/year) for CLI access
 - 16GB+ RAM, 80GB+ storage for models
 
-**🚧 Current Status:**
-- **Planning Stage**: Extensive specification (SPEC.md) and documentation written
-- **Implementation**: Minimal skeleton code - most features in TODO.md are unimplemented
-- **Architecture**: Designed around unified `TopyazCLI` class using Python Fire for CLI generation
+**🚧 Current Status (v1.0.0):**
+- **Local processing works** across Gigapixel, Photo AI, and Video AI
+- **Tested**: 176 tests green (Topaz binaries mocked), `mypy` and `ruff` clean
+- **Not yet shipped**: remote SSH execution and real `--parallel_jobs` batching (see TODO.md)
+- **Architecture**: unified `TopyazCLI` class using Python Fire for CLI generation
 
 **💡 Key Value:**
 - ~2x faster than GUI for batch operations
